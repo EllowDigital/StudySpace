@@ -24,7 +24,7 @@ const App = () => {
         price: "0",
         priceCurrency: "USD",
       },
-      downloadUrl: "https://typeblitz.tech/#download",
+      downloadUrl: "https://typeblitz.netlify.app/#download",
       author: {
         "@type": "Organization",
         name: "EllowDigital",

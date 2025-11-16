@@ -30,8 +30,8 @@ const updateMetaTags = () => {
         "Improve typing speed and accuracy with TypeBlitz - a free, lightweight desktop application.",
     },
     { property: "og:type", content: "website" },
-    { property: "og:url", content: "https://typeblitz.tech" },
-    { property: "og:image", content: "https://typeblitz.tech/assets/images/TypeBlitz.png" },
+    { property: "og:url", content: "https://typeblitz.netlify.app" },
+    { property: "og:image", content: "https://typeblitz.netlify.app/assets/images/TypeBlitz.png" },
     { property: "twitter:card", content: "summary_large_image" },
     { property: "twitter:title", content: "TypeBlitz - Free Typing Speed Improvement App" },
     {
@@ -39,7 +39,7 @@ const updateMetaTags = () => {
       content:
         "Improve typing speed and accuracy with TypeBlitz - a free, lightweight desktop application.",
     },
-    { property: "twitter:image", content: "https://typeblitz.tech/assets/images/TypeBlitz.png" },
+    { property: "twitter:image", content: "https://typeblitz.netlify.app/assets/images/TypeBlitz.png" },
   ];
 
   metaTags.forEach((tag) => {
@@ -59,8 +59,38 @@ updateMetaTags();
 // Register service worker for PWA support
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("/service-worker.js").catch((err) => {
-      console.error("Service Worker registration failed:", err);
+    let refreshing = false;
+
+    navigator.serviceWorker
+      .register("/service-worker.js")
+      .then((registration) => {
+        const requestSkipWaiting = (worker: ServiceWorker | null) => {
+          worker?.postMessage({ type: "SKIP_WAITING" });
+        };
+
+        if (registration.waiting) {
+          requestSkipWaiting(registration.waiting);
+        }
+
+        registration.addEventListener("updatefound", () => {
+          const newWorker = registration.installing;
+          if (newWorker) {
+            newWorker.addEventListener("statechange", () => {
+              if (newWorker.state === "installed") {
+                requestSkipWaiting(newWorker);
+              }
+            });
+          }
+        });
+      })
+      .catch((err) => {
+        console.error("Service Worker registration failed:", err);
+      });
+
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
+      if (refreshing) return;
+      refreshing = true;
+      window.location.reload();
     });
   });
 }

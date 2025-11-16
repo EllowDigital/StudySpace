@@ -22,7 +22,7 @@ TypeBlitz is your ultimate typing companion — whether you're just starting or 
 
 ## 📲 **How to Get Started** 📲
 
-1. **Download**[![Download](https://img.shields.io/badge/Download-TypeBlitz-blue)](https://typeblitz.tech/)Head over to our website [here](https://typeblitz.tech/) to grab TypeBlitz for free! 🎉
+1. **Download**[![Download](https://img.shields.io/badge/Download-TypeBlitz-blue)](https://typeblitz.netlify.app/)Head over to our website [here](https://typeblitz.netlify.app/) to grab TypeBlitz for free! 🎉
 2. **Installation**Simply follow the on-screen prompts to install TypeBlitz on your device. 🛠️
 3. **Getting Started**
    Open the app and dive into a world of engaging typing exercises that will transform your skills in no time! 🌐

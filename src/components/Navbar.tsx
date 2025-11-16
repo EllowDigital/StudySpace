@@ -1,19 +1,27 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Download, Menu, X } from "lucide-react";
+import { Download, Menu } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { useIsMobile } from "@/hooks/use-mobile";
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+
+const sectionLinks = [
+  { id: "about", label: "About" },
+  { id: "features", label: "Features" },
+  { id: "screenshots", label: "Screenshots" },
+  { id: "download", label: "Download" },
+  { id: "contact", label: "Contact" },
+];
 
 const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const isMobile = useIsMobile();
   const location = useLocation();
   const isHomePage = location.pathname === "/";
 
@@ -35,9 +43,8 @@ const Navbar = () => {
       if (section) {
         section.scrollIntoView({ behavior: "smooth" });
       }
-    } else {
-      setMobileMenuOpen(false);
     }
+    setMobileMenuOpen(false);
   };
 
   return (
@@ -61,77 +68,38 @@ const Navbar = () => {
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center gap-6">
-          {isHomePage ? (
-            <>
+          {sectionLinks.map((link) =>
+            isHomePage ? (
               <button
-                onClick={() => scrollToSection("about")}
+                key={link.id}
+                onClick={() => scrollToSection(link.id)}
                 className="text-sm text-muted-foreground hover:text-white transition-colors"
               >
-                About
+                {link.label}
               </button>
-              <button
-                onClick={() => scrollToSection("features")}
-                className="text-sm text-muted-foreground hover:text-white transition-colors"
-              >
-                Features
-              </button>
-              <button
-                onClick={() => scrollToSection("screenshots")}
-                className="text-sm text-muted-foreground hover:text-white transition-colors"
-              >
-                Screenshots
-              </button>
-              <button
-                onClick={() => scrollToSection("download")}
-                className="text-sm text-muted-foreground hover:text-white transition-colors"
-              >
-                Download
-              </button>
-              <button
-                onClick={() => scrollToSection("contact")}
-                className="text-sm text-muted-foreground hover:text-white transition-colors"
-              >
-                Contact
-              </button>
-            </>
-          ) : (
-            <>
+            ) : (
               <Link
-                to="/#about"
+                key={link.id}
+                to={`/#${link.id}`}
                 className="text-sm text-muted-foreground hover:text-white transition-colors"
               >
-                About
+                {link.label}
               </Link>
-              <Link
-                to="/#features"
-                className="text-sm text-muted-foreground hover:text-white transition-colors"
-              >
-                Features
-              </Link>
-              <Link
-                to="/#screenshots"
-                className="text-sm text-muted-foreground hover:text-white transition-colors"
-              >
-                Screenshots
-              </Link>
-              <Link
-                to="/#download"
-                className="text-sm text-muted-foreground hover:text-white transition-colors"
-              >
-                Download
-              </Link>
-              <Link
-                to="/#contact"
-                className="text-sm text-muted-foreground hover:text-white transition-colors"
-              >
-                Contact
-              </Link>
-            </>
+            )
           )}
+          <Link
+            to="/quickstart"
+            className="text-sm text-neon font-semibold hover:text-white transition-colors"
+          >
+            Quickstart
+          </Link>
         </nav>
 
         {/* Desktop Actions */}
         <div className="hidden md:flex items-center gap-4">
+          <Button asChild variant="ghost" className="text-neon hover:text-white">
+            <Link to="/quickstart">Quickstart</Link>
+          </Button>
           <Button
             variant="outline"
             className="items-center gap-2 border-neon text-neon hover:bg-neon hover:text-black"
@@ -154,68 +122,82 @@ const Navbar = () => {
 
         {/* Mobile Navigation */}
         <div className="md:hidden flex items-center">
-          <DropdownMenu open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-            <DropdownMenuTrigger asChild>
+          <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+            <SheetTrigger asChild>
               <Button variant="outline" size="icon" className="text-neon border-neon">
-                {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+                <Menu className="h-5 w-5" />
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent
-              align="end"
-              className="w-60 bg-black/90 backdrop-blur-lg border border-neon/30"
+            </SheetTrigger>
+            <SheetContent
+              side="right"
+              className="bg-black/95 border-neon/20 text-white w-72 p-6 flex flex-col"
             >
-              {isHomePage ? (
-                <>
-                  <DropdownMenuItem onClick={() => scrollToSection("about")}>
-                    About
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => scrollToSection("features")}>
-                    Features
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => scrollToSection("screenshots")}>
-                    Screenshots
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => scrollToSection("download")}>
-                    Download
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => scrollToSection("contact")}>
-                    Contact
-                  </DropdownMenuItem>
-                </>
-              ) : (
-                <>
-                  <DropdownMenuItem asChild>
-                    <Link to="/#about" onClick={() => setMobileMenuOpen(false)}>
-                      About
+              <SheetHeader className="text-left text-white space-y-1">
+                <p className="text-xs uppercase tracking-widest text-muted-foreground">Navigate</p>
+                <SheetTitle className="text-2xl font-semibold text-white">Menu</SheetTitle>
+                <SheetDescription className="text-sm text-white/70">
+                  Choose a section or jump straight to the quickstart guide.
+                </SheetDescription>
+              </SheetHeader>
+              <div className="mt-8 flex flex-col gap-3">
+                {sectionLinks.map((link) =>
+                  isHomePage ? (
+                    <button
+                      key={link.id}
+                      onClick={() => scrollToSection(link.id)}
+                      className="text-left text-lg font-medium text-white/80 hover:text-white"
+                    >
+                      {link.label}
+                    </button>
+                  ) : (
+                    <Link
+                      key={link.id}
+                      to={`/#${link.id}`}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="text-lg font-medium text-white/80 hover:text-white"
+                    >
+                      {link.label}
                     </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/#features" onClick={() => setMobileMenuOpen(false)}>
-                      Features
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/#screenshots" onClick={() => setMobileMenuOpen(false)}>
-                      Screenshots
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
+                  )
+                )}
+                <Link
+                  to="/quickstart"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="text-lg font-semibold text-neon"
+                >
+                  Quickstart Guide
+                </Link>
+              </div>
+              <div className="mt-auto flex flex-col gap-3 pt-8">
+                {isHomePage ? (
+                  <Button
+                    className="w-full items-center gap-2"
+                    onClick={() => scrollToSection("download")}
+                  >
+                    <Download className="w-4 h-4" />
+                    Download App
+                  </Button>
+                ) : (
+                  <Button asChild className="w-full items-center gap-2">
                     <Link to="/#download" onClick={() => setMobileMenuOpen(false)}>
-                      Download
+                      <Download className="w-4 h-4" />
+                      Download App
                     </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/#contact" onClick={() => setMobileMenuOpen(false)}>
-                      Contact
-                    </Link>
-                  </DropdownMenuItem>
-                </>
-              )}
-              <DropdownMenuItem onClick={() => window.open("https://ellowdigitals.com", "_blank")}>
-                Visit EllowDigitals
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+                  </Button>
+                )}
+                <Button
+                  variant="ghost"
+                  className="text-white hover:text-neon"
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    window.open("https://ellowdigital.netlify.app/", "_blank");
+                  }}
+                >
+                  EllowDigital
+                </Button>
+              </div>
+            </SheetContent>
+          </Sheet>
         </div>
       </div>
     </header>

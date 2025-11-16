@@ -143,7 +143,7 @@ const Installation = () => {
                   <Button
                     variant="outline"
                     className="flex-1 border-white/20 text-white hover:bg-white/5"
-                    onClick={() => window.open("https://typeblitz.tech/docs", "_blank")}
+                    onClick={() => window.open("https://typeblitz.netlify.app/quickstart", "_blank")}
                   >
                     View quickstart
                   </Button>
