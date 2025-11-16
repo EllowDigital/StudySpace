@@ -1,4 +1,5 @@
 import type { Config } from "tailwindcss";
+import tailwindcssAnimate from "tailwindcss-animate";
 
 export default {
   darkMode: ["class"],
@@ -21,11 +22,17 @@ export default {
         md: "768px",
         lg: "1024px",
         xl: "1280px",
-        "2xl": "1400px",
+        "2xl": "1440px",
+        "3xl": "1680px",
+        "4xl": "1920px",
       },
     },
 
     extend: {
+      screens: {
+        "3xl": "1680px",
+        "4xl": "1920px",
+      },
       colors: {
         // System colors from CSS variables
         border: "hsl(var(--border))",
@@ -121,5 +128,5 @@ export default {
     },
   },
 
-  plugins: [require("tailwindcss-animate")],
+  plugins: [tailwindcssAnimate],
 } satisfies Config;

@@ -26,5 +26,11 @@ export default tseslint.config(
         { allowShortCircuit: true, allowTernary: true },
       ], // Adding the missing rule for no-unused-expressions
     },
+  },
+  {
+    files: ["src/components/ui/**/*.{ts,tsx}"],
+    rules: {
+      "react-refresh/only-export-components": "off",
+    },
   }
 );

@@ -1,12 +1,10 @@
-import { useEffect, useState } from "react";
+import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { DownloadIcon, ExternalLink } from "lucide-react";
 import { RELEASE_DATE, RELEASE_VERSION_DISPLAY } from "@/lib/release-info";
 
 const Hero = () => {
-  const [greeting, setGreeting] = useState("");
-
-  useEffect(() => {
+  const greeting = useMemo(() => {
     const hour = new Date().getHours();
     let greeting = "Hello";
 
@@ -14,7 +12,7 @@ const Hero = () => {
     else if (hour < 18) greeting = "Good Afternoon";
     else greeting = "Good Evening";
 
-    setGreeting(greeting);
+    return greeting;
   }, []);
 
   const scrollToDownload = () => {

@@ -59,10 +59,11 @@ const Features = () => {
       { threshold: 0.15 }
     );
 
-    cardRefs.current.forEach((ref) => ref && observer.observe(ref));
+    const currentCards = cardRefs.current.filter((ref): ref is HTMLDivElement => Boolean(ref));
+    currentCards.forEach((ref) => observer.observe(ref));
 
     return () => {
-      cardRefs.current.forEach((ref) => ref && observer.unobserve(ref));
+      currentCards.forEach((ref) => observer.unobserve(ref));
     };
   }, []);
 

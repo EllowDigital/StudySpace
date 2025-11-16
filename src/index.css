@@ -53,9 +53,32 @@
 
   body {
     @apply bg-background text-foreground;
+    min-height: 100vh;
+    overflow-x: hidden;
     font-feature-settings:
       "rlig" 1,
       "calt" 1;
+    font-size: clamp(0.95rem, 0.95vw, 1.05rem);
+  }
+
+  main {
+    @apply w-full;
+  }
+
+  .responsive-shell {
+    @apply mx-auto w-full max-w-[1920px] px-4 sm:px-6 lg:px-8;
+  }
+
+  @screen 3xl {
+    body {
+      font-size: 1.05rem;
+    }
+  }
+
+  @screen 4xl {
+    body {
+      font-size: 1.1rem;
+    }
   }
 
   .glass {
