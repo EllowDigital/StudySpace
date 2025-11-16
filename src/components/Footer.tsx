@@ -144,7 +144,7 @@ const Footer = () => {
               age.
             </p>
             <a
-              href="https://ellowdigitals.me/"
+              href="https://ellowdigital.netlify.app/"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 text-sm px-4 py-2 rounded-md border border-neon/30 text-neon bg-neon/10 hover:bg-neon/20 transition"

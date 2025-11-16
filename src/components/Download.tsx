@@ -2,13 +2,15 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { DownloadIcon, ChevronDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-
-const LATEST_VERSION = "v1.4-stable"; // Updated version
-const LATEST_VERSION_DISPLAY = "v1.4-stable"; // Updated version
-const RELEASE_DATE = "May 20, 2025";
+import {
+  RELEASE_DATE,
+  RELEASE_NOTES_SNIPPET,
+  RELEASE_VERSION,
+  RELEASE_VERSION_DISPLAY,
+} from "@/lib/release-info";
 
 const olderVersions = [
-  { version: "v1.4-beta", label: "Version 1.4 (Beta)" },
+  { version: "v1.4-stable", label: "Version 1.4 (stable)" },
   { version: "v1.2-beta", label: "Version 1.2 (Beta)" },
   // Add additional versions as needed
 ];
@@ -42,7 +44,7 @@ const Download = () => {
 
   const handleDownload = useCallback(
     (version: string) => {
-      const isLatest = version === LATEST_VERSION;
+      const isLatest = version === RELEASE_VERSION;
       const fileName = `TypeBlitz-${version}.zip`;
       const path = isLatest ? `./production/latest/${fileName}` : `./production/files/${fileName}`;
 
@@ -94,18 +96,18 @@ const Download = () => {
             </div>
 
             <h3 className="text-2xl font-bold text-center mb-2">
-              TypeBlitz {LATEST_VERSION_DISPLAY}
+              TypeBlitz {RELEASE_VERSION_DISPLAY}
             </h3>
             <p className="text-center text-muted-foreground mb-1">
               Latest Release • {RELEASE_DATE}
             </p>
-            <p className="text-center text-sm text-neon">100% Free | No Ads | No Subscription</p>
+            <p className="text-center text-sm text-neon">{RELEASE_NOTES_SNIPPET}</p>
           </div>
 
           <div className="space-y-4">
             <Button
               className="w-full bg-neon text-dark hover:bg-neon/90 py-6 text-lg flex items-center justify-center gap-2"
-              onClick={() => handleDownload(LATEST_VERSION)}
+              onClick={() => handleDownload(RELEASE_VERSION)}
             >
               <DownloadIcon className="w-5 h-5" />
               Download Latest

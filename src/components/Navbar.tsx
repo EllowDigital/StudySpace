@@ -140,7 +140,7 @@ const Navbar = () => {
             to={isHomePage ? undefined : "/#download"}
           >
             <Download className="w-4 h-4" />
-            <span>Download v1.4</span>
+            <span>Download</span>
           </Button>
 
           <Button

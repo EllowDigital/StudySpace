@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { DownloadIcon, ExternalLink } from "lucide-react";
+import { RELEASE_DATE, RELEASE_VERSION_DISPLAY } from "@/lib/release-info";
 
 const Hero = () => {
   const [greeting, setGreeting] = useState("");
@@ -24,7 +25,10 @@ const Hero = () => {
   };
 
   return (
-    <section className="relative min-h-screen flex flex-col items-center justify-center py-20 overflow-hidden">
+    <section
+      id="hero"
+      className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden py-20"
+    >
       {/* 3D Background Elements */}
       <div className="absolute inset-0 -z-10">
         <div className="absolute top-1/4 left-1/4 w-80 h-80 bg-neon/20 rounded-full filter blur-[100px] animate-float" />
@@ -39,7 +43,16 @@ const Hero = () => {
       </div>
 
       <div className="container px-4 md:px-6 relative z-10 text-center">
-        <div className="mb-4 inline-block glass px-4 py-2 rounded-full">
+        <div className="mb-4 flex flex-col items-center gap-2 sm:flex-row sm:justify-center">
+          <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/40 px-4 py-1 text-xs uppercase tracking-[0.35em] text-muted-foreground">
+            {RELEASE_VERSION_DISPLAY}
+          </span>
+          <span className="inline-flex items-center gap-2 rounded-full bg-neon/15 px-4 py-1 text-xs font-semibold text-neon">
+            Deployed {RELEASE_DATE}
+          </span>
+        </div>
+
+        <div className="mb-4 inline-block glass rounded-full px-4 py-2">
           <p className="text-sm font-medium text-neon">{greeting}, Explorer</p>
         </div>
 
@@ -48,7 +61,8 @@ const Hero = () => {
         </h1>
 
         <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto mb-10">
-          Elevate Your Typing Speed and Accuracy
+          Now shipping the Polaris build—faster drills, smarter analytics, and a calmer cockpit for
+          elite focus.
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -57,13 +71,13 @@ const Hero = () => {
             onClick={scrollToDownload}
           >
             <DownloadIcon className="w-5 h-5" />
-            Download Now
+            Download {RELEASE_VERSION_DISPLAY}
           </Button>
 
           <Button
             variant="outline"
             className="border-white/20 hover:bg-white/5 px-8 py-6 text-lg flex items-center gap-2"
-            onClick={() => window.open("https://ellowdigitals.me", "_blank")}
+            onClick={() => window.open("https://ellowdigital.netlify.app", "_blank")}
           >
             <ExternalLink className="w-4 h-4" />
             Visit EllowDigital
