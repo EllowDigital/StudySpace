@@ -75,8 +75,12 @@ const Preloader = () => {
           <div className="flex flex-col items-center gap-6 text-center">
             <div className="space-y-2">
               <p className="text-xs uppercase tracking-[0.5em] text-neon">TypeBlitz</p>
-              <h2 className="text-2xl font-semibold sm:text-3xl">Preparing precision typing arena</h2>
-              <p className="text-sm sm:text-base text-muted-foreground">{activeStage.description}</p>
+              <h2 className="text-2xl font-semibold sm:text-3xl">
+                Preparing precision typing arena
+              </h2>
+              <p className="text-sm sm:text-base text-muted-foreground">
+                {activeStage.description}
+              </p>
             </div>
 
             <div className="flex w-full flex-col gap-6 md:flex-row md:items-center">
@@ -89,7 +93,9 @@ const Preloader = () => {
                 >
                   <div className="flex h-[82%] w-[82%] flex-col items-center justify-center rounded-full bg-black/80">
                     <span className="text-2xl font-bold">{Math.round(progress)}</span>
-                    <span className="text-[10px] uppercase tracking-widest text-muted-foreground">%</span>
+                    <span className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                      %
+                    </span>
                   </div>
                   <span className="sr-only" role="status" aria-live="polite">
                     {`Loading ${Math.round(progress)} percent`}
@@ -115,7 +121,8 @@ const Preloader = () => {
                   />
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  Optimizing experience for <span className="text-white">keyboard athletes</span> worldwide.
+                  Optimizing experience for <span className="text-white">keyboard athletes</span>{" "}
+                  worldwide.
                 </p>
               </div>
             </div>

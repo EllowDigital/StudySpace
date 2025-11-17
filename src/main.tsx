@@ -39,7 +39,10 @@ const updateMetaTags = () => {
       content:
         "Improve typing speed and accuracy with TypeBlitz - a free, lightweight desktop application.",
     },
-    { property: "twitter:image", content: "https://typeblitz.netlify.app/assets/images/TypeBlitz.png" },
+    {
+      property: "twitter:image",
+      content: "https://typeblitz.netlify.app/assets/images/TypeBlitz.png",
+    },
   ];
 
   metaTags.forEach((tag) => {

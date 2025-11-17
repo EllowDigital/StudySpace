@@ -91,11 +91,13 @@ const Screenshots = () => {
       <div className="container px-4 md:px-6">
         <div className="flex flex-col items-center gap-4 text-center">
           <Badge className="border-white/20 bg-white/5 text-white">
-            <MonitorSmartphone className="mr-2 h-4 w-4" />Live preview
+            <MonitorSmartphone className="mr-2 h-4 w-4" />
+            Live preview
           </Badge>
           <h2 className="section-title">Interface sneak peek</h2>
           <p className="section-subtitle max-w-3xl">
-            Swipe through the latest Polaris visuals—optimized for windowed, ultra-wide, and travel screens alike.
+            Swipe through the latest Polaris visuals—optimized for windowed, ultra-wide, and travel
+            screens alike.
           </p>
         </div>
 
@@ -111,9 +113,15 @@ const Screenshots = () => {
               <div className="absolute inset-x-6 bottom-6 rounded-2xl border border-white/10 bg-black/70 p-5">
                 <div className="flex items-center justify-between gap-4">
                   <div>
-                    <p className="text-sm uppercase tracking-[0.4em] text-muted-foreground">{screenshotData[activeIndex].stat}</p>
-                    <h3 className="text-2xl font-semibold text-white">{screenshotData[activeIndex].title}</h3>
-                    <p className="text-sm text-white/70">{screenshotData[activeIndex].description}</p>
+                    <p className="text-sm uppercase tracking-[0.4em] text-muted-foreground">
+                      {screenshotData[activeIndex].stat}
+                    </p>
+                    <h3 className="text-2xl font-semibold text-white">
+                      {screenshotData[activeIndex].title}
+                    </h3>
+                    <p className="text-sm text-white/70">
+                      {screenshotData[activeIndex].description}
+                    </p>
                   </div>
                   <div className="hidden sm:flex flex-col items-end text-right text-xs text-white/60">
                     <span>Slide {activeIndex + 1}</span>
@@ -123,7 +131,10 @@ const Screenshots = () => {
               </div>
             </div>
 
-            <div className="pointer-events-none absolute inset-0 rounded-[32px] border border-white/5" aria-hidden />
+            <div
+              className="pointer-events-none absolute inset-0 rounded-[32px] border border-white/5"
+              aria-hidden
+            />
 
             <div className="absolute inset-y-0 left-0 flex items-center">
               <button
@@ -148,7 +159,9 @@ const Screenshots = () => {
           <div className="glass rounded-3xl border border-white/10 p-6">
             <div className="mb-4 flex items-center justify-between text-sm text-muted-foreground">
               <span>Slides lineup</span>
-              <span>{activeIndex + 1}/{screenshotData.length}</span>
+              <span>
+                {activeIndex + 1}/{screenshotData.length}
+              </span>
             </div>
             <div className="space-y-4">
               {screenshotData.map((slide, index) => (
@@ -161,7 +174,9 @@ const Screenshots = () => {
                       : "border-white/5 bg-white/0 hover:border-white/15"
                   }`}
                 >
-                  <p className="text-xs uppercase tracking-[0.4em] text-muted-foreground">{slide.stat}</p>
+                  <p className="text-xs uppercase tracking-[0.4em] text-muted-foreground">
+                    {slide.stat}
+                  </p>
                   <p className="mt-1 text-lg font-semibold text-white">{slide.title}</p>
                   <p className="text-sm text-white/70">{slide.description}</p>
                 </button>

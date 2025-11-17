@@ -77,7 +77,11 @@ self.addEventListener("fetch", (event) => {
       if (cachedResponse) {
         fetch(request)
           .then((networkResponse) => {
-            if (networkResponse && networkResponse.status === 200 && networkResponse.type === "basic") {
+            if (
+              networkResponse &&
+              networkResponse.status === 200 &&
+              networkResponse.type === "basic"
+            ) {
               cache.put(request, networkResponse.clone());
             }
           })

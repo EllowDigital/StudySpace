@@ -77,12 +77,13 @@ const Features = () => {
       <div className="container px-4 md:px-6">
         <div className="flex flex-col items-center gap-6 text-center">
           <Badge className="border-white/20 bg-white/5 text-white">
-            <Sparkles className="mr-2 h-4 w-4" />Power features
+            <Sparkles className="mr-2 h-4 w-4" />
+            Power features
           </Badge>
           <h2 className="section-title">Built for serious typists</h2>
           <p className="section-subtitle max-w-3xl">
-            TypeBlitz pairs a razor-sharp UI with telemetry-driven coaching so you can push past plateaus
-            without burning out.
+            TypeBlitz pairs a razor-sharp UI with telemetry-driven coaching so you can push past
+            plateaus without burning out.
           </p>
         </div>
 
@@ -117,10 +118,14 @@ const Features = () => {
           <div className="rounded-3xl border border-white/10 bg-gradient-to-b from-white/5 to-black/40 p-6">
             <div className="mb-6 flex items-center gap-3">
               <Trophy className="h-5 w-5 text-neon" />
-              <p className="text-sm uppercase tracking-[0.5em] text-muted-foreground">Rank up faster</p>
+              <p className="text-sm uppercase tracking-[0.5em] text-muted-foreground">
+                Rank up faster
+              </p>
             </div>
             <p className="text-4xl font-semibold text-white">48%</p>
-            <p className="text-sm text-muted-foreground">Average accuracy gain after 10 focused drills.</p>
+            <p className="text-sm text-muted-foreground">
+              Average accuracy gain after 10 focused drills.
+            </p>
             <div className="mt-6 space-y-4">
               {proBoosters.map((booster, boosterIndex) => (
                 <div
@@ -131,7 +136,9 @@ const Features = () => {
                 >
                   <div className="flex items-center justify-between">
                     <h4 className="text-base font-semibold text-white">{booster.title}</h4>
-                    <span className="text-xs text-neon uppercase tracking-[0.2em]">{booster.stat}</span>
+                    <span className="text-xs text-neon uppercase tracking-[0.2em]">
+                      {booster.stat}
+                    </span>
                   </div>
                   <p className="mt-2 text-sm text-white/70">{booster.description}</p>
                 </div>

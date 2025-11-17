@@ -110,7 +110,9 @@ const Installation = () => {
             <article className="glass border-white/10 rounded-3xl p-8 shadow-[0_20px_80px_rgba(0,0,0,0.35)]">
               <div className="flex flex-col gap-6">
                 <div>
-                  <p className="text-sm uppercase tracking-[0.4em] text-muted-foreground">Release</p>
+                  <p className="text-sm uppercase tracking-[0.4em] text-muted-foreground">
+                    Release
+                  </p>
                   <h3 className="text-3xl font-semibold text-white">{RELEASE_VERSION_DISPLAY}</h3>
                   <p className="text-muted-foreground">Rolled out on {RELEASE_DATE}</p>
                 </div>
@@ -119,16 +121,16 @@ const Installation = () => {
                   <p className="text-sm text-muted-foreground">Focus upgrades</p>
                   <ul className="mt-3 space-y-2 text-base">
                     <li className="flex items-center gap-2">
-                      <CheckCircle2 className="h-4 w-4 text-neon" />Adaptive drills auto-tune to
-                      your pacing
+                      <CheckCircle2 className="h-4 w-4 text-neon" />
+                      Adaptive drills auto-tune to your pacing
                     </li>
                     <li className="flex items-center gap-2">
-                      <CheckCircle2 className="h-4 w-4 text-neon" />Progress HUD redesigned for
-                      quick-glance stats
+                      <CheckCircle2 className="h-4 w-4 text-neon" />
+                      Progress HUD redesigned for quick-glance stats
                     </li>
                     <li className="flex items-center gap-2">
-                      <CheckCircle2 className="h-4 w-4 text-neon" />Performance lighter by 18%
-                      on low-power CPUs
+                      <CheckCircle2 className="h-4 w-4 text-neon" />
+                      Performance lighter by 18% on low-power CPUs
                     </li>
                   </ul>
                 </div>
@@ -143,7 +145,9 @@ const Installation = () => {
                   <Button
                     variant="outline"
                     className="flex-1 border-white/20 text-white hover:bg-white/5"
-                    onClick={() => window.open("https://typeblitz.netlify.app/quickstart", "_blank")}
+                    onClick={() =>
+                      window.open("https://typeblitz.netlify.app/quickstart", "_blank")
+                    }
                   >
                     View quickstart
                   </Button>
@@ -157,7 +161,9 @@ const Installation = () => {
                   key={note.title}
                   className="rounded-2xl border border-white/10 bg-black/30 p-4 text-left"
                 >
-                  <p className="text-sm uppercase tracking-[0.3em] text-muted-foreground">{note.title}</p>
+                  <p className="text-sm uppercase tracking-[0.3em] text-muted-foreground">
+                    {note.title}
+                  </p>
                   <p className="mt-2 text-base text-white/80">{note.detail}</p>
                 </div>
               ))}
@@ -171,7 +177,10 @@ const Installation = () => {
                 return (
                   <li key={step.title} className="relative pl-12">
                     {index !== installSteps.length - 1 && (
-                      <span className="absolute left-[21px] top-8 h-full w-px bg-white/10" aria-hidden />
+                      <span
+                        className="absolute left-[21px] top-8 h-full w-px bg-white/10"
+                        aria-hidden
+                      />
                     )}
                     <span className="absolute left-0 top-0 flex h-10 w-10 items-center justify-center rounded-xl border border-neon/40 bg-black/60 text-neon">
                       <Icon className="h-4 w-4" />
