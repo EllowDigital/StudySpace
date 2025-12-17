@@ -18,69 +18,57 @@ const Privacy = () => {
           <section>
             <h2 className="text-xl font-semibold mb-3 text-foreground">1. Introduction</h2>
             <p>
-              Welcome to TypeBlitz. We respect your privacy and are committed to protecting your
-              personal data. This Privacy Policy explains how we collect, use, disclose, and
-              safeguard your information when you use our application.
+              TypeBlitz is a desktop typing speed and accuracy assessment application developed by
+              EllowDigital Enterprise. This Privacy Policy explains how TypeBlitz handles user
+              information. The core principle of TypeBlitz is privacy-first: the app is designed
+              to operate entirely on the user's device.
             </p>
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold mb-3 text-foreground">
-              2. Information We Collect
-            </h2>
-            <p>We collect minimal information to provide you with a better experience:</p>
-            <ul className="list-disc pl-6 mt-2 space-y-1">
-              <li>
-                Usage statistics: We anonymously collect information about how you use TypeBlitz,
-                including typing speed, accuracy, and frequency.
-              </li>
-              <li>
-                Device information: Basic information about your operating system and device
-                specifications.
-              </li>
-              <li>
-                Settings and preferences: Your application settings and customization preferences.
-              </li>
-            </ul>
-          </section>
-
-          <section>
-            <h2 className="text-xl font-semibold mb-3 text-foreground">
-              3. How We Use Your Information
-            </h2>
-            <p>We use the collected information for the following purposes:</p>
-            <ul className="list-disc pl-6 mt-2 space-y-1">
-              <li>To provide and maintain TypeBlitz functionality</li>
-              <li>To personalize your experience based on your usage patterns</li>
-              <li>To improve our application based on user feedback and statistics</li>
-              <li>To detect and address technical issues</li>
-            </ul>
-          </section>
-
-          <section>
-            <h2 className="text-xl font-semibold mb-3 text-foreground">4. Information Sharing</h2>
+            <h2 className="text-xl font-semibold mb-3 text-foreground">2. Data Collection</h2>
             <p>
-              We do not sell, trade, or otherwise transfer your information to third parties.
-              Anonymous usage statistics may be used internally for product improvement purposes.
+              TypeBlitz does not collect, transmit, store, or share any personal data. All typing
+              statistics, scores, and history are stored locally on your device only and are never
+              transmitted to external servers.
+            </p>
+            <p>
+              The application does not require user accounts, logins, or any identity
+              information to function.
             </p>
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold mb-3 text-foreground">5. Data Security</h2>
+            <h2 className="text-xl font-semibold mb-3 text-foreground">3. Offline Usage</h2>
             <p>
-              We implement reasonable security measures to maintain the safety of your personal
-              information. However, no method of transmission over the internet or electronic
-              storage is 100% secure, and we cannot guarantee absolute security.
+              TypeBlitz is fully functional offline. No data is sent automatically in the
+              background. Any telemetry or analytics services are not used by this application.
             </p>
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold mb-3 text-foreground">
-              6. Updates to This Policy
-            </h2>
+            <h2 className="text-xl font-semibold mb-3 text-foreground">4. External Links</h2>
             <p>
-              We may update our Privacy Policy from time to time. We will notify you of any changes
-              by posting the new Privacy Policy on this page and updating the "Last updated" date.
+              The app may open external web links only when explicitly initiated by you (for
+              example, when visiting the official website). TypeBlitz does not send data to those
+              sites automatically.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-xl font-semibold mb-3 text-foreground">5. No Tracking</h2>
+            <p>
+              We do not use analytics services, advertising networks, trackers, or third-party
+              data collection tools. There is no hidden telemetry; the app operates locally and
+              respects your privacy by design.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-xl font-semibold mb-3 text-foreground">6. Updates to This Policy</h2>
+            <p>
+              We may update this Privacy Policy occasionally. Any changes will be posted on this
+              page and the "Last updated" date below will be revised.
             </p>
           </section>
 
@@ -88,11 +76,11 @@ const Privacy = () => {
             <h2 className="text-xl font-semibold mb-3 text-foreground">7. Contact Us</h2>
             <p>
               If you have any questions about this Privacy Policy, please contact us at
-              privacy@typeblitz.com.
+              ellowdigitalindia@gmail.com.
             </p>
           </section>
 
-          <div className="pt-4 border-t border-white/10 text-sm">Last updated: May 10, 2025</div>
+          <div className="pt-4 border-t border-white/10 text-sm">Last updated: November 2025</div>
         </div>
       </main>
       <Footer />
