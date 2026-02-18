@@ -1,0 +1,12 @@
+﻿{
+    "host": "typeblitz.netlify.app",
+    "key": "70d624f2ff9640b79861cbf5f04be266",
+    "urlList": [
+        "https://typeblitz.netlify.app/",
+        "https://typeblitz.netlify.app/quickstart",
+        "https://typeblitz.netlify.app/privacy",
+        "https://typeblitz.netlify.app/terms",
+        "https://typeblitz.netlify.app/eula"
+    ],
+    "keyLocation": "https://typeblitz.netlify.app/70d624f2ff9640b79861cbf5f04be266.txt"
+}
