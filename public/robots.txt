@@ -14,3 +14,6 @@ User-agent: *
 Allow: /
 
 Sitemap: https://typeblitz.netlify.app/sitemap.xml
+Sitemap: https://typeblitz.netlify.app/sitemaps/sitemap-pages.xml
+Sitemap: https://typeblitz.netlify.app/sitemaps/sitemap-legal.xml
+Sitemap: https://typeblitz.netlify.app/sitemaps/sitemap-media.xml
