@@ -108,6 +108,8 @@ const Screenshots = () => {
                 key={screenshotData[activeIndex].image}
                 src={screenshotData[activeIndex].image}
                 alt={screenshotData[activeIndex].title}
+                loading="lazy"
+                decoding="async"
                 className="h-full w-full object-cover transition duration-500"
               />
               <div className="absolute inset-x-6 bottom-6 rounded-2xl border border-white/10 bg-black/70 p-5">

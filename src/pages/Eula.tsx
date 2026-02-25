@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ScrollToTop from "@/components/ScrollToTop";
+import SeoHead from "@/components/SeoHead";
 
 const Eula = () => {
   useEffect(() => {
@@ -10,6 +11,11 @@ const Eula = () => {
 
   return (
     <>
+      <SeoHead
+        title="EULA | TypeBlitz"
+        description="Read the End User License Agreement for TypeBlitz, including rights, restrictions, and liability terms."
+        path="/eula"
+      />
       <Navbar />
       <main className="container px-4 md:px-6 py-12 max-w-4xl mx-auto">
         <h1 className="text-3xl md:text-4xl font-bold mb-6 text-gradient">
