@@ -36,11 +36,13 @@ TypeBlitz serves as an essential tool for students, professionals, and enthusias
 ## 📥 Download & Installation
 
 ### **Windows (Recommended)**
+
 For the best native experience on Windows 10 and 11, download the official application from the Microsoft Store.
 
 👉 **[Download TypeBlitz via Microsoft Store](https://apps.microsoft.com/detail/9nc8mkgl2q2b?hl=en-US&gl=IN)**
 
 ### **Web / Alternative**
+
 You can also access the web version or direct downloads via our official website:
 [Visit typeblitz.netlify.app](https://typeblitz.netlify.app/)
 

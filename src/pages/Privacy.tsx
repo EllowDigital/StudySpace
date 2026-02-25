@@ -20,8 +20,8 @@ const Privacy = () => {
             <p>
               TypeBlitz is a desktop typing speed and accuracy assessment application developed by
               EllowDigital Enterprise. This Privacy Policy explains how TypeBlitz handles user
-              information. The core principle of TypeBlitz is privacy-first: the app is designed
-              to operate entirely on the user's device.
+              information. The core principle of TypeBlitz is privacy-first: the app is designed to
+              operate entirely on the user's device.
             </p>
           </section>
 
@@ -33,8 +33,8 @@ const Privacy = () => {
               transmitted to external servers.
             </p>
             <p>
-              The application does not require user accounts, logins, or any identity
-              information to function.
+              The application does not require user accounts, logins, or any identity information to
+              function.
             </p>
           </section>
 
@@ -58,14 +58,16 @@ const Privacy = () => {
           <section>
             <h2 className="text-xl font-semibold mb-3 text-foreground">5. No Tracking</h2>
             <p>
-              We do not use analytics services, advertising networks, trackers, or third-party
-              data collection tools. There is no hidden telemetry; the app operates locally and
-              respects your privacy by design.
+              We do not use analytics services, advertising networks, trackers, or third-party data
+              collection tools. There is no hidden telemetry; the app operates locally and respects
+              your privacy by design.
             </p>
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold mb-3 text-foreground">6. Updates to This Policy</h2>
+            <h2 className="text-xl font-semibold mb-3 text-foreground">
+              6. Updates to This Policy
+            </h2>
             <p>
               We may update this Privacy Policy occasionally. Any changes will be posted on this
               page and the "Last updated" date below will be revised.
