@@ -12,6 +12,7 @@ import Footer from "@/components/Footer";
 import ScrollToTop from "@/components/ScrollToTop";
 import { useToast } from "@/hooks/use-toast";
 import { RELEASE_DATE, RELEASE_VERSION_DISPLAY } from "@/lib/release-info";
+import SeoHead from "@/components/SeoHead";
 
 const announcementSections = [
   { id: "features", label: "Power Features" },
@@ -99,6 +100,41 @@ const Index = () => {
 
   return (
     <>
+      <SeoHead
+        title="TypeBlitz | Improve Typing Speed, Accuracy, and Flow"
+        description="TypeBlitz helps you increase WPM and typing accuracy with adaptive drills, progress analytics, and a distraction-free desktop experience."
+        path="/"
+        schema={[
+          {
+            "@context": "https://schema.org",
+            "@type": "SoftwareApplication",
+            name: "TypeBlitz",
+            operatingSystem: "Windows",
+            applicationCategory: "ProductivityApplication",
+            description:
+              "Desktop typing trainer with adaptive drills, speed analytics, and focused practice workflows.",
+            offers: {
+              "@type": "Offer",
+              price: "0",
+              priceCurrency: "USD",
+            },
+            url: "https://typeblitz.netlify.app/",
+            downloadUrl: "https://apps.microsoft.com/detail/9nc8mkgl2q2b",
+            author: {
+              "@type": "Organization",
+              name: "EllowDigital",
+              url: "https://ellowdigitals.me",
+            },
+          },
+          {
+            "@context": "https://schema.org",
+            "@type": "WebSite",
+            name: "TypeBlitz",
+            url: "https://typeblitz.netlify.app/",
+            inLanguage: "en",
+          },
+        ]}
+      />
       <Preloader />
 
       <div className={`transition-opacity duration-700 ${isLoaded ? "opacity-100" : "opacity-0"}`}>

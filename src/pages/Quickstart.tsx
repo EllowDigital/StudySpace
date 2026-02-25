@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, Download, FolderArchive, Rocket, Shield, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 import { RELEASE_DATE, RELEASE_VERSION_DISPLAY } from "@/lib/release-info";
+import SeoHead from "@/components/SeoHead";
 
 const installSteps = [
   {
@@ -45,6 +46,24 @@ const drills = [
 const Quickstart = () => {
   return (
     <div className="section-padding">
+      <SeoHead
+        title="TypeBlitz Quickstart | Install and Start in Minutes"
+        description="Install TypeBlitz quickly with this step-by-step guide covering download, setup, first drills, and prerequisites for Windows."
+        path="/quickstart"
+        schema={{
+          "@context": "https://schema.org",
+          "@type": "HowTo",
+          name: "How to install and start TypeBlitz",
+          description:
+            "A quick setup sequence for downloading, installing, and starting your first TypeBlitz training session.",
+          step: [
+            { "@type": "HowToStep", name: "Download TypeBlitz" },
+            { "@type": "HowToStep", name: "Unzip package" },
+            { "@type": "HowToStep", name: "Launch TypeBlitz" },
+            { "@type": "HowToStep", name: "Complete first drill" },
+          ],
+        }}
+      />
       <div className="container px-4 md:px-6 space-y-16">
         <header className="text-center space-y-4">
           <Badge className="border-white/20 bg-white/5 text-white">Polaris build</Badge>

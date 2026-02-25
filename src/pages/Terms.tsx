@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ScrollToTop from "@/components/ScrollToTop";
+import SeoHead from "@/components/SeoHead";
 
 const Terms = () => {
   useEffect(() => {
@@ -10,6 +11,11 @@ const Terms = () => {
 
   return (
     <>
+      <SeoHead
+        title="Terms of Use | TypeBlitz"
+        description="Review the TypeBlitz terms of use, license scope, disclaimers, and governing legal conditions."
+        path="/terms"
+      />
       <Navbar />
       <main className="container px-4 md:px-6 py-12 max-w-4xl mx-auto">
         <h1 className="text-3xl md:text-4xl font-bold mb-6 text-gradient">Terms of Use</h1>
