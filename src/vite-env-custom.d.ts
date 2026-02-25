@@ -4,16 +4,16 @@
 // without modifying read-only configuration files
 
 declare namespace JSX {
-	interface IntrinsicElements {
-		"ms-store-badge": {
-			productid?: string;
-			productname?: string;
-			"window-mode"?: string;
-			theme?: string;
-			size?: string;
-			language?: string;
-			animation?: string;
-			className?: string;
-		};
-	}
+  interface IntrinsicElements {
+    "ms-store-badge": {
+      productid?: string;
+      productname?: string;
+      "window-mode"?: string;
+      theme?: string;
+      size?: string;
+      language?: string;
+      animation?: string;
+      className?: string;
+    };
+  }
 }
