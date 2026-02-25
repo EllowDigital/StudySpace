@@ -113,6 +113,35 @@ const Download = () => {
               Download Latest
             </Button>
 
+            <div className="rounded-xl border border-white/10 bg-black/40 px-4 py-5">
+              <p className="mb-3 text-center text-sm text-muted-foreground">
+                Prefer the Microsoft Store install?
+              </p>
+              <div className="mx-auto flex w-full max-w-sm justify-center overflow-x-auto">
+                <ms-store-badge
+                  productid="9nc8mkgl2q2b"
+                  productname="TypeBlitz"
+                  window-mode="direct"
+                  theme="auto"
+                  size="large"
+                  language="en"
+                  animation="on"
+                />
+              </div>
+              <p className="mt-3 text-center text-xs text-muted-foreground">
+                If the badge does not load, use
+                <a
+                  href="https://apps.microsoft.com/detail/9nc8mkgl2q2b"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="ml-1 text-neon hover:underline"
+                >
+                  this direct Microsoft Store link
+                </a>
+                .
+              </p>
+            </div>
+
             <div className="pt-2">
               <p className="text-center text-sm text-muted-foreground mb-2">
                 Download older versions of TypeBlitz
