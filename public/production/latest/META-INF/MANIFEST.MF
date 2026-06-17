@@ -1,6 +1,0 @@
-Manifest-Version: 1.0
-Created-By: 1.0 (Android SignApk)
-
-Name: TypeBlitzSetup.exe
-SHA1-Digest: sXqh3Etqy/gRX69QrVVt49V7WXw=
-
