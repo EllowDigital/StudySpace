@@ -1,0 +1,3 @@
+uharfbuzz
+PySide6 
+reportlab

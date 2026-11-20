@@ -1,0 +1,4 @@
+2026-11-20 18:14:29,994 INFO studyspace: Applied migration 1: baseline_2x_schema
+2026-11-20 18:14:29,995 INFO studyspace: Applied migration 2: academic_structure
+2026-11-20 18:14:29,998 INFO studyspace: Applied migration 3: coursework_extensions
+2026-11-20 18:14:29,999 INFO studyspace: Applied migration 4: indexes_and_integrity
