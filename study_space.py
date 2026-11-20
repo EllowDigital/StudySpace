@@ -25,6 +25,7 @@ Code map (search for the numbered banners):
     3 Backup & restore        7 Analytics, alerts, AppCore    11 Qt III — main window
     4 Domain rules            8 PDF reports                   12 Self-tests · 13 Command line
 """
+
 from __future__ import annotations
 
 import argparse
@@ -54,14 +55,28 @@ from typing import Any, Callable, Iterable, Optional, Sequence
 APP_NAME = "Study Space Pro"
 APP_VERSION = "3.0.0"
 DB_FILENAME = "study_space_pro.db"
-APP_DIR = (Path(sys.executable).parent if getattr(sys, "frozen", False)
-           else Path(__file__).resolve().parent)
-REQUIREMENTS = ("PySide6>=6.5", "reportlab>=4.0",
-                "uharfbuzz>=0.37  # optional: Hindi/Indic text shaping in PDFs")
+APP_DIR = (
+    Path(sys.executable).parent
+    if getattr(sys, "frozen", False)
+    else Path(__file__).resolve().parent
+)
+REQUIREMENTS = (
+    "PySide6>=6.5",
+    "reportlab>=4.0",
+    "uharfbuzz>=0.37  # optional: Hindi/Indic text shaping in PDFs",
+)
 LOG = logging.getLogger("studyspace")
 
-ACCENTS = {"Blue": "#2F5FCB", "Violet": "#7046C2", "Teal": "#087F75", "Rose": "#B83258",
-           "Amber": "#955C00", "Indigo": "#4B4AB8", "Emerald": "#0B7A4B", "Slate": "#475569"}
+ACCENTS = {
+    "Blue": "#2F5FCB",
+    "Violet": "#7046C2",
+    "Teal": "#087F75",
+    "Rose": "#B83258",
+    "Amber": "#955C00",
+    "Indigo": "#4B4AB8",
+    "Emerald": "#0B7A4B",
+    "Slate": "#475569",
+}
 
 
 # ════════════════════════════════════════════════════════════════════════════
@@ -88,7 +103,11 @@ def resolve_data_dir(env: Optional[dict] = None) -> Path:
     legacy = APP_DIR / DB_FILENAME
     if legacy.exists() or os.access(APP_DIR, os.W_OK):
         return APP_DIR
-    base = env.get("APPDATA") or env.get("XDG_DATA_HOME") or str(Path.home() / ".local" / "share")
+    base = (
+        env.get("APPDATA")
+        or env.get("XDG_DATA_HOME")
+        or str(Path.home() / ".local" / "share")
+    )
     return Path(base) / "StudySpacePro"
 
 
@@ -136,7 +155,11 @@ def fmt_num(value: Any, places: int = 2, blank: str = "—") -> str:
     n = safe_float(value)
     if n is None:
         return blank
-    return str(int(n)) if float(n).is_integer() else f"{n:.{places}f}".rstrip("0").rstrip(".")
+    return (
+        str(int(n))
+        if float(n).is_integer()
+        else f"{n:.{places}f}".rstrip("0").rstrip(".")
+    )
 
 
 def percent(part: Any, whole: Any) -> Optional[float]:
@@ -185,7 +208,9 @@ def hex_rgb(h: str) -> tuple[int, int, int]:
 
 
 def rgb_hex(r: float, g: float, b: float) -> str:
-    return "#{:02X}{:02X}{:02X}".format(*(max(0, min(255, round(c))) for c in (r, g, b)))
+    return "#{:02X}{:02X}{:02X}".format(
+        *(max(0, min(255, round(c))) for c in (r, g, b))
+    )
 
 
 def mix(a: str, b: str, t: float) -> str:
@@ -198,6 +223,7 @@ def luminance(h: str) -> float:
     def ch(c: int) -> float:
         c /= 255
         return c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4
+
     r, g, b = (ch(c) for c in hex_rgb(h))
     return 0.2126 * r + 0.7152 * g + 0.0722 * b
 
@@ -226,8 +252,20 @@ def ensure_contrast(fg: str, bg: str, minimum: float = 4.5) -> str:
 # ════════════════════════════════════════════════════════════════════════════
 # 2 · DATABASE & VERSIONED MIGRATIONS
 # ════════════════════════════════════════════════════════════════════════════
-LEGACY_TABLES = ("semesters", "subjects", "units", "chapters", "assignments", "study_sessions",
-                 "planner_tasks", "exams", "marks", "revisions", "custom_fields", "settings")
+LEGACY_TABLES = (
+    "semesters",
+    "subjects",
+    "units",
+    "chapters",
+    "assignments",
+    "study_sessions",
+    "planner_tasks",
+    "exams",
+    "marks",
+    "revisions",
+    "custom_fields",
+    "settings",
+)
 _IDENT = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
 # Baseline = the schema shipped by Study Space Pro 2.x (fresh installs get it complete).
@@ -283,25 +321,60 @@ BASELINE_DDL = [
 ]
 # Columns older 2.x databases may lack (added only when missing; data never touched).
 BASELINE_ADDITIONS = {
-    "exams": {"marks_obtained": "REAL", "grade": "TEXT DEFAULT ''", "result": "TEXT DEFAULT ''",
-              "attempt": "TEXT DEFAULT ''", "examiner": "TEXT DEFAULT ''", "weightage": "REAL DEFAULT 0",
-              "duration_minutes": "INTEGER DEFAULT 0", "exam_mode": "TEXT DEFAULT ''", "room": "TEXT DEFAULT ''"},
-    "subjects": {"semester_id": "INTEGER", "code": "TEXT DEFAULT ''", "color": "TEXT DEFAULT '#356AE6'",
-                 "target_hours": "REAL DEFAULT 3", "notes": "TEXT DEFAULT ''"},
+    "exams": {
+        "marks_obtained": "REAL",
+        "grade": "TEXT DEFAULT ''",
+        "result": "TEXT DEFAULT ''",
+        "attempt": "TEXT DEFAULT ''",
+        "examiner": "TEXT DEFAULT ''",
+        "weightage": "REAL DEFAULT 0",
+        "duration_minutes": "INTEGER DEFAULT 0",
+        "exam_mode": "TEXT DEFAULT ''",
+        "room": "TEXT DEFAULT ''",
+    },
+    "subjects": {
+        "semester_id": "INTEGER",
+        "code": "TEXT DEFAULT ''",
+        "color": "TEXT DEFAULT '#356AE6'",
+        "target_hours": "REAL DEFAULT 3",
+        "notes": "TEXT DEFAULT ''",
+    },
     "units": {"confidence": "INTEGER DEFAULT 1", "notes": "TEXT DEFAULT ''"},
-    "assignments": {"description": "TEXT DEFAULT ''", "given_date": "TEXT DEFAULT ''",
-                    "submission_date": "TEXT DEFAULT ''", "priority": "TEXT DEFAULT 'Normal'",
-                    "remarks": "TEXT DEFAULT ''"},
-    "study_sessions": {"unit_id": "INTEGER", "topic": "TEXT DEFAULT ''", "notes": "TEXT DEFAULT ''",
-                       "session_type": "TEXT DEFAULT 'Study'"},
-    "planner_tasks": {"subject_id": "INTEGER", "category": "TEXT DEFAULT 'Study'",
-                      "priority": "TEXT DEFAULT 'Normal'", "status": "TEXT DEFAULT 'Pending'",
-                      "duration_minutes": "INTEGER DEFAULT 30", "notes": "TEXT DEFAULT ''"},
-    "marks": {"unit_id": "INTEGER", "title": "TEXT DEFAULT ''", "assessment_date": "TEXT DEFAULT ''",
-              "notes": "TEXT DEFAULT ''"},
-    "revisions": {"interval_days": "INTEGER DEFAULT 1", "ease": "REAL DEFAULT 2.5",
-                  "repetitions": "INTEGER DEFAULT 0", "status": "TEXT DEFAULT 'Due'",
-                  "last_reviewed": "TEXT DEFAULT ''", "notes": "TEXT DEFAULT ''"},
+    "assignments": {
+        "description": "TEXT DEFAULT ''",
+        "given_date": "TEXT DEFAULT ''",
+        "submission_date": "TEXT DEFAULT ''",
+        "priority": "TEXT DEFAULT 'Normal'",
+        "remarks": "TEXT DEFAULT ''",
+    },
+    "study_sessions": {
+        "unit_id": "INTEGER",
+        "topic": "TEXT DEFAULT ''",
+        "notes": "TEXT DEFAULT ''",
+        "session_type": "TEXT DEFAULT 'Study'",
+    },
+    "planner_tasks": {
+        "subject_id": "INTEGER",
+        "category": "TEXT DEFAULT 'Study'",
+        "priority": "TEXT DEFAULT 'Normal'",
+        "status": "TEXT DEFAULT 'Pending'",
+        "duration_minutes": "INTEGER DEFAULT 30",
+        "notes": "TEXT DEFAULT ''",
+    },
+    "marks": {
+        "unit_id": "INTEGER",
+        "title": "TEXT DEFAULT ''",
+        "assessment_date": "TEXT DEFAULT ''",
+        "notes": "TEXT DEFAULT ''",
+    },
+    "revisions": {
+        "interval_days": "INTEGER DEFAULT 1",
+        "ease": "REAL DEFAULT 2.5",
+        "repetitions": "INTEGER DEFAULT 0",
+        "status": "TEXT DEFAULT 'Due'",
+        "last_reviewed": "TEXT DEFAULT ''",
+        "notes": "TEXT DEFAULT ''",
+    },
 }
 STRUCTURE_DDL = [
     """CREATE TABLE IF NOT EXISTS student_profile (id INTEGER PRIMARY KEY CHECK(id=1),
@@ -358,9 +431,25 @@ COURSEWORK_DDL = [
        title TEXT NOT NULL, event_type TEXT DEFAULT 'Event', start_date TEXT NOT NULL,
        end_date TEXT DEFAULT '', notes TEXT DEFAULT '')""",
 ]
-CLEANUP_TABLES = ("semesters", "subjects", "units", "chapters", "assignments", "study_sessions",
-                  "planner_tasks", "exams", "marks", "revisions", "subject_results", "attendance",
-                  "projects", "notes", "programmes", "academic_years", "calendar_events")
+CLEANUP_TABLES = (
+    "semesters",
+    "subjects",
+    "units",
+    "chapters",
+    "assignments",
+    "study_sessions",
+    "planner_tasks",
+    "exams",
+    "marks",
+    "revisions",
+    "subject_results",
+    "attendance",
+    "projects",
+    "notes",
+    "programmes",
+    "academic_years",
+    "calendar_events",
+)
 INDEX_DDL = [
     "CREATE INDEX IF NOT EXISTS idx_subjects_sem ON subjects(semester_id)",
     "CREATE INDEX IF NOT EXISTS idx_semesters_prog ON semesters(programme_id, semester_no)",
@@ -406,7 +495,8 @@ class Database:
         self._connect()
         try:
             self.was_fresh = (not existed) or not self.q(
-                "SELECT 1 FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' LIMIT 1")
+                "SELECT 1 FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' LIMIT 1"
+            )
             if migrate:
                 self.migrate()
         except BaseException:
@@ -417,8 +507,14 @@ class Database:
     def _connect(self) -> None:
         self.conn = sqlite3.connect(str(self.path), timeout=30, isolation_level=None)
         self.conn.row_factory = sqlite3.Row
-        for pragma in ("PRAGMA foreign_keys=ON", "PRAGMA journal_mode=WAL", "PRAGMA synchronous=NORMAL",
-                       "PRAGMA busy_timeout=30000", "PRAGMA temp_store=MEMORY", "PRAGMA cache_size=-16000"):
+        for pragma in (
+            "PRAGMA foreign_keys=ON",
+            "PRAGMA journal_mode=WAL",
+            "PRAGMA synchronous=NORMAL",
+            "PRAGMA busy_timeout=30000",
+            "PRAGMA temp_store=MEMORY",
+            "PRAGMA cache_size=-16000",
+        ):
             self.conn.execute(pragma)
         self._cols.clear()
 
@@ -486,7 +582,9 @@ class Database:
 
     # ---- schema introspection -------------------------------------------
     def tables(self) -> set[str]:
-        return {r[0] for r in self.q("SELECT name FROM sqlite_master WHERE type='table'")}
+        return {
+            r[0] for r in self.q("SELECT name FROM sqlite_master WHERE type='table'")
+        }
 
     def table_exists(self, name: str) -> bool:
         return name in self.tables()
@@ -495,13 +593,17 @@ class Database:
         if not _IDENT.match(table) or table not in self.tables():
             raise ValueError(f"Unknown table: {table!r}")
         if table not in self._cols:
-            self._cols[table] = [r["name"] for r in self.q(f"PRAGMA table_info({table})")]
+            self._cols[table] = [
+                r["name"] for r in self.q(f"PRAGMA table_info({table})")
+            ]
         return self._cols[table]
 
     def schema_version(self) -> int:
         if not self.table_exists("schema_migrations"):
             return 0
-        return safe_int(self.scalar("SELECT MAX(version) FROM schema_migrations", default=0))
+        return safe_int(
+            self.scalar("SELECT MAX(version) FROM schema_migrations", default=0)
+        )
 
     def integrity_check(self) -> str:
         return str(self.scalar("PRAGMA integrity_check", default="unknown"))
@@ -534,20 +636,28 @@ class Database:
         if not self.was_fresh and current < MIGRATIONS[-1][0]:
             try:
                 snap = BackupManager(self.path.parent / "backups").create(
-                    self, kind="safety", reason=f"pre_migration_v{current}_to_v{MIGRATIONS[-1][0]}")
+                    self,
+                    kind="safety",
+                    reason=f"pre_migration_v{current}_to_v{MIGRATIONS[-1][0]}",
+                )
                 self.migration_log.append(f"Verified pre-upgrade backup: {snap}")
             except Exception as exc:
                 raise MigrationError(
                     f"Upgrade cancelled: a verified safety backup could not be created ({exc}). "
-                    "Your database has not been modified.") from exc
-        self.conn.execute("CREATE TABLE IF NOT EXISTS schema_migrations ("
-                          "version INTEGER PRIMARY KEY, name TEXT NOT NULL, applied_at TEXT NOT NULL)")
+                    "Your database has not been modified."
+                ) from exc
+        self.conn.execute(
+            "CREATE TABLE IF NOT EXISTS schema_migrations ("
+            "version INTEGER PRIMARY KEY, name TEXT NOT NULL, applied_at TEXT NOT NULL)"
+        )
         for version, name, func in pending:
             try:
                 with self.transaction():
                     func(self)
-                    self.conn.execute("INSERT INTO schema_migrations(version,name,applied_at) VALUES(?,?,?)",
-                                      (version, name, datetime.now().isoformat(timespec="seconds")))
+                    self.conn.execute(
+                        "INSERT INTO schema_migrations(version,name,applied_at) VALUES(?,?,?)",
+                        (version, name, datetime.now().isoformat(timespec="seconds")),
+                    )
                 self.migration_log.append(f"Applied migration {version}: {name}")
                 LOG.info("Applied migration %s: %s", version, name)
             except Exception as exc:
@@ -555,13 +665,19 @@ class Database:
                 raise MigrationError(
                     f"Upgrade step {version} ({name}) failed and was rolled back: {exc}. "
                     f"The database remains at version {self.schema_version()}; "
-                    "a pre-upgrade backup is in the backups folder.") from exc
+                    "a pre-upgrade backup is in the backups folder."
+                ) from exc
         self.conn.execute(f"PRAGMA user_version={MIGRATIONS[-1][0]}")
         self._cols.clear()
         problems = self.foreign_key_violations()
         if problems:
-            LOG.warning("%d pre-existing foreign-key inconsistencies found (not modified)", len(problems))
-            self.migration_log.append(f"{len(problems)} pre-existing foreign-key inconsistencies were found; no data was changed.")
+            LOG.warning(
+                "%d pre-existing foreign-key inconsistencies found (not modified)",
+                len(problems),
+            )
+            self.migration_log.append(
+                f"{len(problems)} pre-existing foreign-key inconsistencies were found; no data was changed."
+            )
 
 
 def _m1_baseline(db: Database) -> None:
@@ -577,42 +693,88 @@ def _m2_structure(db: Database) -> None:
     """Academic hierarchy: programme → year → semester; profile; link existing semesters."""
     for ddl in STRUCTURE_DDL:
         db.conn.execute(ddl)
-    db.add_column_if_missing("semesters", "programme_id", "INTEGER REFERENCES programmes(id) ON DELETE RESTRICT")
-    db.add_column_if_missing("semesters", "academic_year_id", "INTEGER REFERENCES academic_years(id) ON DELETE RESTRICT")
+    db.add_column_if_missing(
+        "semesters",
+        "programme_id",
+        "INTEGER REFERENCES programmes(id) ON DELETE RESTRICT",
+    )
+    db.add_column_if_missing(
+        "semesters",
+        "academic_year_id",
+        "INTEGER REFERENCES academic_years(id) ON DELETE RESTRICT",
+    )
     db.add_column_if_missing("semesters", "semester_no", "INTEGER")
     db.add_column_if_missing("semesters", "status", "TEXT DEFAULT 'Active'")
     db.conn.execute("INSERT OR IGNORE INTO student_profile(id) VALUES(1)")
     sems = db.q("SELECT id, is_active FROM semesters ORDER BY id")
     if not sems:
         return
-    label = str(db.scalar("SELECT value FROM settings WHERE key='semester_name'", default="") or "")
+    label = str(
+        db.scalar("SELECT value FROM settings WHERE key='semester_name'", default="")
+        or ""
+    )
     prog_name = re.split(r"\s*[—–-]\s*", label)[0].strip() or "My Programme"
     years = max(1, math.ceil(len(sems) / 2))
     pid = db.conn.execute(
         "INSERT INTO programmes(name,years_count,semesters_per_year,notes) VALUES(?,?,2,?)",
-        (prog_name, years, "Created automatically when upgrading; edit freely.")).lastrowid
-    year_ids = [db.conn.execute("INSERT INTO academic_years(programme_id,year_no,name) VALUES(?,?,?)",
-                                (pid, y, ordinal_year_name(y))).lastrowid for y in range(1, years + 1)]
+        (prog_name, years, "Created automatically when upgrading; edit freely."),
+    ).lastrowid
+    year_ids = [
+        db.conn.execute(
+            "INSERT INTO academic_years(programme_id,year_no,name) VALUES(?,?,?)",
+            (pid, y, ordinal_year_name(y)),
+        ).lastrowid
+        for y in range(1, years + 1)
+    ]
     active_ids = [s["id"] for s in sems if s["is_active"]]
     current = active_ids[-1] if active_ids else sems[-1]["id"]
     for i, s in enumerate(sems, 1):
-        db.conn.execute("UPDATE semesters SET programme_id=?, academic_year_id=?, semester_no=?, status=? WHERE id=?",
-                        (pid, year_ids[(i - 1) // 2], i, "Active" if s["id"] == current else "Completed", s["id"]))
-    db.conn.execute("INSERT OR IGNORE INTO settings(key,value) VALUES('current_semester_id',?)", (str(current),))
+        db.conn.execute(
+            "UPDATE semesters SET programme_id=?, academic_year_id=?, semester_no=?, status=? WHERE id=?",
+            (
+                pid,
+                year_ids[(i - 1) // 2],
+                i,
+                "Active" if s["id"] == current else "Completed",
+                s["id"],
+            ),
+        )
+    db.conn.execute(
+        "INSERT OR IGNORE INTO settings(key,value) VALUES('current_semester_id',?)",
+        (str(current),),
+    )
 
 
 def _m3_coursework(db: Database) -> None:
     """Credits/faculty, assignment & exam detail, results, attendance, projects, notes, files."""
-    for col, d in (("credits", "REAL DEFAULT 0"), ("subject_type", "TEXT DEFAULT 'Theory'"),
-                   ("faculty", "TEXT DEFAULT ''"), ("attendance_target", "REAL")):
+    for col, d in (
+        ("credits", "REAL DEFAULT 0"),
+        ("subject_type", "TEXT DEFAULT 'Theory'"),
+        ("faculty", "TEXT DEFAULT ''"),
+        ("attendance_target", "REAL"),
+    ):
         db.add_column_if_missing("subjects", col, d)
-    for col, d in (("assignment_no", "TEXT DEFAULT ''"), ("assignment_type", "TEXT DEFAULT 'Written'"),
-                   ("faculty", "TEXT DEFAULT ''"), ("marks_obtained", "REAL"), ("max_marks", "REAL")):
+    for col, d in (
+        ("assignment_no", "TEXT DEFAULT ''"),
+        ("assignment_type", "TEXT DEFAULT 'Written'"),
+        ("faculty", "TEXT DEFAULT ''"),
+        ("marks_obtained", "REAL"),
+        ("max_marks", "REAL"),
+    ):
         db.add_column_if_missing("assignments", col, d)
-    for col, d in (("internal_marks", "REAL"), ("external_marks", "REAL"), ("practical_marks", "REAL"),
-                   ("credits", "REAL DEFAULT 0"), ("attempt_no", "INTEGER DEFAULT 1")):
+    for col, d in (
+        ("internal_marks", "REAL"),
+        ("external_marks", "REAL"),
+        ("practical_marks", "REAL"),
+        ("credits", "REAL DEFAULT 0"),
+        ("attempt_no", "INTEGER DEFAULT 1"),
+    ):
         db.add_column_if_missing("exams", col, d)
-    db.add_column_if_missing("study_sessions", "chapter_id", "INTEGER REFERENCES chapters(id) ON DELETE SET NULL")
+    db.add_column_if_missing(
+        "study_sessions",
+        "chapter_id",
+        "INTEGER REFERENCES chapters(id) ON DELETE SET NULL",
+    )
     for ddl in COURSEWORK_DDL:
         db.conn.execute(ddl)
 
@@ -626,12 +788,18 @@ def _m4_integrity(db: Database) -> None:
     db.conn.execute(
         "CREATE TRIGGER IF NOT EXISTS trg_semester_keep_history BEFORE DELETE ON semesters "
         "WHEN EXISTS (SELECT 1 FROM subjects WHERE semester_id = OLD.id) "
-        "BEGIN SELECT RAISE(ABORT, 'This semester still has subjects. Move or delete them first.'); END")
-    for t in CLEANUP_TABLES:  # no orphaned custom fields / file references, on any delete path
+        "BEGIN SELECT RAISE(ABORT, 'This semester still has subjects. Move or delete them first.'); END"
+    )
+    for (
+        t
+    ) in (
+        CLEANUP_TABLES
+    ):  # no orphaned custom fields / file references, on any delete path
         db.conn.execute(
             f"CREATE TRIGGER IF NOT EXISTS trg_{t}_cleanup AFTER DELETE ON {t} BEGIN "
             f"DELETE FROM custom_fields WHERE entity_type='{t}' AND record_id=OLD.id; "
-            f"DELETE FROM attachments WHERE entity_type='{t}' AND record_id=OLD.id; END")
+            f"DELETE FROM attachments WHERE entity_type='{t}' AND record_id=OLD.id; END"
+        )
 
 
 MIGRATIONS: list[tuple[int, str, Callable[[Database], None]]] = [
@@ -664,24 +832,44 @@ def inspect_database_file(path: Path | str) -> dict:
     try:
         try:
             check = con.execute("PRAGMA integrity_check").fetchone()[0]
-            names = {r[0] for r in con.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+            names = {
+                r[0]
+                for r in con.execute(
+                    "SELECT name FROM sqlite_master WHERE type='table'"
+                )
+            }
         except sqlite3.DatabaseError as exc:
             raise BackupError(f"This is not a valid SQLite database: {exc}") from exc
         if check != "ok":
             raise BackupError(f"The backup failed its integrity check: {check}")
         required = {"subjects", "units", "assignments", "settings", "semesters"}
         if not required <= names:
-            raise BackupError("This is not a Study Space database (missing: "
-                              + ", ".join(sorted(required - names)) + ").")
+            raise BackupError(
+                "This is not a Study Space database (missing: "
+                + ", ".join(sorted(required - names))
+                + ")."
+            )
         version = 0
         if "schema_migrations" in names:
-            version = safe_int(con.execute("SELECT MAX(version) FROM schema_migrations").fetchone()[0])
+            version = safe_int(
+                con.execute("SELECT MAX(version) FROM schema_migrations").fetchone()[0]
+            )
         if version > LATEST_SCHEMA:
-            raise BackupError("This backup was created by a newer version of Study Space Pro. "
-                              "Update the application before restoring it.")
-        counts = {t: con.execute(f"SELECT COUNT(*) FROM {t}").fetchone()[0]
-                  for t in ("subjects", "assignments", "exams", "study_sessions") if t in names}
-        return {"version": version, "tables": names, "counts": counts, "size": path.stat().st_size}
+            raise BackupError(
+                "This backup was created by a newer version of Study Space Pro. "
+                "Update the application before restoring it."
+            )
+        counts = {
+            t: con.execute(f"SELECT COUNT(*) FROM {t}").fetchone()[0]
+            for t in ("subjects", "assignments", "exams", "study_sessions")
+            if t in names
+        }
+        return {
+            "version": version,
+            "tables": names,
+            "counts": counts,
+            "size": path.stat().st_size,
+        }
     finally:
         con.close()
 
@@ -697,8 +885,14 @@ class BackupManager:
     def folder(self, kind: str) -> Path:
         return self.root / kind
 
-    def create(self, db: Database, dest: Optional[Path | str] = None, *,
-               kind: str = "manual", reason: str = "") -> Path:
+    def create(
+        self,
+        db: Database,
+        dest: Optional[Path | str] = None,
+        *,
+        kind: str = "manual",
+        reason: str = "",
+    ) -> Path:
         """Back up ``db`` to ``dest`` (default: a timestamped file under backups/<kind>/).
 
         The copy is written to a temporary file, integrity-checked, and only then moved
@@ -706,10 +900,15 @@ class BackupManager:
         existing good one."""
         if dest is None:
             tag = f"_{re.sub(r'[^A-Za-z0-9_-]+', '_', reason)}" if reason else ""
-            dest = self.folder(kind) / f"study_space_{kind}_{datetime.now():%Y%m%d_%H%M%S_%f}{tag}.db"
+            dest = (
+                self.folder(kind)
+                / f"study_space_{kind}_{datetime.now():%Y%m%d_%H%M%S_%f}{tag}.db"
+            )
         dest = Path(dest).expanduser().resolve()
         if dest == db.path.resolve():
-            raise BackupError("The backup destination cannot be the live database file.")
+            raise BackupError(
+                "The backup destination cannot be the live database file."
+            )
 
         def write(tmp: Path) -> None:
             target = sqlite3.connect(str(tmp), timeout=30)
@@ -719,8 +918,12 @@ class BackupManager:
                 check = target.execute("PRAGMA integrity_check").fetchone()[0]
                 if check != "ok":
                     raise BackupError(f"Backup integrity check failed: {check}")
-                src_tables, dst_tables = db.tables(), {r[0] for r in target.execute(
-                    "SELECT name FROM sqlite_master WHERE type='table'")}
+                src_tables, dst_tables = db.tables(), {
+                    r[0]
+                    for r in target.execute(
+                        "SELECT name FROM sqlite_master WHERE type='table'"
+                    )
+                }
                 if src_tables != dst_tables:
                     raise BackupError("Backup is missing tables; it was discarded.")
             finally:
@@ -752,7 +955,9 @@ class BackupManager:
         return self.create(db, kind="auto")
 
 
-def restore_database(db: Database, candidate: Path | str, backups: BackupManager) -> Path:
+def restore_database(
+    db: Database, candidate: Path | str, backups: BackupManager
+) -> Path:
     """Replace the live database with ``candidate`` safely; returns the safety snapshot path.
 
     Validate → verified safety snapshot of the current data → build a consistent copy →
@@ -771,7 +976,9 @@ def restore_database(db: Database, candidate: Path | str, backups: BackupManager
             src.backup(dst)
             dst.execute("PRAGMA journal_mode=DELETE")
             if dst.execute("PRAGMA integrity_check").fetchone()[0] != "ok":
-                raise BackupError("The copied backup failed verification; nothing was changed.")
+                raise BackupError(
+                    "The copied backup failed verification; nothing was changed."
+                )
         finally:
             src.close()
             dst.close()
@@ -811,13 +1018,29 @@ def restore_database(db: Database, candidate: Path | str, backups: BackupManager
 # ════════════════════════════════════════════════════════════════════════════
 PROGRESS_STATES = ("Not Started", "In Progress", "Completed")
 PRIORITIES = ("Low", "Normal", "High", "Urgent")
-PRIORITY_RANK = {"Urgent": 0, "High": 1, "Normal": 2, "Low": 3}  # sort key (text order would be wrong)
-ASSIGNMENT_STATUSES = ("Not Started", "In Progress", "Completed", "Submitted",
-                       "Late Submission", "Overdue", "Evaluated")
-PENDING_ASSIGNMENT = frozenset({"Not Started", "In Progress", "Completed", "Overdue"})  # not yet handed in
+PRIORITY_RANK = {
+    "Urgent": 0,
+    "High": 1,
+    "Normal": 2,
+    "Low": 3,
+}  # sort key (text order would be wrong)
+ASSIGNMENT_STATUSES = (
+    "Not Started",
+    "In Progress",
+    "Completed",
+    "Submitted",
+    "Late Submission",
+    "Overdue",
+    "Evaluated",
+)
+PENDING_ASSIGNMENT = frozenset(
+    {"Not Started", "In Progress", "Completed", "Overdue"}
+)  # not yet handed in
 
 
-def effective_assignment_status(status: str, due: Any, submitted: Any, today: Optional[date] = None) -> str:
+def effective_assignment_status(
+    status: str, due: Any, submitted: Any, today: Optional[date] = None
+) -> str:
     """Status as the student should see it: derives Overdue / Late Submission from dates."""
     today = today or date.today()
     status = status or "Not Started"
@@ -839,14 +1062,28 @@ def attendance_stats(held: Any, attended: Any, target: Optional[float] = 75.0) -
     if pct is not None:
         status = "Shortage" if pct < t else ("Borderline" if pct < t + 5 else "Safe")
         if pct < t:
-            need = None if t >= 100 else max(1, math.ceil((t * held - 100 * att) / (100 - t) - 1e-9))
+            need = (
+                None
+                if t >= 100
+                else max(1, math.ceil((t * held - 100 * att) / (100 - t) - 1e-9))
+            )
         elif t > 0:
             can_skip = max(0, int(math.floor(att * 100 / t - held + 1e-9)))
-    return {"held": held, "attended": att, "missed": held - att, "pct": pct, "target": t,
-            "status": status, "need": need, "can_skip": can_skip}
+    return {
+        "held": held,
+        "attended": att,
+        "missed": held - att,
+        "pct": pct,
+        "target": t,
+        "status": status,
+        "need": need,
+        "can_skip": can_skip,
+    }
 
 
-def sm2_next(repetitions: int, ease: float, interval: int, quality: int) -> tuple[int, float, int]:
+def sm2_next(
+    repetitions: int, ease: float, interval: int, quality: int
+) -> tuple[int, float, int]:
     """SM-2 spaced repetition. ``quality``: 1 Again · 3 Hard · 4 Good · 5 Easy.
     Returns (repetitions, ease, interval_days)."""
     ease = max(1.3, float(ease or 2.5))
@@ -854,7 +1091,15 @@ def sm2_next(repetitions: int, ease: float, interval: int, quality: int) -> tupl
         return 0, max(1.3, ease - 0.2), 1
     reps = int(repetitions or 0) + 1
     ease = max(1.3, ease + 0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02))
-    days = 1 if reps == 1 else 6 if reps == 2 else max(int(interval or 1) + 1, round(int(interval or 1) * ease))
+    days = (
+        1
+        if reps == 1
+        else (
+            6
+            if reps == 2
+            else max(int(interval or 1) + 1, round(int(interval or 1) * ease))
+        )
+    )
     return reps, ease, days
 
 
@@ -870,41 +1115,75 @@ def study_streak(days: set[str], today: Optional[date] = None) -> int:
     return n
 
 
-def trend_label(values: Sequence[float], min_points: int = 4, band: float = 5.0) -> tuple[str, Optional[float]]:
+def trend_label(
+    values: Sequence[float], min_points: int = 4, band: float = 5.0
+) -> tuple[str, Optional[float]]:
     """Improving / Declining / Stable from chronological scores (%); needs ``min_points``.
 
-    Compares the mean of the later half with the earlier half; ±``band`` points = change."""
+    Compares the mean of the later half with the earlier half; ±``band`` points = change.
+    """
     if len(values) < min_points:
         return "Not enough data", None
     half = len(values) // 2
     first, last = values[:half], values[-half:]
     delta = sum(last) / len(last) - sum(first) / len(first)
-    return ("Improving" if delta > band else "Declining" if delta < -band else "Stable"), delta
+    return (
+        "Improving" if delta > band else "Declining" if delta < -band else "Stable"
+    ), delta
 
 
 # ---- configurable grading ---------------------------------------------------
 GRADE_PRESETS: dict[str, dict] = {
-    "10-point scale": {"max_points": 10.0, "scale": [
-        ("O", 90, 10, "Outstanding"), ("A+", 80, 9, "Excellent"), ("A", 70, 8, "Very good"),
-        ("B+", 60, 7, "Good"), ("B", 50, 6, "Above average"), ("C", 45, 5, "Average"),
-        ("P", 40, 4, "Pass"), ("F", 0, 0, "Fail")]},
-    "4.0 GPA scale": {"max_points": 4.0, "scale": [
-        ("A", 90, 4.0, "Excellent"), ("A-", 85, 3.7, ""), ("B+", 80, 3.3, ""), ("B", 75, 3.0, "Good"),
-        ("B-", 70, 2.7, ""), ("C+", 65, 2.3, ""), ("C", 60, 2.0, "Satisfactory"),
-        ("D", 50, 1.0, "Pass"), ("F", 0, 0.0, "Fail")]},
+    "10-point scale": {
+        "max_points": 10.0,
+        "scale": [
+            ("O", 90, 10, "Outstanding"),
+            ("A+", 80, 9, "Excellent"),
+            ("A", 70, 8, "Very good"),
+            ("B+", 60, 7, "Good"),
+            ("B", 50, 6, "Above average"),
+            ("C", 45, 5, "Average"),
+            ("P", 40, 4, "Pass"),
+            ("F", 0, 0, "Fail"),
+        ],
+    },
+    "4.0 GPA scale": {
+        "max_points": 4.0,
+        "scale": [
+            ("A", 90, 4.0, "Excellent"),
+            ("A-", 85, 3.7, ""),
+            ("B+", 80, 3.3, ""),
+            ("B", 75, 3.0, "Good"),
+            ("B-", 70, 2.7, ""),
+            ("C+", 65, 2.3, ""),
+            ("C", 60, 2.0, "Satisfactory"),
+            ("D", 50, 1.0, "Pass"),
+            ("F", 0, 0.0, "Fail"),
+        ],
+    },
 }
-SGPA_METHODS = {"credit_weighted": "Credit-weighted grade points", "simple_average": "Simple average of grade points",
-                "percentage_factor": "Overall percentage ÷ factor"}
-CGPA_METHODS = {"credit_weighted": "Credit-weighted across all semesters", "average_of_sgpa": "Average of semester SGPAs"}
+SGPA_METHODS = {
+    "credit_weighted": "Credit-weighted grade points",
+    "simple_average": "Simple average of grade points",
+    "percentage_factor": "Overall percentage ÷ factor",
+}
+CGPA_METHODS = {
+    "credit_weighted": "Credit-weighted across all semesters",
+    "average_of_sgpa": "Average of semester SGPAs",
+}
 
 
 def _scale_rows(preset: str) -> list[dict]:
-    return [{"grade": g, "min": float(m), "points": float(p), "label": lb} for g, m, p, lb in GRADE_PRESETS[preset]["scale"]]
+    return [
+        {"grade": g, "min": float(m), "points": float(p), "label": lb}
+        for g, m, p, lb in GRADE_PRESETS[preset]["scale"]
+    ]
 
 
 @dataclass
 class GradingConfig:
     """The student's grading rules. Nothing about a particular university is assumed."""
+
     name: str = "10-point scale"
     scale: list = field(default_factory=lambda: _scale_rows("10-point scale"))
     max_points: float = 10.0
@@ -912,15 +1191,23 @@ class GradingConfig:
     cgpa_method: str = "credit_weighted"
     percentage_factor: float = 9.5
     pass_percentage: float = 40.0
-    component_pass: dict = field(default_factory=lambda: {"internal": 0.0, "external": 0.0, "practical": 0.0})
-    total_method: str = "sum"            # sum | weighted
-    weights: dict = field(default_factory=lambda: {"internal": 30.0, "external": 70.0, "practical": 0.0})
-    retake_policy: str = "latest"        # latest | best
+    component_pass: dict = field(
+        default_factory=lambda: {"internal": 0.0, "external": 0.0, "practical": 0.0}
+    )
+    total_method: str = "sum"  # sum | weighted
+    weights: dict = field(
+        default_factory=lambda: {"internal": 30.0, "external": 70.0, "practical": 0.0}
+    )
+    retake_policy: str = "latest"  # latest | best
     include_failed: bool = True
 
     @classmethod
     def preset(cls, name: str) -> "GradingConfig":
-        return cls(name=name, scale=_scale_rows(name), max_points=GRADE_PRESETS[name]["max_points"])
+        return cls(
+            name=name,
+            scale=_scale_rows(name),
+            max_points=GRADE_PRESETS[name]["max_points"],
+        )
 
     def to_json(self) -> str:
         return json.dumps(self.__dict__, sort_keys=True)
@@ -946,25 +1233,47 @@ class GradingConfig:
             raise ValidationError("The grade scale needs at least one row.")
         seen_g, seen_m = set(), set()
         for r in self.scale:
-            g, m, p = str(r.get("grade", "")).strip(), safe_float(r.get("min")), safe_float(r.get("points"))
+            g, m, p = (
+                str(r.get("grade", "")).strip(),
+                safe_float(r.get("min")),
+                safe_float(r.get("points")),
+            )
             if not g or m is None or p is None or not 0 <= m <= 100 or p < 0:
-                raise ValidationError("Each grade needs a name, a minimum % between 0 and 100, and points ≥ 0.")
+                raise ValidationError(
+                    "Each grade needs a name, a minimum % between 0 and 100, and points ≥ 0."
+                )
             if g in seen_g or m in seen_m:
-                raise ValidationError("Grade names and minimum percentages must be unique.")
+                raise ValidationError(
+                    "Grade names and minimum percentages must be unique."
+                )
             seen_g.add(g)
             seen_m.add(m)
         if 0.0 not in seen_m:
-            raise ValidationError("Include a lowest grade starting at 0% so every mark maps to a grade.")
+            raise ValidationError(
+                "Include a lowest grade starting at 0% so every mark maps to a grade."
+            )
         if self.sgpa_method not in SGPA_METHODS or self.cgpa_method not in CGPA_METHODS:
             raise ValidationError("Unknown SGPA/CGPA method.")
-        if self.total_method not in ("sum", "weighted") or self.retake_policy not in ("latest", "best"):
+        if self.total_method not in ("sum", "weighted") or self.retake_policy not in (
+            "latest",
+            "best",
+        ):
             raise ValidationError("Unknown total or retake method.")
         if not 0 <= safe_float(self.pass_percentage, -1) <= 100:
             raise ValidationError("Pass percentage must be between 0 and 100.")
-        if (safe_float(self.percentage_factor, 0) or 0) <= 0 or (safe_float(self.max_points, 0) or 0) <= 0:
-            raise ValidationError("Percentage factor and maximum grade points must be positive.")
-        if any((safe_float(v, -1) or 0) < 0 for v in list(self.weights.values()) + list(self.component_pass.values())):
-            raise ValidationError("Weights and component pass marks cannot be negative.")
+        if (safe_float(self.percentage_factor, 0) or 0) <= 0 or (
+            safe_float(self.max_points, 0) or 0
+        ) <= 0:
+            raise ValidationError(
+                "Percentage factor and maximum grade points must be positive."
+            )
+        if any(
+            (safe_float(v, -1) or 0) < 0
+            for v in list(self.weights.values()) + list(self.component_pass.values())
+        ):
+            raise ValidationError(
+                "Weights and component pass marks cannot be negative."
+            )
 
     def _sorted(self) -> list[dict]:
         return sorted(self.scale, key=lambda r: -float(r["min"]))
@@ -985,31 +1294,63 @@ class GradingConfig:
     def describe(self) -> list[str]:
         """Plain-language statement of every rule used (shown in the app and in PDFs)."""
         s = self._sorted()
-        lines = ["Grade scale: " + ", ".join(f"{r['grade']} ≥ {fmt_num(r['min'])}% = {fmt_num(r['points'])}" for r in s) + "."]
-        lines.append({
-            "credit_weighted": "SGPA = Σ(credits × grade points) ÷ Σ credits"
-                               + (", failed subjects included at their grade points." if self.include_failed else ", passed subjects only."),
-            "simple_average": "SGPA = simple average of subject grade points.",
-            "percentage_factor": f"SGPA = overall semester percentage ÷ {fmt_num(self.percentage_factor)}.",
-        }[self.sgpa_method])
-        lines.append({"credit_weighted": "CGPA = Σ(credits × grade points) ÷ Σ credits over all semesters.",
-                      "average_of_sgpa": "CGPA = average of the semester SGPAs."}[self.cgpa_method])
+        lines = [
+            "Grade scale: "
+            + ", ".join(
+                f"{r['grade']} ≥ {fmt_num(r['min'])}% = {fmt_num(r['points'])}"
+                for r in s
+            )
+            + "."
+        ]
+        lines.append(
+            {
+                "credit_weighted": "SGPA = Σ(credits × grade points) ÷ Σ credits"
+                + (
+                    ", failed subjects included at their grade points."
+                    if self.include_failed
+                    else ", passed subjects only."
+                ),
+                "simple_average": "SGPA = simple average of subject grade points.",
+                "percentage_factor": f"SGPA = overall semester percentage ÷ {fmt_num(self.percentage_factor)}.",
+            }[self.sgpa_method]
+        )
+        lines.append(
+            {
+                "credit_weighted": "CGPA = Σ(credits × grade points) ÷ Σ credits over all semesters.",
+                "average_of_sgpa": "CGPA = average of the semester SGPAs.",
+            }[self.cgpa_method]
+        )
         if self.total_method == "weighted":
             w = ", ".join(f"{k} {fmt_num(v)}" for k, v in self.weights.items() if v)
             lines.append(f"Subject total = weighted component percentages ({w}).")
         else:
-            lines.append("Subject total = internal + external + practical marks obtained ÷ their maximum.")
+            lines.append(
+                "Subject total = internal + external + practical marks obtained ÷ their maximum."
+            )
         mins = [f"{k} {fmt_num(v)}%" for k, v in self.component_pass.items() if v]
-        lines.append(f"Pass: at least {fmt_num(self.pass_percentage)}% overall" + (f" and {', '.join(mins)}." if mins else "."))
-        lines.append("Repeated subjects: the " + ("most recent attempt" if self.retake_policy == "latest"
-                                                  else "best attempt") + " counts.")
+        lines.append(
+            f"Pass: at least {fmt_num(self.pass_percentage)}% overall"
+            + (f" and {', '.join(mins)}." if mins else ".")
+        )
+        lines.append(
+            "Repeated subjects: the "
+            + (
+                "most recent attempt"
+                if self.retake_policy == "latest"
+                else "best attempt"
+            )
+            + " counts."
+        )
         return lines
 
 
-def evaluate_result(row: dict, cfg: GradingConfig, default_credits: float = 0.0) -> dict:
+def evaluate_result(
+    row: dict, cfg: GradingConfig, default_credits: float = 0.0
+) -> dict:
     """Totals, grade, grade points and pass/fail for one ``subject_results`` row.
 
-    Explicit grade / grade points / result typed by the student always win over derived values."""
+    Explicit grade / grade points / result typed by the student always win over derived values.
+    """
     comps: dict[str, tuple[float, float]] = {}
     for k in ("internal", "external", "practical"):
         got, mx = safe_float(row.get(f"{k}_marks")), safe_float(row.get(f"{k}_max"))
@@ -1021,7 +1362,13 @@ def evaluate_result(row: dict, cfg: GradingConfig, default_credits: float = 0.0)
     if comps:
         wsum = sum(cfg.weights.get(k, 0) or 0 for k in comps)
         if cfg.total_method == "weighted" and wsum > 0:
-            pct = sum((cfg.weights.get(k, 0) or 0) * comps[k][0] / comps[k][1] * 100 for k in comps) / wsum
+            pct = (
+                sum(
+                    (cfg.weights.get(k, 0) or 0) * comps[k][0] / comps[k][1] * 100
+                    for k in comps
+                )
+                / wsum
+            )
         else:
             pct = obtained / maximum * 100
     grade = str(row.get("grade") or "").strip()
@@ -1039,17 +1386,28 @@ def evaluate_result(row: dict, cfg: GradingConfig, default_credits: float = 0.0)
         passed = False
         points = 0.0 if declared == "Absent" else points
     elif pct is not None:
-        comp_ok = all(comps[k][0] / comps[k][1] * 100 + 1e-9 >= (cfg.component_pass.get(k, 0) or 0) for k in comps)
+        comp_ok = all(
+            comps[k][0] / comps[k][1] * 100 + 1e-9
+            >= (cfg.component_pass.get(k, 0) or 0)
+            for k in comps
+        )
         passed = pct + 1e-9 >= cfg.pass_percentage and comp_ok
     elif points is not None:
         passed = points > 0
     else:
         passed = None
     credits = safe_float(row.get("credits"))
-    return {"pct": pct, "obtained": obtained if comps else None, "maximum": maximum if comps else None,
-            "grade": grade, "points": points, "passed": passed, "declared": declared,
-            "credits": credits if credits is not None else float(default_credits or 0),
-            "counted": declared != "Withheld" and (points is not None)}
+    return {
+        "pct": pct,
+        "obtained": obtained if comps else None,
+        "maximum": maximum if comps else None,
+        "grade": grade,
+        "points": points,
+        "passed": passed,
+        "declared": declared,
+        "credits": credits if credits is not None else float(default_credits or 0),
+        "counted": declared != "Withheld" and (points is not None),
+    }
 
 
 def pick_attempts(rows: Sequence[dict], cfg: GradingConfig) -> list[dict]:
@@ -1060,49 +1418,95 @@ def pick_attempts(rows: Sequence[dict], cfg: GradingConfig) -> list[dict]:
     chosen = []
     for items in by_subject.values():
         if cfg.retake_policy == "best":
-            chosen.append(max(items, key=lambda r: (r["ev"]["points"] if r["ev"]["points"] is not None else -1,
-                                                    r["ev"]["pct"] if r["ev"]["pct"] is not None else -1,
-                                                    r.get("attempt_no") or 0)))
+            chosen.append(
+                max(
+                    items,
+                    key=lambda r: (
+                        r["ev"]["points"] if r["ev"]["points"] is not None else -1,
+                        r["ev"]["pct"] if r["ev"]["pct"] is not None else -1,
+                        r.get("attempt_no") or 0,
+                    ),
+                )
+            )
         else:
-            chosen.append(max(items, key=lambda r: (r.get("attempt_no") or 0, r.get("id") or 0)))
+            chosen.append(
+                max(items, key=lambda r: (r.get("attempt_no") or 0, r.get("id") or 0))
+            )
     return chosen
 
 
 def compute_sgpa(evals: Sequence[dict], cfg: GradingConfig) -> Optional[float]:
     """SGPA for one semester's evaluated results (see GradingConfig.describe for the rule)."""
-    use = [e for e in evals if e["counted"] and e["points"] is not None and (cfg.include_failed or e["passed"] is not False)]
+    use = [
+        e
+        for e in evals
+        if e["counted"]
+        and e["points"] is not None
+        and (cfg.include_failed or e["passed"] is not False)
+    ]
     if not use:
         return None
     if cfg.sgpa_method == "percentage_factor":
         marked = [e for e in use if e["maximum"]]
         mx = sum(e["maximum"] for e in marked)
-        return (sum(e["obtained"] for e in marked) / mx * 100) / cfg.percentage_factor if mx else None
+        return (
+            (sum(e["obtained"] for e in marked) / mx * 100) / cfg.percentage_factor
+            if mx
+            else None
+        )
     if cfg.sgpa_method == "simple_average":
         return sum(e["points"] for e in use) / len(use)
     credits = sum(e["credits"] or 0 for e in use)
-    if credits <= 0:  # no credits recorded: fall back to a plain average (stated in the UI)
+    if (
+        credits <= 0
+    ):  # no credits recorded: fall back to a plain average (stated in the UI)
         return sum(e["points"] for e in use) / len(use)
     return sum((e["credits"] or 0) * e["points"] for e in use) / credits
 
 
-def compute_cgpa(per_semester: Sequence[Sequence[dict]], cfg: GradingConfig) -> Optional[float]:
+def compute_cgpa(
+    per_semester: Sequence[Sequence[dict]], cfg: GradingConfig
+) -> Optional[float]:
     if cfg.cgpa_method == "average_of_sgpa":
-        vals = [v for v in (compute_sgpa(s, cfg) for s in per_semester) if v is not None]
+        vals = [
+            v for v in (compute_sgpa(s, cfg) for s in per_semester) if v is not None
+        ]
         return sum(vals) / len(vals) if vals else None
     flat = [e for s in per_semester for e in s]
-    return compute_sgpa(flat, GradingConfig(**{**cfg.__dict__, "sgpa_method": "credit_weighted"})) \
-        if cfg.sgpa_method == "percentage_factor" else compute_sgpa(flat, cfg)
+    return (
+        compute_sgpa(
+            flat, GradingConfig(**{**cfg.__dict__, "sgpa_method": "credit_weighted"})
+        )
+        if cfg.sgpa_method == "percentage_factor"
+        else compute_sgpa(flat, cfg)
+    )
 
 
 # ════════════════════════════════════════════════════════════════════════════
 # 5 · SETTINGS & THEME
 # ════════════════════════════════════════════════════════════════════════════
 DEFAULT_SETTINGS = {
-    "theme": "Light", "accent": "Blue", "accent_custom": "", "font_size": "10", "density": "Comfortable",
-    "daily_goal": "180", "pomodoro_work": "25", "pomodoro_short": "5", "pomodoro_long": "15",
-    "attendance_min": "75", "low_mark_pct": "40", "scope_semester": "current", "current_semester_id": "",
-    "date_style": "%d %b %Y", "auto_backup": "1", "backup_keep": "14", "grading": "",
-    "table_colors": "", "status_colors": "", "dashboard_panels": "", "sidebar_compact": "0",
+    "theme": "Light",
+    "accent": "Blue",
+    "accent_custom": "",
+    "font_size": "10",
+    "density": "Comfortable",
+    "daily_goal": "180",
+    "pomodoro_work": "25",
+    "pomodoro_short": "5",
+    "pomodoro_long": "15",
+    "attendance_min": "75",
+    "low_mark_pct": "40",
+    "scope_semester": "current",
+    "current_semester_id": "",
+    "date_style": "%d %b %Y",
+    "auto_backup": "1",
+    "backup_keep": "14",
+    "grading": "",
+    "table_colors": "",
+    "status_colors": "",
+    "dashboard_panels": "",
+    "sidebar_compact": "0",
 }
 
 
@@ -1120,7 +1524,10 @@ class SettingsStore:
 
     def _all(self) -> dict[str, str]:
         if self._cache is None:
-            self._cache = {r["key"]: r["value"] for r in self.db.q("SELECT key,value FROM settings")}
+            self._cache = {
+                r["key"]: r["value"]
+                for r in self.db.q("SELECT key,value FROM settings")
+            }
         return self._cache
 
     def get(self, key: str, default: Optional[str] = None) -> str:
@@ -1149,8 +1556,20 @@ class SettingsStore:
         with self.db.transaction():
             self.db.conn.executemany(
                 "INSERT INTO settings(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",
-                [(str(k), v if isinstance(v, str) else json.dumps(v) if isinstance(v, (dict, list)) else str(v))
-                 for k, v in values.items()])
+                [
+                    (
+                        str(k),
+                        (
+                            v
+                            if isinstance(v, str)
+                            else (
+                                json.dumps(v) if isinstance(v, (dict, list)) else str(v)
+                            )
+                        ),
+                    )
+                    for k, v in values.items()
+                ],
+            )
         self.invalidate()
 
     def set(self, key: str, value: Any) -> None:
@@ -1166,24 +1585,68 @@ class SettingsStore:
         self.set("grading", cfg.to_json())
 
 
-DENSITY = {"Compact": {"pad_v": 5, "pad_h": 10, "row": 24, "gap": 10, "font": -1},
-           "Comfortable": {"pad_v": 8, "pad_h": 12, "row": 32, "gap": 14, "font": 0},
-           "Spacious": {"pad_v": 11, "pad_h": 14, "row": 42, "gap": 18, "font": 1}}
+DENSITY = {
+    "Compact": {"pad_v": 5, "pad_h": 10, "row": 24, "gap": 10, "font": -1},
+    "Comfortable": {"pad_v": 8, "pad_h": 12, "row": 32, "gap": 14, "font": 0},
+    "Spacious": {"pad_v": 11, "pad_h": 14, "row": 42, "gap": 18, "font": 1},
+}
 
-_LIGHT = {"bg": "#F4F7FB", "panel": "#FFFFFF", "panel_alt": "#EEF2F8", "text": "#182230", "muted": "#566274",
-          "border": "#D5DDE9", "side": "#17243B", "side_text": "#DCE5F1", "side_hover": "#263A58",
-          "input": "#FFFFFF", "table_alt": "#F6F8FC", "header": "#E8EEF6", "placeholder": "#6F7B8D",
-          "disabled": "#8A96A8", "grid": "#E3E9F2",
-          "success": "#146C46", "warning": "#8A5A00", "danger": "#B42318", "info": "#2457A7"}
-_DARK = {"bg": "#0F172A", "panel": "#172235", "panel_alt": "#202F45", "text": "#E6EDF7", "muted": "#A9B7CB",
-         "border": "#34445D", "side": "#0B1220", "side_text": "#DCE5F1", "side_hover": "#1A2940",
-         "input": "#1C2B40", "table_alt": "#1B2A3E", "header": "#223249", "placeholder": "#8D9BB0",
-         "disabled": "#8290A4", "grid": "#2B3B53",
-         "success": "#4ADE80", "warning": "#FBBF24", "danger": "#F87171", "info": "#7DB3FF"}
-TABLE_COLOR_KEYS = {"header_bg": "Header background", "header_fg": "Header text", "alt_row": "Alternate row",
-                    "selected": "Selected row", "grid": "Grid / border", "highlight": "Hover highlight"}
-STATUS_COLOR_KEYS = {"success": "Completed / good", "warning": "Warning / pending",
-                     "danger": "Overdue / poor", "info": "Information"}
+_LIGHT = {
+    "bg": "#F4F7FB",
+    "panel": "#FFFFFF",
+    "panel_alt": "#EEF2F8",
+    "text": "#182230",
+    "muted": "#566274",
+    "border": "#D5DDE9",
+    "side": "#17243B",
+    "side_text": "#DCE5F1",
+    "side_hover": "#263A58",
+    "input": "#FFFFFF",
+    "table_alt": "#F6F8FC",
+    "header": "#E8EEF6",
+    "placeholder": "#6F7B8D",
+    "disabled": "#8A96A8",
+    "grid": "#E3E9F2",
+    "success": "#146C46",
+    "warning": "#8A5A00",
+    "danger": "#B42318",
+    "info": "#2457A7",
+}
+_DARK = {
+    "bg": "#0F172A",
+    "panel": "#172235",
+    "panel_alt": "#202F45",
+    "text": "#E6EDF7",
+    "muted": "#A9B7CB",
+    "border": "#34445D",
+    "side": "#0B1220",
+    "side_text": "#DCE5F1",
+    "side_hover": "#1A2940",
+    "input": "#1C2B40",
+    "table_alt": "#1B2A3E",
+    "header": "#223249",
+    "placeholder": "#8D9BB0",
+    "disabled": "#8290A4",
+    "grid": "#2B3B53",
+    "success": "#4ADE80",
+    "warning": "#FBBF24",
+    "danger": "#F87171",
+    "info": "#7DB3FF",
+}
+TABLE_COLOR_KEYS = {
+    "header_bg": "Header background",
+    "header_fg": "Header text",
+    "alt_row": "Alternate row",
+    "selected": "Selected row",
+    "grid": "Grid / border",
+    "highlight": "Hover highlight",
+}
+STATUS_COLOR_KEYS = {
+    "success": "Completed / good",
+    "warning": "Warning / pending",
+    "danger": "Overdue / poor",
+    "info": "Information",
+}
 
 
 class Theme:
@@ -1192,9 +1655,15 @@ class Theme:
     Accent-coloured *text* and *fills* are checked against WCAG contrast so any
     custom accent stays readable in both light and dark mode."""
 
-    def __init__(self, mode: str = "light", accent: str = "#2F5FCB", font_pt: int = 10,
-                 density: str = "Comfortable", table_colors: Optional[dict] = None,
-                 status_colors: Optional[dict] = None) -> None:
+    def __init__(
+        self,
+        mode: str = "light",
+        accent: str = "#2F5FCB",
+        font_pt: int = 10,
+        density: str = "Comfortable",
+        table_colors: Optional[dict] = None,
+        status_colors: Optional[dict] = None,
+    ) -> None:
         self.dark = mode == "dark"
         self.density = density if density in DENSITY else "Comfortable"
         self.dim = DENSITY[self.density]
@@ -1207,11 +1676,15 @@ class Theme:
         t["accent"] = self.accent
         t["accent_fg"] = readable_on(self.accent)
         t["accent_text"] = ensure_contrast(self.accent, t["panel"])
-        t["accent_hover"] = mix(self.accent, "#FFFFFF" if self.dark else "#000000", 0.14)
+        t["accent_hover"] = mix(
+            self.accent, "#FFFFFF" if self.dark else "#000000", 0.14
+        )
         t["accent_soft"] = mix(t["panel"], self.accent, 0.16)
         tc = {k: hex_norm(v, "") for k, v in (table_colors or {}).items() if v}
         t["t_header_bg"] = tc.get("header_bg") or t["header"]
-        t["t_header_fg"] = tc.get("header_fg") or ensure_contrast(t["text"], tc.get("header_bg") or t["header"])
+        t["t_header_fg"] = tc.get("header_fg") or ensure_contrast(
+            t["text"], tc.get("header_bg") or t["header"]
+        )
         t["t_alt"] = tc.get("alt_row") or t["table_alt"]
         t["t_sel"] = tc.get("selected") or self.accent
         t["t_sel_fg"] = readable_on(t["t_sel"])
@@ -1221,9 +1694,17 @@ class Theme:
             t[s + "_soft"] = mix(t["panel"], t[s], 0.16 if not self.dark else 0.22)
             t[s + "_text"] = ensure_contrast(t[s], t[s + "_soft"])
         t["font"] = '"Segoe UI", "Helvetica Neue", Arial, sans-serif'
-        t.update(pad_v=self.dim["pad_v"], pad_h=self.dim["pad_h"], gap=self.dim["gap"],
-                 fs=self.font_pt, fs_small=max(7, self.font_pt - 1), fs_title=self.font_pt + 12,
-                 fs_section=self.font_pt + 2, fs_metric=self.font_pt + 13, fs_timer=self.font_pt + 44)
+        t.update(
+            pad_v=self.dim["pad_v"],
+            pad_h=self.dim["pad_h"],
+            gap=self.dim["gap"],
+            fs=self.font_pt,
+            fs_small=max(7, self.font_pt - 1),
+            fs_title=self.font_pt + 12,
+            fs_section=self.font_pt + 2,
+            fs_metric=self.font_pt + 13,
+            fs_timer=self.font_pt + 44,
+        )
         self.t = t
 
     @classmethod
@@ -1231,18 +1712,28 @@ class Theme:
         mode = s.get("theme").strip().lower()
         dark = system_dark if mode == "system" else mode == "dark"
         accent = s.get("accent_custom") or ACCENTS.get(s.get("accent"), ACCENTS["Blue"])
-        return cls("dark" if dark else "light", accent, s.get_int("font_size", 10), s.get("density"),
-                   s.get_json("table_colors", {}), s.get_json("status_colors", {}))
+        return cls(
+            "dark" if dark else "light",
+            accent,
+            s.get_int("font_size", 10),
+            s.get("density"),
+            s.get_json("table_colors", {}),
+            s.get_json("status_colors", {}),
+        )
 
     def color(self, token_or_hex: str) -> str:
         """Resolve a theme token ('danger', 'accent'…) or a literal hex colour."""
         return self.t.get(token_or_hex) or hex_norm(token_or_hex, self.t["text"])
 
     def soft(self, token: str) -> str:
-        return self.t.get(token + "_soft") or mix(self.t["panel"], self.color(token), 0.16)
+        return self.t.get(token + "_soft") or mix(
+            self.t["panel"], self.color(token), 0.16
+        )
 
     def text_on_soft(self, token: str) -> str:
-        return self.t.get(token + "_text") or ensure_contrast(self.color(token), self.soft(token))
+        return self.t.get(token + "_text") or ensure_contrast(
+            self.color(token), self.soft(token)
+        )
 
     @property
     def row_height(self) -> int:
@@ -1250,6 +1741,7 @@ class Theme:
 
     def qss(self) -> str:
         from string import Template
+
         return Template(_QSS).substitute(self.t)
 
 
@@ -1365,13 +1857,14 @@ class ChangeBus:
 @dataclass(frozen=True)
 class Field:
     """One editable column of an entity (drives the record form and validation)."""
+
     key: str
     label: str
-    kind: str = "text"      # text long int float date choice fk bool color file
+    kind: str = "text"  # text long int float date choice fk bool color file
     required: bool = False
     choices: tuple = ()
-    fk: str = ""            # lookup name for kind='fk'
-    parent: str = ""        # sibling field whose value narrows this lookup
+    fk: str = ""  # lookup name for kind='fk'
+    parent: str = ""  # sibling field whose value narrows this lookup
     default: Any = None
     lo: Optional[float] = None
     hi: Optional[float] = None
@@ -1381,29 +1874,32 @@ class Field:
 @dataclass(frozen=True)
 class Column:
     """One column of the on-screen / PDF table."""
+
     key: str
     label: str
     width: int = 110
-    kind: str = "text"      # text int float date pct minutes status priority bool kb
-    align: str = ""         # left | center | right ('' = by kind)
-    vis: bool = True        # visible by default
-    color: str = ""         # row key holding a hex colour (subject swatch)
+    kind: str = "text"  # text int float date pct minutes status priority bool kb
+    align: str = ""  # left | center | right ('' = by kind)
+    vis: bool = True  # visible by default
+    color: str = ""  # row key holding a hex colour (subject swatch)
 
 
 @dataclass(frozen=True)
 class Rule:
     """Conditional formatting. ``value`` may be '@low' (the low-marks threshold)."""
+
     column: str
-    op: str                 # eq ne lt le gt ge contains in blank notblank
+    op: str  # eq ne lt le gt ge contains in blank notblank
     value: Any = ""
-    color: str = "danger"   # theme token or #hex
-    scope: str = "cell"     # 'cell' colours the text; 'row' tints the whole row
+    color: str = "danger"  # theme token or #hex
+    scope: str = "cell"  # 'cell' colours the text; 'row' tints the whole row
     bold: bool = False
 
 
 @dataclass
 class Ctx:
     """Context passed to row-derivation hooks."""
+
     today: date
     grading: GradingConfig
     low_mark: float = 40.0
@@ -1437,52 +1933,192 @@ def F(key: str, label: str, kind: str = "text", req: bool = False, **kw: Any) ->
     return Field(key, label, kind, req, **kw)
 
 
-def C(key: str, label: str, w: int = 110, kind: str = "text", align: str = "", vis: bool = True, color: str = "") -> Column:
+def C(
+    key: str,
+    label: str,
+    w: int = 110,
+    kind: str = "text",
+    align: str = "",
+    vis: bool = True,
+    color: str = "",
+) -> Column:
     return Column(key, label, w, kind, align, vis, color)
 
 
-DEGREE_LEVELS = ("Diploma", "Undergraduate", "Postgraduate", "Doctorate", "Certificate", "Custom")
+DEGREE_LEVELS = (
+    "Diploma",
+    "Undergraduate",
+    "Postgraduate",
+    "Doctorate",
+    "Certificate",
+    "Custom",
+)
 TERM_STATUS = ("Upcoming", "Active", "Completed")
 UNIT_STATUS = PROGRESS_STATES
-EXAM_TYPES = ("Class Test", "Unit Test", "Quiz", "Internal Assessment", "Seasonal Exam", "Mid-Semester Exam",
-              "Semester Exam", "End-Semester Exam", "Practical Exam", "Viva", "Laboratory Assessment",
-              "University Exam", "Backlog Exam", "Supplementary Exam")
-ASSESSMENT_TYPES = ("Class Test", "Unit Test", "Unit Quiz", "Quiz", "Internal Assessment", "Assignment", "Practical",
-                    "Lab Assessment", "Viva", "Seasonal Exam", "Semester Exam", "Other")
-ASSIGNMENT_TYPES = ("Written", "Lab Record", "Online", "Presentation", "Project", "Quiz", "Other")
+EXAM_TYPES = (
+    "Class Test",
+    "Unit Test",
+    "Quiz",
+    "Internal Assessment",
+    "Seasonal Exam",
+    "Mid-Semester Exam",
+    "Semester Exam",
+    "End-Semester Exam",
+    "Practical Exam",
+    "Viva",
+    "Laboratory Assessment",
+    "University Exam",
+    "Backlog Exam",
+    "Supplementary Exam",
+)
+ASSESSMENT_TYPES = (
+    "Class Test",
+    "Unit Test",
+    "Unit Quiz",
+    "Quiz",
+    "Internal Assessment",
+    "Assignment",
+    "Practical",
+    "Lab Assessment",
+    "Viva",
+    "Seasonal Exam",
+    "Semester Exam",
+    "Other",
+)
+ASSIGNMENT_TYPES = (
+    "Written",
+    "Lab Record",
+    "Online",
+    "Presentation",
+    "Project",
+    "Quiz",
+    "Other",
+)
 PREP_STATUS = ("Not Started", "In Progress", "Prepared", "Completed")
 RESULT_STATES = ("Pending", "Pass", "Fail", "Absent", "Withheld")
-PROJECT_CATEGORIES = ("Academic Project", "Mini Project", "Major Project", "Laboratory Record", "Practical Assignment",
-                      "Viva Preparation", "Presentation", "Research Activity", "Internship", "Certification")
-PROJECT_STATUS = ("Not Started", "In Progress", "On Hold", "Completed", "Submitted", "Evaluated")
+PROJECT_CATEGORIES = (
+    "Academic Project",
+    "Mini Project",
+    "Major Project",
+    "Laboratory Record",
+    "Practical Assignment",
+    "Viva Preparation",
+    "Presentation",
+    "Research Activity",
+    "Internship",
+    "Certification",
+)
+PROJECT_STATUS = (
+    "Not Started",
+    "In Progress",
+    "On Hold",
+    "Completed",
+    "Submitted",
+    "Evaluated",
+)
 SUBJECT_TYPES = ("Theory", "Practical", "Lab", "Project", "Elective", "Audit")
-DOC_CATEGORIES = ("Subject Note", "Chapter Note", "Assignment File", "Examination Resource", "Practical File",
-                  "Project Document", "Study Reference", "Academic Document", "Other")
-EVENT_TYPES = ("Event", "Holiday", "Exam Period", "Registration", "Break", "Deadline", "Other")
+DOC_CATEGORIES = (
+    "Subject Note",
+    "Chapter Note",
+    "Assignment File",
+    "Examination Resource",
+    "Practical File",
+    "Project Document",
+    "Study Reference",
+    "Academic Document",
+    "Other",
+)
+EVENT_TYPES = (
+    "Event",
+    "Holiday",
+    "Exam Period",
+    "Registration",
+    "Break",
+    "Deadline",
+    "Other",
+)
 SESSION_TYPES = ("Study", "Revision", "Practice", "Lecture", "Project")
-TASK_CATEGORIES = ("Study", "Assignment", "Revision", "Exam prep", "Personal", "Project")
-ATTACH_EXT = {".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".txt", ".md", ".csv", ".rtf",
-              ".odt", ".ods", ".odp", ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".webp"}
+TASK_CATEGORIES = (
+    "Study",
+    "Assignment",
+    "Revision",
+    "Exam prep",
+    "Personal",
+    "Project",
+)
+ATTACH_EXT = {
+    ".pdf",
+    ".doc",
+    ".docx",
+    ".xls",
+    ".xlsx",
+    ".ppt",
+    ".pptx",
+    ".txt",
+    ".md",
+    ".csv",
+    ".rtf",
+    ".odt",
+    ".ods",
+    ".odp",
+    ".png",
+    ".jpg",
+    ".jpeg",
+    ".gif",
+    ".bmp",
+    ".webp",
+}
 
 # status word -> theme colour token (used for status/priority cell colouring everywhere)
 STATUS_TOKENS = {
-    "Completed": "success", "Submitted": "success", "Evaluated": "success", "Pass": "success", "Active": "success",
-    "Prepared": "success", "Reviewed": "success", "Safe": "success", "Present": "success", "Yes": "success",
-    "Overdue": "danger", "Fail": "danger", "Absent": "danger", "Shortage": "danger", "Missing": "danger",
-    "Urgent": "danger", "Late Submission": "warning", "High": "warning", "Borderline": "warning",
-    "In Progress": "info", "Pending": "warning", "Due": "warning", "On Hold": "warning", "Partial": "warning",
-    "Upcoming": "info", "Withheld": "warning", "Not Started": "muted", "Skipped": "muted", "Paused": "muted", "Low": "muted"}
+    "Completed": "success",
+    "Submitted": "success",
+    "Evaluated": "success",
+    "Pass": "success",
+    "Active": "success",
+    "Prepared": "success",
+    "Reviewed": "success",
+    "Safe": "success",
+    "Present": "success",
+    "Yes": "success",
+    "Overdue": "danger",
+    "Fail": "danger",
+    "Absent": "danger",
+    "Shortage": "danger",
+    "Missing": "danger",
+    "Urgent": "danger",
+    "Late Submission": "warning",
+    "High": "warning",
+    "Borderline": "warning",
+    "In Progress": "info",
+    "Pending": "warning",
+    "Due": "warning",
+    "On Hold": "warning",
+    "Partial": "warning",
+    "Upcoming": "info",
+    "Withheld": "warning",
+    "Not Started": "muted",
+    "Skipped": "muted",
+    "Paused": "muted",
+    "Low": "muted",
+}
 
-_SJ = ("JOIN subjects s ON s.id=t.subject_id LEFT JOIN semesters sem ON sem.id=s.semester_id "
-       "LEFT JOIN academic_years ay ON ay.id=sem.academic_year_id")
+_SJ = (
+    "JOIN subjects s ON s.id=t.subject_id LEFT JOIN semesters sem ON sem.id=s.semester_id "
+    "LEFT JOIN academic_years ay ON ay.id=sem.academic_year_id"
+)
 _SJL = _SJ.replace("JOIN subjects s", "LEFT JOIN subjects s", 1)
 _SUBJ = "s.id AS subject_id, s.name AS subject, s.color AS subject_color, sem.name AS semester, ay.name AS academic_year"
 
 
 def _d_assignment(r: dict, c: Ctx) -> None:
-    r["status_eff"] = effective_assignment_status(r["status"], r["due_date"], r["submission_date"], c.today)
+    r["status_eff"] = effective_assignment_status(
+        r["status"], r["due_date"], r["submission_date"], c.today
+    )
     d = parse_date(r["due_date"])
-    r["days_left"] = (d - c.today).days if d and r["status_eff"] in PENDING_ASSIGNMENT else None
+    r["days_left"] = (
+        (d - c.today).days if d and r["status_eff"] in PENDING_ASSIGNMENT else None
+    )
     got, mx = safe_float(r["marks_obtained"]), safe_float(r["max_marks"])
     r["score"] = f"{fmt_num(got)}/{fmt_num(mx)}" if got is not None and mx else ""
     r["pct"] = percent(got, mx) if got is not None else None
@@ -1504,20 +2140,38 @@ def _d_result(r: dict, c: Ctx) -> None:
     ev = evaluate_result(r, c.grading, r.get("subject_credits") or 0)
     for k, tag in (("internal", "int"), ("external", "ext"), ("practical", "prac")):
         got, mx = safe_float(r[f"{k}_marks"]), safe_float(r[f"{k}_max"])
-        r[f"{tag}_txt"] = f"{fmt_num(got)}/{fmt_num(mx)}" if got is not None and mx else ""
-    r["total"] = f"{fmt_num(ev['obtained'])}/{fmt_num(ev['maximum'])}" if ev["maximum"] else ""
-    r["pct"], r["grade_eff"], r["points_eff"], r["credits_eff"] = ev["pct"], ev["grade"], ev["points"], ev["credits"]
-    r["result_eff"] = (ev["declared"] if ev["declared"] in ("Pass", "Fail", "Absent", "Withheld")
-                       else "Pass" if ev["passed"] else "Fail" if ev["passed"] is False else "Pending")
+        r[f"{tag}_txt"] = (
+            f"{fmt_num(got)}/{fmt_num(mx)}" if got is not None and mx else ""
+        )
+    r["total"] = (
+        f"{fmt_num(ev['obtained'])}/{fmt_num(ev['maximum'])}" if ev["maximum"] else ""
+    )
+    r["pct"], r["grade_eff"], r["points_eff"], r["credits_eff"] = (
+        ev["pct"],
+        ev["grade"],
+        ev["points"],
+        ev["credits"],
+    )
+    r["result_eff"] = (
+        ev["declared"]
+        if ev["declared"] in ("Pass", "Fail", "Absent", "Withheld")
+        else "Pass" if ev["passed"] else "Fail" if ev["passed"] is False else "Pending"
+    )
 
 
 def _d_attendance(r: dict, c: Ctx) -> None:
-    r["status"] = "Present" if r["held"] and r["attended"] == r["held"] else "Absent" if r["attended"] == 0 else "Partial"
+    r["status"] = (
+        "Present"
+        if r["held"] and r["attended"] == r["held"]
+        else "Absent" if r["attended"] == 0 else "Partial"
+    )
 
 
 def _d_task(r: dict, c: Ctx) -> None:
     d = parse_date(r["task_date"])
-    r["overdue"] = "1" if d and d < c.today and r["status"] in ("Pending", "In Progress") else ""
+    r["overdue"] = (
+        "1" if d and d < c.today and r["status"] in ("Pending", "In Progress") else ""
+    )
 
 
 def _d_revision(r: dict, c: Ctx) -> None:
@@ -1529,7 +2183,9 @@ def _d_project(r: dict, c: Ctx) -> None:
     d = parse_date(r["deadline"])
     open_ = r["status"] in ("Not Started", "In Progress", "On Hold")
     r["days_left"] = (d - c.today).days if d and open_ else None
-    r["progress"] = f"{r['milestones_done']}/{r['milestones']}" if r["milestones"] else ""
+    r["progress"] = (
+        f"{r['milestones_done']}/{r['milestones']}" if r["milestones"] else ""
+    )
     r["pct"] = percent(r["marks_obtained"], r["max_marks"])
 
 
@@ -1538,324 +2194,980 @@ def _d_subject(r: dict, c: Ctx) -> None:
 
 
 def _d_attachment(r: dict, c: Ctx) -> None:
-    r["exists"] = "Yes" if r["file_path"] and Path(r["file_path"]).exists() else "Missing"
-    r["size_kb"] = (r["size_bytes"] or 0) / 1024 if r["size_bytes"] is not None else None
-    r["linked"] = "General" if r["entity_type"] == "general" else f"{r['entity_type'].replace('_', ' ')} #{r['record_id']}"
+    r["exists"] = (
+        "Yes" if r["file_path"] and Path(r["file_path"]).exists() else "Missing"
+    )
+    r["size_kb"] = (
+        (r["size_bytes"] or 0) / 1024 if r["size_bytes"] is not None else None
+    )
+    r["linked"] = (
+        "General"
+        if r["entity_type"] == "general"
+        else f"{r['entity_type'].replace('_', ' ')} #{r['record_id']}"
+    )
 
 
-_BLOCK = "block"      # deletion refused while children exist
-_DELETE = "delete"    # children are removed with the parent
-_DETACH = "detach"    # children are kept; the link is cleared
+_BLOCK = "block"  # deletion refused while children exist
+_DELETE = "delete"  # children are removed with the parent
+_DETACH = "detach"  # children are kept; the link is cleared
 
 ENTITY_LIST = (
-    Entity("programmes", "Programme", "Programmes",
-           (F("name", "Programme name", req=True, hint="e.g. B.Tech CSE (AI & ML)"),
-            F("degree_level", "Level", "choice", choices=DEGREE_LEVELS, default="Undergraduate"),
-            F("branch", "Branch"), F("specialisation", "Specialisation"),
-            F("college_name", "College"), F("university_name", "University"),
+    Entity(
+        "programmes",
+        "Programme",
+        "Programmes",
+        (
+            F("name", "Programme name", req=True, hint="e.g. B.Tech CSE (AI & ML)"),
+            F(
+                "degree_level",
+                "Level",
+                "choice",
+                choices=DEGREE_LEVELS,
+                default="Undergraduate",
+            ),
+            F("branch", "Branch"),
+            F("specialisation", "Specialisation"),
+            F("college_name", "College"),
+            F("university_name", "University"),
             F("session_label", "Academic session", hint="e.g. 2024–2028"),
-            F("start_year", "Start year", "int", lo=1950, hi=2100), F("end_year", "Expected end year", "int", lo=1950, hi=2100),
+            F("start_year", "Start year", "int", lo=1950, hi=2100),
+            F("end_year", "Expected end year", "int", lo=1950, hi=2100),
             F("years_count", "Number of years", "int", True, lo=1, hi=10, default=4),
-            F("semesters_per_year", "Semesters per year", "int", True, lo=1, hi=4, default=2),
-            F("status", "Status", "choice", choices=("Active", "Completed", "On Hold"), default="Active"),
-            F("notes", "Notes", "long")),
-           "t.id, t.name, t.degree_level, t.branch, t.specialisation, t.college_name, t.university_name, t.session_label, "
-           "t.years_count, t.status, (SELECT COUNT(*) FROM semesters x WHERE x.programme_id=t.id) AS semesters",
-           "programmes t",
-           (C("name", "Programme", 230), C("degree_level", "Level", 110), C("branch", "Branch", 140),
-            C("specialisation", "Specialisation", 150), C("college_name", "College", 170), C("session_label", "Session", 100),
-            C("years_count", "Years", 60, "int"), C("semesters", "Semesters", 85, "int"), C("status", "Status", 90, "status")),
-           order="t.id", filters=("status", "degree_level"), label_key="name",
-           children=(("semesters", "programme_id IN ({ids})", "semesters", _BLOCK),
-                     ("academic_years", "programme_id IN ({ids})", "academic years", _BLOCK))),
-    Entity("academic_years", "Academic year", "Academic years",
-           (F("programme_id", "Programme", "fk", True, fk="programmes"),
-            F("year_no", "Year number", "int", True, lo=1, hi=12, default=1), F("name", "Name", req=True, hint="e.g. First Year"),
-            F("session_label", "Session", hint="e.g. 2024-25"), F("start_date", "Start date", "date"), F("end_date", "End date", "date"),
-            F("status", "Status", "choice", choices=TERM_STATUS, default="Active"), F("notes", "Notes", "long")),
-           "t.id, p.name AS programme, t.year_no, t.name, t.session_label, t.start_date, t.end_date, t.status, "
-           "(SELECT COUNT(*) FROM semesters x WHERE x.academic_year_id=t.id) AS semesters",
-           "academic_years t JOIN programmes p ON p.id=t.programme_id",
-           (C("programme", "Programme", 200), C("year_no", "No.", 55, "int"), C("name", "Academic year", 160),
-            C("session_label", "Session", 100), C("start_date", "Start", 100, "date"), C("end_date", "End", 100, "date"),
-            C("semesters", "Semesters", 85, "int"), C("status", "Status", 90, "status")),
-           order="t.programme_id, t.year_no", filters=("programme", "status"), label_key="name",
-           children=(("semesters", "academic_year_id IN ({ids})", "semesters", _BLOCK),)),
-    Entity("semesters", "Semester", "Semesters",
-           (F("programme_id", "Programme", "fk", fk="programmes"),
-            F("academic_year_id", "Academic year", "fk", fk="academic_years", parent="programme_id"),
-            F("semester_no", "Semester number", "int", lo=1, hi=24), F("name", "Semester name", req=True),
-            F("start_date", "Start date", "date"), F("end_date", "End date", "date"),
-            F("status", "Status", "choice", choices=TERM_STATUS, default="Upcoming")),
-           "t.id, p.name AS programme, ay.name AS academic_year, t.semester_no, t.name, t.start_date, t.end_date, t.status, "
-           "(SELECT COUNT(*) FROM subjects x WHERE x.semester_id=t.id) AS subjects",
-           "semesters t LEFT JOIN programmes p ON p.id=t.programme_id LEFT JOIN academic_years ay ON ay.id=t.academic_year_id",
-           (C("programme", "Programme", 180), C("academic_year", "Year", 110), C("semester_no", "No.", 55, "int"),
-            C("name", "Semester", 170), C("start_date", "Start", 100, "date"), C("end_date", "End", 100, "date"),
-            C("subjects", "Subjects", 75, "int"), C("status", "Status", 95, "status")),
-           order="COALESCE(t.programme_id,0), COALESCE(t.semester_no,9999), t.id", filters=("programme", "academic_year", "status"),
-           label_key="name", quick={"Mark as active": {"status": "Active"}, "Mark as completed": {"status": "Completed"}},
-           bulk=("status",), children=(("subjects", "semester_id IN ({ids})", "subjects", _BLOCK),
-                                       ("calendar_events", "semester_id IN ({ids})", "calendar events", _DETACH))),
-    Entity("subjects", "Subject", "Subjects",
-           (F("semester_id", "Semester", "fk", True, fk="semesters"), F("name", "Subject name", req=True),
-            F("code", "Subject code"), F("subject_type", "Type", "choice", choices=SUBJECT_TYPES, default="Theory"),
-            F("credits", "Credits", "float", lo=0, hi=60, default=0), F("faculty", "Faculty"),
-            F("color", "Colour", "color", default="#356AE6"), F("target_hours", "Weekly study target (hours)", "float", lo=0, hi=100, default=3),
-            F("attendance_target", "Attendance target % (blank = default)", "float", lo=0, hi=100), F("notes", "Notes", "long")),
-           "t.id, t.name, t.code, sem.name AS semester, ay.name AS academic_year, t.subject_type, t.credits, t.faculty, t.color, "
-           "t.target_hours, t.attendance_target, t.notes, (SELECT COUNT(*) FROM units u WHERE u.subject_id=t.id) AS units_total, "
-           "(SELECT COUNT(*) FROM units u WHERE u.subject_id=t.id AND u.status='Completed') AS units_done",
-           "subjects t LEFT JOIN semesters sem ON sem.id=t.semester_id LEFT JOIN academic_years ay ON ay.id=sem.academic_year_id",
-           (C("name", "Subject", 230, color="color"), C("code", "Code", 90), C("semester", "Semester", 130),
-            C("subject_type", "Type", 85), C("credits", "Credits", 70, "float", "right"), C("faculty", "Faculty", 140),
-            C("syllabus_pct", "Syllabus", 80, "pct", "right"), C("target_hours", "Target h/wk", 85, "float", "right"),
-            C("attendance_target", "Att. target", 80, "float", "right", False), C("academic_year", "Year", 100, vis=False)),
-           order="COALESCE(t.semester_id,0), t.name", scope="t.semester_id = ?", filters=("semester", "subject_type"), label_key="name",
-           derive=_d_subject, bulk=("subject_type",),
-           children=(("units", "subject_id IN ({ids})", "units", _DELETE),
-                     ("chapters", "unit_id IN (SELECT id FROM units WHERE subject_id IN ({ids}))", "chapters", _DELETE),
-                     ("revisions", "unit_id IN (SELECT id FROM units WHERE subject_id IN ({ids}))", "revision schedules", _DELETE),
-                     ("assignments", "subject_id IN ({ids})", "assignments", _DELETE),
-                     ("exams", "subject_id IN ({ids})", "exams", _DELETE), ("marks", "subject_id IN ({ids})", "assessment marks", _DELETE),
-                     ("subject_results", "subject_id IN ({ids})", "semester results", _DELETE),
-                     ("attendance", "subject_id IN ({ids})", "attendance records", _DELETE),
-                     ("study_sessions", "subject_id IN ({ids})", "study sessions", _DELETE),
-                     ("planner_tasks", "subject_id IN ({ids})", "planner tasks (kept, unlinked)", _DETACH),
-                     ("projects", "subject_id IN ({ids})", "projects (kept, unlinked)", _DETACH),
-                     ("notes", "subject_id IN ({ids})", "notes (kept, unlinked)", _DETACH))),
-    Entity("units", "Unit", "Units / syllabus",
-           (F("subject_id", "Subject", "fk", True, fk="subjects"), F("unit_no", "Unit number", "int", True, lo=1, hi=200, default=1),
-            F("title", "Unit title", req=True), F("status", "Status", "choice", choices=UNIT_STATUS, default="Not Started"),
-            F("confidence", "Confidence (1–5)", "int", lo=1, hi=5, default=1), F("notes", "Notes", "long")),
-           f"t.id, s.id AS subject_id, s.name AS subject, s.color AS subject_color, sem.name AS semester, t.unit_no, t.title, t.status, t.confidence, "
-           "(SELECT COUNT(*) FROM chapters c WHERE c.unit_id=t.id) AS chapters, "
-           "(SELECT COUNT(*) FROM chapters c WHERE c.unit_id=t.id AND c.status='Completed') AS chapters_done",
-           "units t " + _SJ, (C("subject", "Subject", 180, color="subject_color"), C("unit_no", "Unit", 55, "int"),
-                              C("title", "Title", 260), C("status", "Status", 105, "status"), C("confidence", "Confidence", 85, "int", "center"),
-                              C("chapters", "Chapters", 75, "int"), C("chapters_done", "Done", 60, "int"), C("semester", "Semester", 110, vis=False)),
-           order="s.name, t.unit_no", scope="s.semester_id = ?", filters=("subject", "status"), bulk=("status", "confidence"),
-           quick={"Mark in progress": {"status": "In Progress"}, "Mark completed": {"status": "Completed"}},
-           children=(("chapters", "unit_id IN ({ids})", "chapters", _DELETE), ("revisions", "unit_id IN ({ids})", "revision schedules", _DELETE),
-                     ("assignments", "unit_id IN ({ids})", "assignments (kept, unlinked)", _DETACH),
-                     ("marks", "unit_id IN ({ids})", "marks (kept, unlinked)", _DETACH),
-                     ("study_sessions", "unit_id IN ({ids})", "study sessions (kept, unlinked)", _DETACH),
-                     ("notes", "unit_id IN ({ids})", "notes (kept, unlinked)", _DETACH)),
-           rules=(Rule("status", "eq", "Completed", "success"),), attachments=False),
-    Entity("chapters", "Chapter", "Chapters",
-           (F("unit_id", "Unit", "fk", True, fk="units"), F("title", "Chapter / topic", req=True),
+            F(
+                "semesters_per_year",
+                "Semesters per year",
+                "int",
+                True,
+                lo=1,
+                hi=4,
+                default=2,
+            ),
+            F(
+                "status",
+                "Status",
+                "choice",
+                choices=("Active", "Completed", "On Hold"),
+                default="Active",
+            ),
+            F("notes", "Notes", "long"),
+        ),
+        "t.id, t.name, t.degree_level, t.branch, t.specialisation, t.college_name, t.university_name, t.session_label, "
+        "t.years_count, t.status, (SELECT COUNT(*) FROM semesters x WHERE x.programme_id=t.id) AS semesters",
+        "programmes t",
+        (
+            C("name", "Programme", 230),
+            C("degree_level", "Level", 110),
+            C("branch", "Branch", 140),
+            C("specialisation", "Specialisation", 150),
+            C("college_name", "College", 170),
+            C("session_label", "Session", 100),
+            C("years_count", "Years", 60, "int"),
+            C("semesters", "Semesters", 85, "int"),
+            C("status", "Status", 90, "status"),
+        ),
+        order="t.id",
+        filters=("status", "degree_level"),
+        label_key="name",
+        children=(
+            ("semesters", "programme_id IN ({ids})", "semesters", _BLOCK),
+            ("academic_years", "programme_id IN ({ids})", "academic years", _BLOCK),
+        ),
+    ),
+    Entity(
+        "academic_years",
+        "Academic year",
+        "Academic years",
+        (
+            F("programme_id", "Programme", "fk", True, fk="programmes"),
+            F("year_no", "Year number", "int", True, lo=1, hi=12, default=1),
+            F("name", "Name", req=True, hint="e.g. First Year"),
+            F("session_label", "Session", hint="e.g. 2024-25"),
+            F("start_date", "Start date", "date"),
+            F("end_date", "End date", "date"),
+            F("status", "Status", "choice", choices=TERM_STATUS, default="Active"),
+            F("notes", "Notes", "long"),
+        ),
+        "t.id, p.name AS programme, t.year_no, t.name, t.session_label, t.start_date, t.end_date, t.status, "
+        "(SELECT COUNT(*) FROM semesters x WHERE x.academic_year_id=t.id) AS semesters",
+        "academic_years t JOIN programmes p ON p.id=t.programme_id",
+        (
+            C("programme", "Programme", 200),
+            C("year_no", "No.", 55, "int"),
+            C("name", "Academic year", 160),
+            C("session_label", "Session", 100),
+            C("start_date", "Start", 100, "date"),
+            C("end_date", "End", 100, "date"),
+            C("semesters", "Semesters", 85, "int"),
+            C("status", "Status", 90, "status"),
+        ),
+        order="t.programme_id, t.year_no",
+        filters=("programme", "status"),
+        label_key="name",
+        children=(("semesters", "academic_year_id IN ({ids})", "semesters", _BLOCK),),
+    ),
+    Entity(
+        "semesters",
+        "Semester",
+        "Semesters",
+        (
+            F("programme_id", "Programme", "fk", fk="programmes"),
+            F(
+                "academic_year_id",
+                "Academic year",
+                "fk",
+                fk="academic_years",
+                parent="programme_id",
+            ),
+            F("semester_no", "Semester number", "int", lo=1, hi=24),
+            F("name", "Semester name", req=True),
+            F("start_date", "Start date", "date"),
+            F("end_date", "End date", "date"),
+            F("status", "Status", "choice", choices=TERM_STATUS, default="Upcoming"),
+        ),
+        "t.id, p.name AS programme, ay.name AS academic_year, t.semester_no, t.name, t.start_date, t.end_date, t.status, "
+        "(SELECT COUNT(*) FROM subjects x WHERE x.semester_id=t.id) AS subjects",
+        "semesters t LEFT JOIN programmes p ON p.id=t.programme_id LEFT JOIN academic_years ay ON ay.id=t.academic_year_id",
+        (
+            C("programme", "Programme", 180),
+            C("academic_year", "Year", 110),
+            C("semester_no", "No.", 55, "int"),
+            C("name", "Semester", 170),
+            C("start_date", "Start", 100, "date"),
+            C("end_date", "End", 100, "date"),
+            C("subjects", "Subjects", 75, "int"),
+            C("status", "Status", 95, "status"),
+        ),
+        order="COALESCE(t.programme_id,0), COALESCE(t.semester_no,9999), t.id",
+        filters=("programme", "academic_year", "status"),
+        label_key="name",
+        quick={
+            "Mark as active": {"status": "Active"},
+            "Mark as completed": {"status": "Completed"},
+        },
+        bulk=("status",),
+        children=(
+            ("subjects", "semester_id IN ({ids})", "subjects", _BLOCK),
+            ("calendar_events", "semester_id IN ({ids})", "calendar events", _DETACH),
+        ),
+    ),
+    Entity(
+        "subjects",
+        "Subject",
+        "Subjects",
+        (
+            F("semester_id", "Semester", "fk", True, fk="semesters"),
+            F("name", "Subject name", req=True),
+            F("code", "Subject code"),
+            F(
+                "subject_type",
+                "Type",
+                "choice",
+                choices=SUBJECT_TYPES,
+                default="Theory",
+            ),
+            F("credits", "Credits", "float", lo=0, hi=60, default=0),
+            F("faculty", "Faculty"),
+            F("color", "Colour", "color", default="#356AE6"),
+            F(
+                "target_hours",
+                "Weekly study target (hours)",
+                "float",
+                lo=0,
+                hi=100,
+                default=3,
+            ),
+            F(
+                "attendance_target",
+                "Attendance target % (blank = default)",
+                "float",
+                lo=0,
+                hi=100,
+            ),
+            F("notes", "Notes", "long"),
+        ),
+        "t.id, t.name, t.code, sem.name AS semester, ay.name AS academic_year, t.subject_type, t.credits, t.faculty, t.color, "
+        "t.target_hours, t.attendance_target, t.notes, (SELECT COUNT(*) FROM units u WHERE u.subject_id=t.id) AS units_total, "
+        "(SELECT COUNT(*) FROM units u WHERE u.subject_id=t.id AND u.status='Completed') AS units_done",
+        "subjects t LEFT JOIN semesters sem ON sem.id=t.semester_id LEFT JOIN academic_years ay ON ay.id=sem.academic_year_id",
+        (
+            C("name", "Subject", 230, color="color"),
+            C("code", "Code", 90),
+            C("semester", "Semester", 130),
+            C("subject_type", "Type", 85),
+            C("credits", "Credits", 70, "float", "right"),
+            C("faculty", "Faculty", 140),
+            C("syllabus_pct", "Syllabus", 80, "pct", "right"),
+            C("target_hours", "Target h/wk", 85, "float", "right"),
+            C("attendance_target", "Att. target", 80, "float", "right", False),
+            C("academic_year", "Year", 100, vis=False),
+        ),
+        order="COALESCE(t.semester_id,0), t.name",
+        scope="t.semester_id = ?",
+        filters=("semester", "subject_type"),
+        label_key="name",
+        derive=_d_subject,
+        bulk=("subject_type",),
+        children=(
+            ("units", "subject_id IN ({ids})", "units", _DELETE),
+            (
+                "chapters",
+                "unit_id IN (SELECT id FROM units WHERE subject_id IN ({ids}))",
+                "chapters",
+                _DELETE,
+            ),
+            (
+                "revisions",
+                "unit_id IN (SELECT id FROM units WHERE subject_id IN ({ids}))",
+                "revision schedules",
+                _DELETE,
+            ),
+            ("assignments", "subject_id IN ({ids})", "assignments", _DELETE),
+            ("exams", "subject_id IN ({ids})", "exams", _DELETE),
+            ("marks", "subject_id IN ({ids})", "assessment marks", _DELETE),
+            ("subject_results", "subject_id IN ({ids})", "semester results", _DELETE),
+            ("attendance", "subject_id IN ({ids})", "attendance records", _DELETE),
+            ("study_sessions", "subject_id IN ({ids})", "study sessions", _DELETE),
+            (
+                "planner_tasks",
+                "subject_id IN ({ids})",
+                "planner tasks (kept, unlinked)",
+                _DETACH,
+            ),
+            ("projects", "subject_id IN ({ids})", "projects (kept, unlinked)", _DETACH),
+            ("notes", "subject_id IN ({ids})", "notes (kept, unlinked)", _DETACH),
+        ),
+    ),
+    Entity(
+        "units",
+        "Unit",
+        "Units / syllabus",
+        (
+            F("subject_id", "Subject", "fk", True, fk="subjects"),
+            F("unit_no", "Unit number", "int", True, lo=1, hi=200, default=1),
+            F("title", "Unit title", req=True),
             F("status", "Status", "choice", choices=UNIT_STATUS, default="Not Started"),
-            F("priority", "Priority", "choice", choices=PRIORITIES[:3], default="Normal"), F("notes", "Notes", "long")),
-           "t.id, s.id AS subject_id, s.name AS subject, s.color AS subject_color, u.unit_no, u.title AS unit, t.title, t.status, t.priority",
-           "chapters t JOIN units u ON u.id=t.unit_id JOIN subjects s ON s.id=u.subject_id",
-           (C("subject", "Subject", 180, color="subject_color"), C("unit_no", "Unit", 55, "int"), C("unit", "Unit title", 180),
-            C("title", "Chapter / topic", 260), C("status", "Status", 105, "status"), C("priority", "Priority", 85, "priority")),
-           order="s.name, u.unit_no, t.id", scope="s.semester_id = ?", filters=("subject", "status", "priority"),
-           bulk=("status", "priority"), quick={"Mark in progress": {"status": "In Progress"}, "Mark completed": {"status": "Completed"}},
-           children=(("study_sessions", "chapter_id IN ({ids})", "study sessions (kept, unlinked)", _DETACH),
-                     ("notes", "chapter_id IN ({ids})", "notes (kept, unlinked)", _DETACH))),
-    Entity("assignments", "Assignment", "Assignments",
-           (F("subject_id", "Subject", "fk", True, fk="subjects"), F("unit_id", "Unit (optional)", "fk", fk="units", parent="subject_id"),
-            F("assignment_no", "Assignment no."), F("title", "Title", req=True),
-            F("assignment_type", "Type", "choice", choices=ASSIGNMENT_TYPES, default="Written"), F("description", "Description", "long"),
-            F("given_date", "Given on", "date"), F("due_date", "Submission deadline", "date"),
-            F("submission_date", "Actual submission date", "date"),
-            F("status", "Status", "choice", choices=ASSIGNMENT_STATUSES, default="Not Started"),
-            F("priority", "Priority", "choice", choices=PRIORITIES, default="Normal"),
-            F("marks_obtained", "Marks obtained", "float", lo=0), F("max_marks", "Maximum marks", "float", lo=0),
-            F("faculty", "Teacher / faculty"), F("remarks", "Notes & remarks", "long")),
-           f"t.id, t.assignment_no, t.title, {_SUBJ}, t.assignment_type, t.given_date, t.due_date, t.submission_date, t.status, "
-           "t.priority, t.marks_obtained, t.max_marks, t.faculty, t.remarks",
-           "assignments t " + _SJ,
-           (C("assignment_no", "No.", 55), C("title", "Assignment", 230), C("subject", "Subject", 170, color="subject_color"),
-            C("semester", "Semester", 110), C("assignment_type", "Type", 100), C("given_date", "Given", 95, "date"),
-            C("due_date", "Deadline", 100, "date"), C("submission_date", "Submitted", 100, "date"), C("status_eff", "Status", 120, "status"),
-            C("days_left", "Days left", 75, "int", "right"), C("priority", "Priority", 80, "priority"), C("score", "Marks", 80, align="center"),
-            C("pct", "%", 60, "pct", "right"), C("faculty", "Faculty", 130, vis=False), C("academic_year", "Year", 90, vis=False)),
-           order="CASE WHEN t.due_date='' THEN 1 ELSE 0 END, t.due_date, t.id", scope="s.semester_id = ?",
-           date_key="due_date", filters=("subject", "semester", "status_eff", "priority", "assignment_type"), derive=_d_assignment,
-           bulk=("status", "priority", "assignment_type"), attachments=True,
-           quick={"Mark in progress": {"status": "In Progress"}, "Mark completed": {"status": "Completed"},
-                  "Mark submitted today": {"status": "Submitted", "submission_date": "@today"}, "Mark evaluated": {"status": "Evaluated"}},
-           rules=(Rule("status_eff", "eq", "Overdue", "danger", "row"), Rule("status_eff", "eq", "Late Submission", "warning", "cell"),
-                  Rule("status_eff", "in", "Submitted|Evaluated", "success", "cell"))),
-    Entity("exams", "Exam", "Exam schedule",
-           (F("subject_id", "Subject", "fk", True, fk="subjects"), F("title", "Examination name", req=True),
-            F("exam_type", "Type", "choice", choices=EXAM_TYPES, default="Semester Exam"), F("exam_date", "Date", "date"),
-            F("max_marks", "Maximum marks", "float", lo=0, default=100), F("marks_obtained", "Marks obtained", "float", lo=0),
-            F("internal_marks", "Internal marks", "float", lo=0), F("external_marks", "External marks", "float", lo=0),
-            F("practical_marks", "Practical marks", "float", lo=0), F("grade", "Grade"), F("credits", "Credits", "float", lo=0, default=0),
-            F("result", "Result", "choice", choices=("",) + RESULT_STATES), F("attempt_no", "Attempt number", "int", lo=1, hi=20, default=1),
-            F("attempt", "Attempt note"), F("weightage", "Weightage %", "float", lo=0, hi=100, default=0),
-            F("duration_minutes", "Duration (minutes)", "int", lo=0, hi=1440, default=0),
-            F("exam_mode", "Mode", "choice", choices=("", "Offline", "Online", "Practical", "Viva")),
-            F("venue", "Venue"), F("room", "Room / seat"), F("examiner", "Examiner"),
-            F("prep_status", "Preparation", "choice", choices=PREP_STATUS, default="Not Started"), F("notes", "Notes", "long")),
-           f"t.id, t.title, {_SUBJ}, t.exam_type, t.exam_date, t.max_marks, t.marks_obtained, t.internal_marks, t.external_marks, "
-           "t.practical_marks, t.grade, t.credits, t.result, t.attempt_no, t.venue, t.room, t.exam_mode, t.prep_status, "
-           "t.duration_minutes, t.weightage, t.examiner, t.notes",
-           "exams t " + _SJ,
-           (C("title", "Examination", 220), C("subject", "Subject", 170, color="subject_color"), C("exam_type", "Type", 130),
-            C("exam_date", "Date", 100, "date"), C("days_to", "In (days)", 75, "int", "right"), C("score", "Marks", 80, align="center"),
-            C("pct", "%", 60, "pct", "right"), C("grade", "Grade", 60, align="center"), C("result", "Result", 80, "status"),
-            C("attempt_no", "Attempt", 65, "int", "center"), C("prep_status", "Preparation", 110, "status"), C("venue", "Venue", 110),
-            C("semester", "Semester", 110, vis=False), C("internal_marks", "Internal", 70, "float", "right", False),
-            C("external_marks", "External", 70, "float", "right", False), C("practical_marks", "Practical", 70, "float", "right", False),
-            C("credits", "Credits", 65, "float", "right", False), C("exam_mode", "Mode", 80, vis=False)),
-           order="CASE WHEN t.exam_date='' THEN 1 ELSE 0 END, t.exam_date, t.id", scope="s.semester_id = ?", date_key="exam_date",
-           filters=("subject", "semester", "exam_type", "prep_status", "result"), derive=_d_exam, attachments=True,
-           bulk=("prep_status", "exam_type"), quick={"Mark prepared": {"prep_status": "Prepared"}},
-           rules=(Rule("pct", "lt", "@low", "danger", "cell", True), Rule("result", "eq", "Fail", "danger", "row"))),
-    Entity("marks", "Assessment", "Assessments & marks",
-           (F("subject_id", "Subject", "fk", True, fk="subjects"), F("unit_id", "Unit (optional)", "fk", fk="units", parent="subject_id"),
-            F("assessment_type", "Type", "choice", True, choices=ASSESSMENT_TYPES, default="Class Test"), F("title", "Title"),
-            F("marks_obtained", "Marks obtained", "float", True, lo=0), F("max_marks", "Maximum marks", "float", True, lo=0.01, default=20),
-            F("assessment_date", "Date", "date"), F("notes", "Notes", "long")),
-           f"t.id, t.title, t.assessment_type, {_SUBJ}, u.title AS unit, t.marks_obtained, t.max_marks, t.assessment_date, t.notes",
-           "marks t " + _SJ + " LEFT JOIN units u ON u.id=t.unit_id",
-           (C("assessment_date", "Date", 100, "date"), C("title", "Title", 200), C("assessment_type", "Type", 130),
-            C("subject", "Subject", 170, color="subject_color"), C("marks_obtained", "Obtained", 80, "float", "right"),
-            C("max_marks", "Maximum", 80, "float", "right"), C("pct", "%", 65, "pct", "right"), C("unit", "Unit", 140, vis=False),
-            C("semester", "Semester", 110, vis=False), C("notes", "Notes", 200, vis=False)),
-           order="CASE WHEN t.assessment_date='' THEN 1 ELSE 0 END, t.assessment_date DESC, t.id DESC", scope="s.semester_id = ?",
-           date_key="assessment_date", filters=("subject", "semester", "assessment_type"), derive=_d_mark, bulk=("assessment_type",),
-           rules=(Rule("pct", "lt", "@low", "danger", "cell", True),)),
-    Entity("subject_results", "Result", "Semester results",
-           (F("subject_id", "Subject", "fk", True, fk="subjects"), F("attempt_no", "Attempt number", "int", True, lo=1, hi=20, default=1),
-            F("exam_session", "Exam session", hint="e.g. Nov 2025"),
-            F("internal_marks", "Internal marks", "float", lo=0), F("internal_max", "Internal maximum", "float", lo=0),
-            F("external_marks", "External (university) marks", "float", lo=0), F("external_max", "External maximum", "float", lo=0),
-            F("practical_marks", "Practical marks", "float", lo=0), F("practical_max", "Practical maximum", "float", lo=0),
-            F("grade", "Grade (blank = from scale)"), F("grade_points", "Grade points (blank = from scale)", "float", lo=0, hi=100),
-            F("credits", "Credits (blank = subject credits)", "float", lo=0, hi=60),
-            F("result", "Result", "choice", choices=RESULT_STATES, default="Pending"), F("result_date", "Result date", "date"),
-            F("notes", "Notes", "long")),
-           f"t.id, {_SUBJ}, s.credits AS subject_credits, t.attempt_no, t.exam_session, t.internal_marks, t.internal_max, "
-           "t.external_marks, t.external_max, t.practical_marks, t.practical_max, t.grade, t.grade_points, t.credits, t.result, "
-           "t.result_date, t.notes",
-           "subject_results t " + _SJ,
-           (C("subject", "Subject", 190, color="subject_color"), C("semester", "Semester", 110), C("attempt_no", "Attempt", 65, "int", "center"),
-            C("exam_session", "Session", 90), C("int_txt", "Internal", 75, align="center"), C("ext_txt", "External", 75, align="center"),
-            C("prac_txt", "Practical", 75, align="center"), C("total", "Total", 80, align="center"), C("pct", "%", 65, "pct", "right"),
-            C("grade_eff", "Grade", 60, align="center"), C("points_eff", "Points", 65, "float", "right"),
-            C("credits_eff", "Credits", 65, "float", "right"), C("result_eff", "Result", 80, "status")),
-           order="sem.semester_no, s.name, t.attempt_no", scope="s.semester_id = ?", date_key="result_date",
-           filters=("subject", "semester", "result_eff"), derive=_d_result, label_key="subject",
-           rules=(Rule("result_eff", "eq", "Fail", "danger", "row"), Rule("result_eff", "eq", "Pass", "success", "cell"))),
-    Entity("attendance", "Attendance record", "Attendance log",
-           (F("subject_id", "Subject", "fk", True, fk="subjects"), F("att_date", "Date", "date", True),
-            F("classes_held", "Classes held", "int", True, lo=0, hi=500, default=1),
-            F("classes_attended", "Classes attended", "int", True, lo=0, hi=500, default=1),
-            F("kind", "Class type", "choice", choices=("Lecture", "Lab", "Tutorial", "Seminar", "Other"), default="Lecture"),
-            F("notes", "Notes")),
-           f"t.id, t.att_date, {_SUBJ}, t.kind, t.classes_held AS held, t.classes_attended AS attended, "
-           "(t.classes_held - t.classes_attended) AS missed, t.notes",
-           "attendance t " + _SJ,
-           (C("att_date", "Date", 100, "date"), C("subject", "Subject", 190, color="subject_color"), C("kind", "Type", 85),
-            C("held", "Held", 60, "int", "right"), C("attended", "Attended", 75, "int", "right"), C("missed", "Missed", 65, "int", "right"),
-            C("status", "Status", 85, "status"), C("semester", "Semester", 110, vis=False), C("notes", "Notes", 220)),
-           order="t.att_date DESC, t.id DESC", scope="s.semester_id = ?", date_key="att_date",
-           filters=("subject", "semester", "kind", "status"), derive=_d_attendance, label_key="att_date",
-           rules=(Rule("status", "eq", "Absent", "danger", "cell"),)),
-    Entity("projects", "Project / record", "Projects, labs & activities",
-           (F("category", "Category", "choice", True, choices=PROJECT_CATEGORIES, default="Academic Project"),
-            F("title", "Title", req=True), F("subject_id", "Subject (optional)", "fk", fk="subjects"),
-            F("status", "Status", "choice", choices=PROJECT_STATUS, default="Not Started"),
-            F("start_date", "Start date", "date"), F("deadline", "Deadline", "date"), F("completion_date", "Completed on", "date"),
-            F("supervisor", "Supervisor / guide"), F("organisation", "Organisation / platform"), F("description", "Description", "long"),
-            F("marks_obtained", "Marks obtained", "float", lo=0), F("max_marks", "Maximum marks", "float", lo=0),
-            F("grade", "Grade"), F("link", "Link / repository"), F("notes", "Notes", "long")),
-           "t.id, t.category, t.title, s.id AS subject_id, s.name AS subject, s.color AS subject_color, sem.name AS semester, t.status, t.start_date, "
-           "t.deadline, t.completion_date, t.supervisor, t.organisation, t.marks_obtained, t.max_marks, t.grade, t.link, "
-           "(SELECT COUNT(*) FROM project_milestones m WHERE m.project_id=t.id) AS milestones, "
-           "(SELECT COUNT(*) FROM project_milestones m WHERE m.project_id=t.id AND m.status='Completed') AS milestones_done",
-           "projects t " + _SJL,
-           (C("category", "Category", 140), C("title", "Title", 230), C("subject", "Subject", 160, color="subject_color"),
-            C("status", "Status", 100, "status"), C("deadline", "Deadline", 100, "date"), C("days_left", "Days left", 75, "int", "right"),
-            C("progress", "Milestones", 85, align="center"), C("supervisor", "Supervisor", 130), C("organisation", "Organisation", 130, vis=False),
-            C("grade", "Grade", 60, align="center", vis=False), C("pct", "%", 60, "pct", "right", False),
-            C("start_date", "Start", 95, "date", vis=False), C("completion_date", "Completed", 100, "date", vis=False)),
-           order="CASE WHEN t.deadline='' THEN 1 ELSE 0 END, t.deadline, t.id", scope="(t.subject_id IS NULL OR s.semester_id = ?)",
-           date_key="deadline", filters=("category", "subject", "status"), derive=_d_project, attachments=True,
-           bulk=("status", "category"), quick={"Mark in progress": {"status": "In Progress"},
-                                               "Mark completed": {"status": "Completed", "completion_date": "@today"}},
-           children=(("project_milestones", "project_id IN ({ids})", "milestones", _DELETE),),
-           rules=(Rule("days_left", "lt", 0, "danger", "row"), Rule("status", "in", "Completed|Submitted|Evaluated", "success", "cell"))),
-    Entity("planner_tasks", "Task", "Planner tasks",
-           (F("task_date", "Date", "date", True), F("title", "Task", req=True), F("subject_id", "Subject (optional)", "fk", fk="subjects"),
-            F("category", "Category", "choice", choices=TASK_CATEGORIES, default="Study"),
-            F("priority", "Priority", "choice", choices=PRIORITIES, default="Normal"),
-            F("status", "Status", "choice", choices=("Pending", "In Progress", "Completed", "Skipped"), default="Pending"),
-            F("duration_minutes", "Planned minutes", "int", lo=1, hi=1440, default=30), F("notes", "Notes", "long")),
-           f"t.id, t.task_date, t.title, {_SUBJ}, t.category, t.priority, t.status, t.duration_minutes, t.notes",
-           "planner_tasks t " + _SJL,
-           (C("task_date", "Date", 100, "date"), C("title", "Task", 250), C("subject", "Subject", 160, color="subject_color"),
-            C("category", "Category", 100), C("priority", "Priority", 80, "priority"), C("status", "Status", 100, "status"),
-            C("duration_minutes", "Planned", 80, "minutes", "right"), C("notes", "Notes", 200, vis=False)),
-           order="t.task_date, CASE t.priority WHEN 'Urgent' THEN 0 WHEN 'High' THEN 1 WHEN 'Normal' THEN 2 ELSE 3 END, t.id",
-           scope="(t.subject_id IS NULL OR s.semester_id = ?)", date_key="task_date",
-           filters=("subject", "category", "priority", "status"), derive=_d_task, bulk=("status", "priority", "category"),
-           quick={"Mark complete": {"status": "Completed"}, "Mark in progress": {"status": "In Progress"}, "Skip": {"status": "Skipped"}},
-           rules=(Rule("overdue", "eq", "1", "danger", "row"), Rule("status", "eq", "Completed", "success", "cell"))),
-    Entity("study_sessions", "Study session", "Study sessions",
-           (F("subject_id", "Subject", "fk", True, fk="subjects"), F("unit_id", "Unit (optional)", "fk", fk="units", parent="subject_id"),
-            F("chapter_id", "Chapter (optional)", "fk", fk="chapters", parent="unit_id"), F("study_date", "Date", "date", True),
-            F("duration_minutes", "Minutes studied", "int", True, lo=1, hi=1440, default=30), F("topic", "Topic"),
-            F("session_type", "Type", "choice", choices=SESSION_TYPES, default="Study"), F("notes", "Notes", "long")),
-           f"t.id, t.study_date, {_SUBJ}, u.title AS unit, c.title AS chapter, t.topic, t.duration_minutes, t.session_type, t.notes",
-           "study_sessions t " + _SJ + " LEFT JOIN units u ON u.id=t.unit_id LEFT JOIN chapters c ON c.id=t.chapter_id",
-           (C("study_date", "Date", 100, "date"), C("subject", "Subject", 180, color="subject_color"), C("unit", "Unit", 150),
-            C("chapter", "Chapter", 150, vis=False), C("topic", "Topic", 220), C("duration_minutes", "Time", 80, "minutes", "right"),
-            C("session_type", "Type", 85), C("semester", "Semester", 110, vis=False), C("notes", "Notes", 200, vis=False)),
-           order="t.study_date DESC, t.id DESC", scope="s.semester_id = ?", date_key="study_date",
-           filters=("subject", "semester", "session_type"), label_key="topic", bulk=("session_type",)),
-    Entity("revisions", "Revision", "Revision schedule",
-           (F("unit_id", "Unit", "fk", True, fk="units"), F("due_date", "Next review", "date", True),
-            F("interval_days", "Interval (days)", "int", lo=1, hi=3650, default=1), F("ease", "Ease factor", "float", lo=1.3, hi=4, default=2.5),
-            F("repetitions", "Repetitions", "int", lo=0, hi=500, default=0),
-            F("status", "Status", "choice", choices=("Due", "Reviewed", "Paused"), default="Due"),
-            F("last_reviewed", "Last reviewed", "date"), F("notes", "Notes", "long")),
-           "t.id, s.id AS subject_id, s.name AS subject, s.color AS subject_color, u.unit_no, u.title AS unit, t.due_date, t.interval_days, t.ease, "
-           "t.repetitions, t.status, t.last_reviewed, t.notes",
-           "revisions t JOIN units u ON u.id=t.unit_id JOIN subjects s ON s.id=u.subject_id",
-           (C("subject", "Subject", 180, color="subject_color"), C("unit_no", "Unit", 55, "int"), C("unit", "Unit title", 220),
-            C("due_date", "Next review", 100, "date"), C("due_in", "In (days)", 75, "int", "right"), C("interval_days", "Interval", 70, "int", "right"),
-            C("repetitions", "Reviews", 65, "int", "right"), C("status", "Status", 85, "status"), C("last_reviewed", "Last", 95, "date")),
-           order="t.due_date, t.id", scope="s.semester_id = ?", date_key="due_date", filters=("subject", "status"), derive=_d_revision,
-           label_key="unit", bulk=("status",), quick={"Pause": {"status": "Paused"}, "Resume": {"status": "Due"}},
-           rules=(Rule("due_in", "le", 0, "warning", "row"),)),
-    Entity("notes", "Note", "Notes",
-           (F("title", "Title", req=True), F("subject_id", "Subject (optional)", "fk", fk="subjects"),
+            F("confidence", "Confidence (1–5)", "int", lo=1, hi=5, default=1),
+            F("notes", "Notes", "long"),
+        ),
+        f"t.id, s.id AS subject_id, s.name AS subject, s.color AS subject_color, sem.name AS semester, t.unit_no, t.title, t.status, t.confidence, "
+        "(SELECT COUNT(*) FROM chapters c WHERE c.unit_id=t.id) AS chapters, "
+        "(SELECT COUNT(*) FROM chapters c WHERE c.unit_id=t.id AND c.status='Completed') AS chapters_done",
+        "units t " + _SJ,
+        (
+            C("subject", "Subject", 180, color="subject_color"),
+            C("unit_no", "Unit", 55, "int"),
+            C("title", "Title", 260),
+            C("status", "Status", 105, "status"),
+            C("confidence", "Confidence", 85, "int", "center"),
+            C("chapters", "Chapters", 75, "int"),
+            C("chapters_done", "Done", 60, "int"),
+            C("semester", "Semester", 110, vis=False),
+        ),
+        order="s.name, t.unit_no",
+        scope="s.semester_id = ?",
+        filters=("subject", "status"),
+        bulk=("status", "confidence"),
+        quick={
+            "Mark in progress": {"status": "In Progress"},
+            "Mark completed": {"status": "Completed"},
+        },
+        children=(
+            ("chapters", "unit_id IN ({ids})", "chapters", _DELETE),
+            ("revisions", "unit_id IN ({ids})", "revision schedules", _DELETE),
+            (
+                "assignments",
+                "unit_id IN ({ids})",
+                "assignments (kept, unlinked)",
+                _DETACH,
+            ),
+            ("marks", "unit_id IN ({ids})", "marks (kept, unlinked)", _DETACH),
+            (
+                "study_sessions",
+                "unit_id IN ({ids})",
+                "study sessions (kept, unlinked)",
+                _DETACH,
+            ),
+            ("notes", "unit_id IN ({ids})", "notes (kept, unlinked)", _DETACH),
+        ),
+        rules=(Rule("status", "eq", "Completed", "success"),),
+        attachments=False,
+    ),
+    Entity(
+        "chapters",
+        "Chapter",
+        "Chapters",
+        (
+            F("unit_id", "Unit", "fk", True, fk="units"),
+            F("title", "Chapter / topic", req=True),
+            F("status", "Status", "choice", choices=UNIT_STATUS, default="Not Started"),
+            F(
+                "priority",
+                "Priority",
+                "choice",
+                choices=PRIORITIES[:3],
+                default="Normal",
+            ),
+            F("notes", "Notes", "long"),
+        ),
+        "t.id, s.id AS subject_id, s.name AS subject, s.color AS subject_color, u.unit_no, u.title AS unit, t.title, t.status, t.priority",
+        "chapters t JOIN units u ON u.id=t.unit_id JOIN subjects s ON s.id=u.subject_id",
+        (
+            C("subject", "Subject", 180, color="subject_color"),
+            C("unit_no", "Unit", 55, "int"),
+            C("unit", "Unit title", 180),
+            C("title", "Chapter / topic", 260),
+            C("status", "Status", 105, "status"),
+            C("priority", "Priority", 85, "priority"),
+        ),
+        order="s.name, u.unit_no, t.id",
+        scope="s.semester_id = ?",
+        filters=("subject", "status", "priority"),
+        bulk=("status", "priority"),
+        quick={
+            "Mark in progress": {"status": "In Progress"},
+            "Mark completed": {"status": "Completed"},
+        },
+        children=(
+            (
+                "study_sessions",
+                "chapter_id IN ({ids})",
+                "study sessions (kept, unlinked)",
+                _DETACH,
+            ),
+            ("notes", "chapter_id IN ({ids})", "notes (kept, unlinked)", _DETACH),
+        ),
+    ),
+    Entity(
+        "assignments",
+        "Assignment",
+        "Assignments",
+        (
+            F("subject_id", "Subject", "fk", True, fk="subjects"),
             F("unit_id", "Unit (optional)", "fk", fk="units", parent="subject_id"),
-            F("chapter_id", "Chapter (optional)", "fk", fk="chapters", parent="unit_id"), F("tags", "Tags", hint="comma separated"),
-            F("body", "Note", "long")),
-           "t.id, t.title, s.id AS subject_id, s.name AS subject, s.color AS subject_color, u.title AS unit, c.title AS chapter, t.tags, t.updated_at, "
-           "substr(replace(t.body, char(10), ' '), 1, 140) AS preview",
-           "notes t " + _SJL + " LEFT JOIN units u ON u.id=t.unit_id LEFT JOIN chapters c ON c.id=t.chapter_id",
-           (C("title", "Title", 230), C("subject", "Subject", 170, color="subject_color"), C("unit", "Unit", 140),
-            C("chapter", "Chapter", 140, vis=False), C("tags", "Tags", 120), C("preview", "Preview", 300), C("updated_at", "Updated", 130, "date")),
-           order="t.updated_at DESC, t.id DESC", scope="(t.subject_id IS NULL OR s.semester_id = ?)", filters=("subject", "tags"),
-           attachments=True),
-    Entity("attachments", "Document", "Documents & files",
-           (F("file_path", "File", "file", True), F("display_name", "Display name"),
-            F("category", "Category", "choice", choices=DOC_CATEGORIES, default="Study Reference"), F("notes", "Notes", "long")),
-           "t.id, t.entity_type, t.record_id, t.display_name, t.category, t.file_path, t.size_bytes, t.added_at, t.notes",
-           "attachments t",
-           (C("display_name", "Name", 240), C("category", "Category", 150), C("linked", "Linked to", 140), C("size_kb", "Size", 75, "kb", "right"),
-            C("exists", "File", 70, "status"), C("added_at", "Added", 110, "date"), C("file_path", "Location", 320)),
-           order="t.added_at DESC, t.id DESC", filters=("category", "linked", "exists"), derive=_d_attachment,
-           defaults={"entity_type": "general", "record_id": 0}, label_key="display_name",
-           rules=(Rule("exists", "eq", "Missing", "danger", "row"),)),
-    Entity("calendar_events", "Calendar event", "Academic calendar",
-           (F("title", "Event", req=True), F("event_type", "Type", "choice", choices=EVENT_TYPES, default="Event"),
-            F("start_date", "Start date", "date", True), F("end_date", "End date", "date"),
-            F("semester_id", "Semester (optional)", "fk", fk="semesters"), F("notes", "Notes", "long")),
-           "t.id, t.title, t.event_type, t.start_date, t.end_date, sem.name AS semester, t.notes",
-           "calendar_events t LEFT JOIN semesters sem ON sem.id=t.semester_id",
-           (C("start_date", "Start", 100, "date"), C("end_date", "End", 100, "date"), C("title", "Event", 260), C("event_type", "Type", 110),
-            C("semester", "Semester", 130), C("notes", "Notes", 260, vis=False)),
-           order="t.start_date, t.id", scope="(t.semester_id IS NULL OR t.semester_id = ?)", date_key="start_date",
-           filters=("event_type", "semester")),
+            F("assignment_no", "Assignment no."),
+            F("title", "Title", req=True),
+            F(
+                "assignment_type",
+                "Type",
+                "choice",
+                choices=ASSIGNMENT_TYPES,
+                default="Written",
+            ),
+            F("description", "Description", "long"),
+            F("given_date", "Given on", "date"),
+            F("due_date", "Submission deadline", "date"),
+            F("submission_date", "Actual submission date", "date"),
+            F(
+                "status",
+                "Status",
+                "choice",
+                choices=ASSIGNMENT_STATUSES,
+                default="Not Started",
+            ),
+            F("priority", "Priority", "choice", choices=PRIORITIES, default="Normal"),
+            F("marks_obtained", "Marks obtained", "float", lo=0),
+            F("max_marks", "Maximum marks", "float", lo=0),
+            F("faculty", "Teacher / faculty"),
+            F("remarks", "Notes & remarks", "long"),
+        ),
+        f"t.id, t.assignment_no, t.title, {_SUBJ}, t.assignment_type, t.given_date, t.due_date, t.submission_date, t.status, "
+        "t.priority, t.marks_obtained, t.max_marks, t.faculty, t.remarks",
+        "assignments t " + _SJ,
+        (
+            C("assignment_no", "No.", 55),
+            C("title", "Assignment", 230),
+            C("subject", "Subject", 170, color="subject_color"),
+            C("semester", "Semester", 110),
+            C("assignment_type", "Type", 100),
+            C("given_date", "Given", 95, "date"),
+            C("due_date", "Deadline", 100, "date"),
+            C("submission_date", "Submitted", 100, "date"),
+            C("status_eff", "Status", 120, "status"),
+            C("days_left", "Days left", 75, "int", "right"),
+            C("priority", "Priority", 80, "priority"),
+            C("score", "Marks", 80, align="center"),
+            C("pct", "%", 60, "pct", "right"),
+            C("faculty", "Faculty", 130, vis=False),
+            C("academic_year", "Year", 90, vis=False),
+        ),
+        order="CASE WHEN t.due_date='' THEN 1 ELSE 0 END, t.due_date, t.id",
+        scope="s.semester_id = ?",
+        date_key="due_date",
+        filters=("subject", "semester", "status_eff", "priority", "assignment_type"),
+        derive=_d_assignment,
+        bulk=("status", "priority", "assignment_type"),
+        attachments=True,
+        quick={
+            "Mark in progress": {"status": "In Progress"},
+            "Mark completed": {"status": "Completed"},
+            "Mark submitted today": {
+                "status": "Submitted",
+                "submission_date": "@today",
+            },
+            "Mark evaluated": {"status": "Evaluated"},
+        },
+        rules=(
+            Rule("status_eff", "eq", "Overdue", "danger", "row"),
+            Rule("status_eff", "eq", "Late Submission", "warning", "cell"),
+            Rule("status_eff", "in", "Submitted|Evaluated", "success", "cell"),
+        ),
+    ),
+    Entity(
+        "exams",
+        "Exam",
+        "Exam schedule",
+        (
+            F("subject_id", "Subject", "fk", True, fk="subjects"),
+            F("title", "Examination name", req=True),
+            F(
+                "exam_type",
+                "Type",
+                "choice",
+                choices=EXAM_TYPES,
+                default="Semester Exam",
+            ),
+            F("exam_date", "Date", "date"),
+            F("max_marks", "Maximum marks", "float", lo=0, default=100),
+            F("marks_obtained", "Marks obtained", "float", lo=0),
+            F("internal_marks", "Internal marks", "float", lo=0),
+            F("external_marks", "External marks", "float", lo=0),
+            F("practical_marks", "Practical marks", "float", lo=0),
+            F("grade", "Grade"),
+            F("credits", "Credits", "float", lo=0, default=0),
+            F("result", "Result", "choice", choices=("",) + RESULT_STATES),
+            F("attempt_no", "Attempt number", "int", lo=1, hi=20, default=1),
+            F("attempt", "Attempt note"),
+            F("weightage", "Weightage %", "float", lo=0, hi=100, default=0),
+            F(
+                "duration_minutes",
+                "Duration (minutes)",
+                "int",
+                lo=0,
+                hi=1440,
+                default=0,
+            ),
+            F(
+                "exam_mode",
+                "Mode",
+                "choice",
+                choices=("", "Offline", "Online", "Practical", "Viva"),
+            ),
+            F("venue", "Venue"),
+            F("room", "Room / seat"),
+            F("examiner", "Examiner"),
+            F(
+                "prep_status",
+                "Preparation",
+                "choice",
+                choices=PREP_STATUS,
+                default="Not Started",
+            ),
+            F("notes", "Notes", "long"),
+        ),
+        f"t.id, t.title, {_SUBJ}, t.exam_type, t.exam_date, t.max_marks, t.marks_obtained, t.internal_marks, t.external_marks, "
+        "t.practical_marks, t.grade, t.credits, t.result, t.attempt_no, t.venue, t.room, t.exam_mode, t.prep_status, "
+        "t.duration_minutes, t.weightage, t.examiner, t.notes",
+        "exams t " + _SJ,
+        (
+            C("title", "Examination", 220),
+            C("subject", "Subject", 170, color="subject_color"),
+            C("exam_type", "Type", 130),
+            C("exam_date", "Date", 100, "date"),
+            C("days_to", "In (days)", 75, "int", "right"),
+            C("score", "Marks", 80, align="center"),
+            C("pct", "%", 60, "pct", "right"),
+            C("grade", "Grade", 60, align="center"),
+            C("result", "Result", 80, "status"),
+            C("attempt_no", "Attempt", 65, "int", "center"),
+            C("prep_status", "Preparation", 110, "status"),
+            C("venue", "Venue", 110),
+            C("semester", "Semester", 110, vis=False),
+            C("internal_marks", "Internal", 70, "float", "right", False),
+            C("external_marks", "External", 70, "float", "right", False),
+            C("practical_marks", "Practical", 70, "float", "right", False),
+            C("credits", "Credits", 65, "float", "right", False),
+            C("exam_mode", "Mode", 80, vis=False),
+        ),
+        order="CASE WHEN t.exam_date='' THEN 1 ELSE 0 END, t.exam_date, t.id",
+        scope="s.semester_id = ?",
+        date_key="exam_date",
+        filters=("subject", "semester", "exam_type", "prep_status", "result"),
+        derive=_d_exam,
+        attachments=True,
+        bulk=("prep_status", "exam_type"),
+        quick={"Mark prepared": {"prep_status": "Prepared"}},
+        rules=(
+            Rule("pct", "lt", "@low", "danger", "cell", True),
+            Rule("result", "eq", "Fail", "danger", "row"),
+        ),
+    ),
+    Entity(
+        "marks",
+        "Assessment",
+        "Assessments & marks",
+        (
+            F("subject_id", "Subject", "fk", True, fk="subjects"),
+            F("unit_id", "Unit (optional)", "fk", fk="units", parent="subject_id"),
+            F(
+                "assessment_type",
+                "Type",
+                "choice",
+                True,
+                choices=ASSESSMENT_TYPES,
+                default="Class Test",
+            ),
+            F("title", "Title"),
+            F("marks_obtained", "Marks obtained", "float", True, lo=0),
+            F("max_marks", "Maximum marks", "float", True, lo=0.01, default=20),
+            F("assessment_date", "Date", "date"),
+            F("notes", "Notes", "long"),
+        ),
+        f"t.id, t.title, t.assessment_type, {_SUBJ}, u.title AS unit, t.marks_obtained, t.max_marks, t.assessment_date, t.notes",
+        "marks t " + _SJ + " LEFT JOIN units u ON u.id=t.unit_id",
+        (
+            C("assessment_date", "Date", 100, "date"),
+            C("title", "Title", 200),
+            C("assessment_type", "Type", 130),
+            C("subject", "Subject", 170, color="subject_color"),
+            C("marks_obtained", "Obtained", 80, "float", "right"),
+            C("max_marks", "Maximum", 80, "float", "right"),
+            C("pct", "%", 65, "pct", "right"),
+            C("unit", "Unit", 140, vis=False),
+            C("semester", "Semester", 110, vis=False),
+            C("notes", "Notes", 200, vis=False),
+        ),
+        order="CASE WHEN t.assessment_date='' THEN 1 ELSE 0 END, t.assessment_date DESC, t.id DESC",
+        scope="s.semester_id = ?",
+        date_key="assessment_date",
+        filters=("subject", "semester", "assessment_type"),
+        derive=_d_mark,
+        bulk=("assessment_type",),
+        rules=(Rule("pct", "lt", "@low", "danger", "cell", True),),
+    ),
+    Entity(
+        "subject_results",
+        "Result",
+        "Semester results",
+        (
+            F("subject_id", "Subject", "fk", True, fk="subjects"),
+            F("attempt_no", "Attempt number", "int", True, lo=1, hi=20, default=1),
+            F("exam_session", "Exam session", hint="e.g. Nov 2025"),
+            F("internal_marks", "Internal marks", "float", lo=0),
+            F("internal_max", "Internal maximum", "float", lo=0),
+            F("external_marks", "External (university) marks", "float", lo=0),
+            F("external_max", "External maximum", "float", lo=0),
+            F("practical_marks", "Practical marks", "float", lo=0),
+            F("practical_max", "Practical maximum", "float", lo=0),
+            F("grade", "Grade (blank = from scale)"),
+            F(
+                "grade_points",
+                "Grade points (blank = from scale)",
+                "float",
+                lo=0,
+                hi=100,
+            ),
+            F("credits", "Credits (blank = subject credits)", "float", lo=0, hi=60),
+            F("result", "Result", "choice", choices=RESULT_STATES, default="Pending"),
+            F("result_date", "Result date", "date"),
+            F("notes", "Notes", "long"),
+        ),
+        f"t.id, {_SUBJ}, s.credits AS subject_credits, t.attempt_no, t.exam_session, t.internal_marks, t.internal_max, "
+        "t.external_marks, t.external_max, t.practical_marks, t.practical_max, t.grade, t.grade_points, t.credits, t.result, "
+        "t.result_date, t.notes",
+        "subject_results t " + _SJ,
+        (
+            C("subject", "Subject", 190, color="subject_color"),
+            C("semester", "Semester", 110),
+            C("attempt_no", "Attempt", 65, "int", "center"),
+            C("exam_session", "Session", 90),
+            C("int_txt", "Internal", 75, align="center"),
+            C("ext_txt", "External", 75, align="center"),
+            C("prac_txt", "Practical", 75, align="center"),
+            C("total", "Total", 80, align="center"),
+            C("pct", "%", 65, "pct", "right"),
+            C("grade_eff", "Grade", 60, align="center"),
+            C("points_eff", "Points", 65, "float", "right"),
+            C("credits_eff", "Credits", 65, "float", "right"),
+            C("result_eff", "Result", 80, "status"),
+        ),
+        order="sem.semester_no, s.name, t.attempt_no",
+        scope="s.semester_id = ?",
+        date_key="result_date",
+        filters=("subject", "semester", "result_eff"),
+        derive=_d_result,
+        label_key="subject",
+        rules=(
+            Rule("result_eff", "eq", "Fail", "danger", "row"),
+            Rule("result_eff", "eq", "Pass", "success", "cell"),
+        ),
+    ),
+    Entity(
+        "attendance",
+        "Attendance record",
+        "Attendance log",
+        (
+            F("subject_id", "Subject", "fk", True, fk="subjects"),
+            F("att_date", "Date", "date", True),
+            F("classes_held", "Classes held", "int", True, lo=0, hi=500, default=1),
+            F(
+                "classes_attended",
+                "Classes attended",
+                "int",
+                True,
+                lo=0,
+                hi=500,
+                default=1,
+            ),
+            F(
+                "kind",
+                "Class type",
+                "choice",
+                choices=("Lecture", "Lab", "Tutorial", "Seminar", "Other"),
+                default="Lecture",
+            ),
+            F("notes", "Notes"),
+        ),
+        f"t.id, t.att_date, {_SUBJ}, t.kind, t.classes_held AS held, t.classes_attended AS attended, "
+        "(t.classes_held - t.classes_attended) AS missed, t.notes",
+        "attendance t " + _SJ,
+        (
+            C("att_date", "Date", 100, "date"),
+            C("subject", "Subject", 190, color="subject_color"),
+            C("kind", "Type", 85),
+            C("held", "Held", 60, "int", "right"),
+            C("attended", "Attended", 75, "int", "right"),
+            C("missed", "Missed", 65, "int", "right"),
+            C("status", "Status", 85, "status"),
+            C("semester", "Semester", 110, vis=False),
+            C("notes", "Notes", 220),
+        ),
+        order="t.att_date DESC, t.id DESC",
+        scope="s.semester_id = ?",
+        date_key="att_date",
+        filters=("subject", "semester", "kind", "status"),
+        derive=_d_attendance,
+        label_key="att_date",
+        rules=(Rule("status", "eq", "Absent", "danger", "cell"),),
+    ),
+    Entity(
+        "projects",
+        "Project / record",
+        "Projects, labs & activities",
+        (
+            F(
+                "category",
+                "Category",
+                "choice",
+                True,
+                choices=PROJECT_CATEGORIES,
+                default="Academic Project",
+            ),
+            F("title", "Title", req=True),
+            F("subject_id", "Subject (optional)", "fk", fk="subjects"),
+            F(
+                "status",
+                "Status",
+                "choice",
+                choices=PROJECT_STATUS,
+                default="Not Started",
+            ),
+            F("start_date", "Start date", "date"),
+            F("deadline", "Deadline", "date"),
+            F("completion_date", "Completed on", "date"),
+            F("supervisor", "Supervisor / guide"),
+            F("organisation", "Organisation / platform"),
+            F("description", "Description", "long"),
+            F("marks_obtained", "Marks obtained", "float", lo=0),
+            F("max_marks", "Maximum marks", "float", lo=0),
+            F("grade", "Grade"),
+            F("link", "Link / repository"),
+            F("notes", "Notes", "long"),
+        ),
+        "t.id, t.category, t.title, s.id AS subject_id, s.name AS subject, s.color AS subject_color, sem.name AS semester, t.status, t.start_date, "
+        "t.deadline, t.completion_date, t.supervisor, t.organisation, t.marks_obtained, t.max_marks, t.grade, t.link, "
+        "(SELECT COUNT(*) FROM project_milestones m WHERE m.project_id=t.id) AS milestones, "
+        "(SELECT COUNT(*) FROM project_milestones m WHERE m.project_id=t.id AND m.status='Completed') AS milestones_done",
+        "projects t " + _SJL,
+        (
+            C("category", "Category", 140),
+            C("title", "Title", 230),
+            C("subject", "Subject", 160, color="subject_color"),
+            C("status", "Status", 100, "status"),
+            C("deadline", "Deadline", 100, "date"),
+            C("days_left", "Days left", 75, "int", "right"),
+            C("progress", "Milestones", 85, align="center"),
+            C("supervisor", "Supervisor", 130),
+            C("organisation", "Organisation", 130, vis=False),
+            C("grade", "Grade", 60, align="center", vis=False),
+            C("pct", "%", 60, "pct", "right", False),
+            C("start_date", "Start", 95, "date", vis=False),
+            C("completion_date", "Completed", 100, "date", vis=False),
+        ),
+        order="CASE WHEN t.deadline='' THEN 1 ELSE 0 END, t.deadline, t.id",
+        scope="(t.subject_id IS NULL OR s.semester_id = ?)",
+        date_key="deadline",
+        filters=("category", "subject", "status"),
+        derive=_d_project,
+        attachments=True,
+        bulk=("status", "category"),
+        quick={
+            "Mark in progress": {"status": "In Progress"},
+            "Mark completed": {"status": "Completed", "completion_date": "@today"},
+        },
+        children=(
+            ("project_milestones", "project_id IN ({ids})", "milestones", _DELETE),
+        ),
+        rules=(
+            Rule("days_left", "lt", 0, "danger", "row"),
+            Rule("status", "in", "Completed|Submitted|Evaluated", "success", "cell"),
+        ),
+    ),
+    Entity(
+        "planner_tasks",
+        "Task",
+        "Planner tasks",
+        (
+            F("task_date", "Date", "date", True),
+            F("title", "Task", req=True),
+            F("subject_id", "Subject (optional)", "fk", fk="subjects"),
+            F(
+                "category",
+                "Category",
+                "choice",
+                choices=TASK_CATEGORIES,
+                default="Study",
+            ),
+            F("priority", "Priority", "choice", choices=PRIORITIES, default="Normal"),
+            F(
+                "status",
+                "Status",
+                "choice",
+                choices=("Pending", "In Progress", "Completed", "Skipped"),
+                default="Pending",
+            ),
+            F("duration_minutes", "Planned minutes", "int", lo=1, hi=1440, default=30),
+            F("notes", "Notes", "long"),
+        ),
+        f"t.id, t.task_date, t.title, {_SUBJ}, t.category, t.priority, t.status, t.duration_minutes, t.notes",
+        "planner_tasks t " + _SJL,
+        (
+            C("task_date", "Date", 100, "date"),
+            C("title", "Task", 250),
+            C("subject", "Subject", 160, color="subject_color"),
+            C("category", "Category", 100),
+            C("priority", "Priority", 80, "priority"),
+            C("status", "Status", 100, "status"),
+            C("duration_minutes", "Planned", 80, "minutes", "right"),
+            C("notes", "Notes", 200, vis=False),
+        ),
+        order="t.task_date, CASE t.priority WHEN 'Urgent' THEN 0 WHEN 'High' THEN 1 WHEN 'Normal' THEN 2 ELSE 3 END, t.id",
+        scope="(t.subject_id IS NULL OR s.semester_id = ?)",
+        date_key="task_date",
+        filters=("subject", "category", "priority", "status"),
+        derive=_d_task,
+        bulk=("status", "priority", "category"),
+        quick={
+            "Mark complete": {"status": "Completed"},
+            "Mark in progress": {"status": "In Progress"},
+            "Skip": {"status": "Skipped"},
+        },
+        rules=(
+            Rule("overdue", "eq", "1", "danger", "row"),
+            Rule("status", "eq", "Completed", "success", "cell"),
+        ),
+    ),
+    Entity(
+        "study_sessions",
+        "Study session",
+        "Study sessions",
+        (
+            F("subject_id", "Subject", "fk", True, fk="subjects"),
+            F("unit_id", "Unit (optional)", "fk", fk="units", parent="subject_id"),
+            F(
+                "chapter_id",
+                "Chapter (optional)",
+                "fk",
+                fk="chapters",
+                parent="unit_id",
+            ),
+            F("study_date", "Date", "date", True),
+            F(
+                "duration_minutes",
+                "Minutes studied",
+                "int",
+                True,
+                lo=1,
+                hi=1440,
+                default=30,
+            ),
+            F("topic", "Topic"),
+            F("session_type", "Type", "choice", choices=SESSION_TYPES, default="Study"),
+            F("notes", "Notes", "long"),
+        ),
+        f"t.id, t.study_date, {_SUBJ}, u.title AS unit, c.title AS chapter, t.topic, t.duration_minutes, t.session_type, t.notes",
+        "study_sessions t "
+        + _SJ
+        + " LEFT JOIN units u ON u.id=t.unit_id LEFT JOIN chapters c ON c.id=t.chapter_id",
+        (
+            C("study_date", "Date", 100, "date"),
+            C("subject", "Subject", 180, color="subject_color"),
+            C("unit", "Unit", 150),
+            C("chapter", "Chapter", 150, vis=False),
+            C("topic", "Topic", 220),
+            C("duration_minutes", "Time", 80, "minutes", "right"),
+            C("session_type", "Type", 85),
+            C("semester", "Semester", 110, vis=False),
+            C("notes", "Notes", 200, vis=False),
+        ),
+        order="t.study_date DESC, t.id DESC",
+        scope="s.semester_id = ?",
+        date_key="study_date",
+        filters=("subject", "semester", "session_type"),
+        label_key="topic",
+        bulk=("session_type",),
+    ),
+    Entity(
+        "revisions",
+        "Revision",
+        "Revision schedule",
+        (
+            F("unit_id", "Unit", "fk", True, fk="units"),
+            F("due_date", "Next review", "date", True),
+            F("interval_days", "Interval (days)", "int", lo=1, hi=3650, default=1),
+            F("ease", "Ease factor", "float", lo=1.3, hi=4, default=2.5),
+            F("repetitions", "Repetitions", "int", lo=0, hi=500, default=0),
+            F(
+                "status",
+                "Status",
+                "choice",
+                choices=("Due", "Reviewed", "Paused"),
+                default="Due",
+            ),
+            F("last_reviewed", "Last reviewed", "date"),
+            F("notes", "Notes", "long"),
+        ),
+        "t.id, s.id AS subject_id, s.name AS subject, s.color AS subject_color, u.unit_no, u.title AS unit, t.due_date, t.interval_days, t.ease, "
+        "t.repetitions, t.status, t.last_reviewed, t.notes",
+        "revisions t JOIN units u ON u.id=t.unit_id JOIN subjects s ON s.id=u.subject_id",
+        (
+            C("subject", "Subject", 180, color="subject_color"),
+            C("unit_no", "Unit", 55, "int"),
+            C("unit", "Unit title", 220),
+            C("due_date", "Next review", 100, "date"),
+            C("due_in", "In (days)", 75, "int", "right"),
+            C("interval_days", "Interval", 70, "int", "right"),
+            C("repetitions", "Reviews", 65, "int", "right"),
+            C("status", "Status", 85, "status"),
+            C("last_reviewed", "Last", 95, "date"),
+        ),
+        order="t.due_date, t.id",
+        scope="s.semester_id = ?",
+        date_key="due_date",
+        filters=("subject", "status"),
+        derive=_d_revision,
+        label_key="unit",
+        bulk=("status",),
+        quick={"Pause": {"status": "Paused"}, "Resume": {"status": "Due"}},
+        rules=(Rule("due_in", "le", 0, "warning", "row"),),
+    ),
+    Entity(
+        "notes",
+        "Note",
+        "Notes",
+        (
+            F("title", "Title", req=True),
+            F("subject_id", "Subject (optional)", "fk", fk="subjects"),
+            F("unit_id", "Unit (optional)", "fk", fk="units", parent="subject_id"),
+            F(
+                "chapter_id",
+                "Chapter (optional)",
+                "fk",
+                fk="chapters",
+                parent="unit_id",
+            ),
+            F("tags", "Tags", hint="comma separated"),
+            F("body", "Note", "long"),
+        ),
+        "t.id, t.title, s.id AS subject_id, s.name AS subject, s.color AS subject_color, u.title AS unit, c.title AS chapter, t.tags, t.updated_at, "
+        "substr(replace(t.body, char(10), ' '), 1, 140) AS preview",
+        "notes t "
+        + _SJL
+        + " LEFT JOIN units u ON u.id=t.unit_id LEFT JOIN chapters c ON c.id=t.chapter_id",
+        (
+            C("title", "Title", 230),
+            C("subject", "Subject", 170, color="subject_color"),
+            C("unit", "Unit", 140),
+            C("chapter", "Chapter", 140, vis=False),
+            C("tags", "Tags", 120),
+            C("preview", "Preview", 300),
+            C("updated_at", "Updated", 130, "date"),
+        ),
+        order="t.updated_at DESC, t.id DESC",
+        scope="(t.subject_id IS NULL OR s.semester_id = ?)",
+        filters=("subject", "tags"),
+        attachments=True,
+    ),
+    Entity(
+        "attachments",
+        "Document",
+        "Documents & files",
+        (
+            F("file_path", "File", "file", True),
+            F("display_name", "Display name"),
+            F(
+                "category",
+                "Category",
+                "choice",
+                choices=DOC_CATEGORIES,
+                default="Study Reference",
+            ),
+            F("notes", "Notes", "long"),
+        ),
+        "t.id, t.entity_type, t.record_id, t.display_name, t.category, t.file_path, t.size_bytes, t.added_at, t.notes",
+        "attachments t",
+        (
+            C("display_name", "Name", 240),
+            C("category", "Category", 150),
+            C("linked", "Linked to", 140),
+            C("size_kb", "Size", 75, "kb", "right"),
+            C("exists", "File", 70, "status"),
+            C("added_at", "Added", 110, "date"),
+            C("file_path", "Location", 320),
+        ),
+        order="t.added_at DESC, t.id DESC",
+        filters=("category", "linked", "exists"),
+        derive=_d_attachment,
+        defaults={"entity_type": "general", "record_id": 0},
+        label_key="display_name",
+        rules=(Rule("exists", "eq", "Missing", "danger", "row"),),
+    ),
+    Entity(
+        "calendar_events",
+        "Calendar event",
+        "Academic calendar",
+        (
+            F("title", "Event", req=True),
+            F("event_type", "Type", "choice", choices=EVENT_TYPES, default="Event"),
+            F("start_date", "Start date", "date", True),
+            F("end_date", "End date", "date"),
+            F("semester_id", "Semester (optional)", "fk", fk="semesters"),
+            F("notes", "Notes", "long"),
+        ),
+        "t.id, t.title, t.event_type, t.start_date, t.end_date, sem.name AS semester, t.notes",
+        "calendar_events t LEFT JOIN semesters sem ON sem.id=t.semester_id",
+        (
+            C("start_date", "Start", 100, "date"),
+            C("end_date", "End", 100, "date"),
+            C("title", "Event", 260),
+            C("event_type", "Type", 110),
+            C("semester", "Semester", 130),
+            C("notes", "Notes", 260, vis=False),
+        ),
+        order="t.start_date, t.id",
+        scope="(t.semester_id IS NULL OR t.semester_id = ?)",
+        date_key="start_date",
+        filters=("event_type", "semester"),
+    ),
 )
 ENTITIES: dict[str, Entity] = {e.table: e for e in ENTITY_LIST}
 ENTITY_TITLES = {t: e.singular for t, e in ENTITIES.items()}
@@ -1876,8 +3188,12 @@ def rule_matches(op: str, expected: Any, cell: Any) -> bool:
             return False
         return {"lt": a < b, "le": a <= b, "gt": a > b, "ge": a >= b}[op]
     s, v = str(cell).casefold(), str(expected).casefold()
-    return {"eq": s == v, "ne": s != v, "contains": v in s,
-            "in": s in {x.strip().casefold() for x in str(expected).split("|")}}.get(op, False)
+    return {
+        "eq": s == v,
+        "ne": s != v,
+        "contains": v in s,
+        "in": s in {x.strip().casefold() for x in str(expected).split("|")},
+    }.get(op, False)
 
 
 def format_cell(col: Column, row: dict, date_style: str = "%d %b %Y") -> str:
@@ -1920,17 +3236,21 @@ def sort_value(col: Column, row: dict) -> tuple:
 class RowSet:
     """Search / filter / multi-column sort over loaded rows — no Qt, fully testable."""
 
-    def __init__(self, columns: Sequence[Column], rows: list[dict], date_style: str = "%d %b %Y") -> None:
+    def __init__(
+        self, columns: Sequence[Column], rows: list[dict], date_style: str = "%d %b %Y"
+    ) -> None:
         self.columns = {c.key: c for c in columns}
         self.all = rows
         self.date_style = date_style
         self.search_text = ""
-        self.value_filters: dict[str, set] = {}      # column -> allowed display values
-        self.text_filters: dict[str, str] = {}       # column -> substring
+        self.value_filters: dict[str, set] = {}  # column -> allowed display values
+        self.text_filters: dict[str, str] = {}  # column -> substring
         self.date_range: tuple[str, Optional[str], Optional[str]] = ("", None, None)
         self.sort_keys: list[tuple[str, bool]] = []  # (column, ascending)
         for r in self.all:
-            r["_s"] = " ".join(format_cell(c, r, date_style) for c in columns).casefold()
+            r["_s"] = " ".join(
+                format_cell(c, r, date_style) for c in columns
+            ).casefold()
 
     def display(self, row: dict, key: str) -> str:
         return format_cell(self.columns[key], row, self.date_style)
@@ -1942,17 +3262,36 @@ class RowSet:
             out = [r for r in out if all(t in r["_s"] for t in terms)]
         for key, allowed in self.value_filters.items():
             if allowed and key in self.columns:
-                out = [r for r in out if self.display(r, key) in allowed or str(r.get(key) or "") in allowed]
+                out = [
+                    r
+                    for r in out
+                    if self.display(r, key) in allowed
+                    or str(r.get(key) or "") in allowed
+                ]
         for key, sub in self.text_filters.items():
             if sub and key in self.columns:
-                out = [r for r in out if sub.casefold() in self.display(r, key).casefold()]
+                out = [
+                    r for r in out if sub.casefold() in self.display(r, key).casefold()
+                ]
         key, lo, hi = self.date_range
         if key and (lo or hi):
-            out = [r for r in out if r.get(key) and (not lo or str(r[key])[:10] >= lo) and (not hi or str(r[key])[:10] <= hi)]
-        for key, asc in reversed(self.sort_keys):  # stable successive sorts = multi-column sort
+            out = [
+                r
+                for r in out
+                if r.get(key)
+                and (not lo or str(r[key])[:10] >= lo)
+                and (not hi or str(r[key])[:10] <= hi)
+            ]
+        for key, asc in reversed(
+            self.sort_keys
+        ):  # stable successive sorts = multi-column sort
             if key in self.columns:
                 col = self.columns[key]
-                present = [r for r in out if sort_value(col, r)[0] == 0 or sort_value(col, r) != (1, 0)]
+                present = [
+                    r
+                    for r in out
+                    if sort_value(col, r)[0] == 0 or sort_value(col, r) != (1, 0)
+                ]
                 blanks = [r for r in out if sort_value(col, r) == (1, 0)]
                 present.sort(key=lambda r: sort_value(col, r), reverse=not asc)
                 out = present + blanks  # blanks stay last in both directions
@@ -1963,23 +3302,33 @@ class RowSet:
         return sorted(vals, key=str.casefold)
 
 
-def rows_to_tsv(rs: RowSet, rows: Sequence[dict], keys: Sequence[str], header: bool = True) -> str:
+def rows_to_tsv(
+    rs: RowSet, rows: Sequence[dict], keys: Sequence[str], header: bool = True
+) -> str:
     lines = []
     if header:
         lines.append("\t".join(rs.columns[k].label for k in keys))
     for r in rows:
-        lines.append("\t".join(rs.display(r, k).replace("\t", " ").replace("\n", " ") for k in keys))
+        lines.append(
+            "\t".join(
+                rs.display(r, k).replace("\t", " ").replace("\n", " ") for k in keys
+            )
+        )
     return "\n".join(lines)
 
 
-def export_csv(path: Path | str, rs: RowSet, rows: Sequence[dict], keys: Sequence[str]) -> Path:
+def export_csv(
+    path: Path | str, rs: RowSet, rows: Sequence[dict], keys: Sequence[str]
+) -> Path:
     """Atomic CSV export (UTF-8 with BOM for Excel) with formula-injection protection."""
+
     def write(tmp: Path) -> None:
         with open(tmp, "w", newline="", encoding="utf-8-sig") as fh:
             w = csv.writer(fh)
             w.writerow([csv_safe(rs.columns[k].label) for k in keys])
             for r in rows:
                 w.writerow([csv_safe(rs.display(r, k)) for k in keys])
+
     return atomic_write(path, write)
 
 
@@ -1987,17 +3336,23 @@ def export_csv(path: Path | str, rs: RowSet, rows: Sequence[dict], keys: Sequenc
 class Repository:
     """All reads/writes of academic records: validation, safe SQL, safe deletion."""
 
-    def __init__(self, db: Database, settings: SettingsStore, bus: Optional[ChangeBus] = None) -> None:
+    def __init__(
+        self, db: Database, settings: SettingsStore, bus: Optional[ChangeBus] = None
+    ) -> None:
         self.db, self.settings, self.bus = db, settings, bus or ChangeBus()
         self.snapshot_hook: Optional[Callable[[str], Any]] = None
-        self.fixed_today: Optional[date] = None   # tests may pin "today"
+        self.fixed_today: Optional[date] = None  # tests may pin "today"
 
     def today(self) -> date:
         return self.fixed_today or date.today()
 
     def context(self) -> Ctx:
-        return Ctx(self.today(), self.settings.grading(), self.settings.get_float("low_mark_pct", 40.0),
-                   self.settings.get_float("attendance_min", 75.0))
+        return Ctx(
+            self.today(),
+            self.settings.grading(),
+            self.settings.get_float("low_mark_pct", 40.0),
+            self.settings.get_float("attendance_min", 75.0),
+        )
 
     @staticmethod
     def entity(table: str) -> Entity:
@@ -2012,8 +3367,16 @@ class Repository:
         ent = self.entity(ent) if isinstance(ent, str) else ent
         where, args = "", []
         if ent.scope and semester_id is not None:
-            ids = [int(semester_id)] if isinstance(semester_id, (int, str)) else [int(i) for i in semester_id]
-            where, args = " WHERE " + ent.scope.replace("= ?", f"IN ({','.join('?' * len(ids))})"), ids
+            ids = (
+                [int(semester_id)]
+                if isinstance(semester_id, (int, str))
+                else [int(i) for i in semester_id]
+            )
+            where, args = (
+                " WHERE "
+                + ent.scope.replace("= ?", f"IN ({','.join('?' * len(ids))})"),
+                ids,
+            )
         sql = f"SELECT {ent.select} FROM {ent.source}{where} ORDER BY {ent.order}"
         ctx = self.context()
         out = []
@@ -2033,33 +3396,83 @@ class Repository:
         rec = self.get(table, rid) or {}
         return str(rec.get(self.entity(table).label_key) or f"#{rid}")
 
-    def lookup(self, name: str, parent: Any = None, semester_id: Optional[int] = None) -> list[tuple[str, int]]:
+    def lookup(
+        self, name: str, parent: Any = None, semester_id: Optional[int] = None
+    ) -> list[tuple[str, int]]:
         q = self.db.q
         parent = safe_int(parent) or None
         if name == "programmes":
-            return [(r["name"], r["id"]) for r in q("SELECT id,name FROM programmes ORDER BY id")]
+            return [
+                (r["name"], r["id"])
+                for r in q("SELECT id,name FROM programmes ORDER BY id")
+            ]
         if name == "academic_years":
-            rows = q("SELECT y.id, y.name, p.name AS pn FROM academic_years y JOIN programmes p ON p.id=y.programme_id"
-                     + (" WHERE y.programme_id=?" if parent else "") + " ORDER BY y.programme_id, y.year_no", (parent,) if parent else ())
-            return [(r["name"] if parent else f"{r['pn']} · {r['name']}", r["id"]) for r in rows]
+            rows = q(
+                "SELECT y.id, y.name, p.name AS pn FROM academic_years y JOIN programmes p ON p.id=y.programme_id"
+                + (" WHERE y.programme_id=?" if parent else "")
+                + " ORDER BY y.programme_id, y.year_no",
+                (parent,) if parent else (),
+            )
+            return [
+                (r["name"] if parent else f"{r['pn']} · {r['name']}", r["id"])
+                for r in rows
+            ]
         if name == "semesters":
-            return [(r["name"], r["id"]) for r in q(
-                "SELECT id,name FROM semesters ORDER BY COALESCE(programme_id,0), COALESCE(semester_no,9999), id")]
+            return [
+                (r["name"], r["id"])
+                for r in q(
+                    "SELECT id,name FROM semesters ORDER BY COALESCE(programme_id,0), COALESCE(semester_no,9999), id"
+                )
+            ]
         if name == "subjects":
-            order = "COALESCE(sem.programme_id,0), COALESCE(sem.semester_no,9999), s.name"
+            order = (
+                "COALESCE(sem.programme_id,0), COALESCE(sem.semester_no,9999), s.name"
+            )
             if semester_id is not None:
                 order = "(s.semester_id IS NOT ?), " + order
-            rows = q("SELECT s.id, s.name, s.code, sem.name AS sem FROM subjects s LEFT JOIN semesters sem ON sem.id=s.semester_id "
-                     f"ORDER BY {order}", (semester_id,) if semester_id is not None else ())
-            return [(f"{r['name']}" + (f" ({r['code']})" if r["code"] else "") + (f" · {r['sem']}" if r["sem"] else ""), r["id"]) for r in rows]
+            rows = q(
+                "SELECT s.id, s.name, s.code, sem.name AS sem FROM subjects s LEFT JOIN semesters sem ON sem.id=s.semester_id "
+                f"ORDER BY {order}",
+                (semester_id,) if semester_id is not None else (),
+            )
+            return [
+                (
+                    f"{r['name']}"
+                    + (f" ({r['code']})" if r["code"] else "")
+                    + (f" · {r['sem']}" if r["sem"] else ""),
+                    r["id"],
+                )
+                for r in rows
+            ]
         if name == "units":
-            rows = q("SELECT u.id, u.unit_no, u.title, s.name AS sn FROM units u JOIN subjects s ON s.id=u.subject_id"
-                     + (" WHERE u.subject_id=?" if parent else "") + " ORDER BY s.name, u.unit_no", (parent,) if parent else ())
-            return [(f"Unit {r['unit_no']}: {r['title']}" if parent else f"{r['sn']} · Unit {r['unit_no']}: {r['title']}", r["id"]) for r in rows]
+            rows = q(
+                "SELECT u.id, u.unit_no, u.title, s.name AS sn FROM units u JOIN subjects s ON s.id=u.subject_id"
+                + (" WHERE u.subject_id=?" if parent else "")
+                + " ORDER BY s.name, u.unit_no",
+                (parent,) if parent else (),
+            )
+            return [
+                (
+                    (
+                        f"Unit {r['unit_no']}: {r['title']}"
+                        if parent
+                        else f"{r['sn']} · Unit {r['unit_no']}: {r['title']}"
+                    ),
+                    r["id"],
+                )
+                for r in rows
+            ]
         if name == "chapters":
-            rows = q("SELECT c.id, c.title, u.title AS ut FROM chapters c JOIN units u ON u.id=c.unit_id"
-                     + (" WHERE c.unit_id=?" if parent else "") + " ORDER BY u.unit_no, c.id", (parent,) if parent else ())
-            return [(r["title"] if parent else f"{r['ut']} · {r['title']}", r["id"]) for r in rows]
+            rows = q(
+                "SELECT c.id, c.title, u.title AS ut FROM chapters c JOIN units u ON u.id=c.unit_id"
+                + (" WHERE c.unit_id=?" if parent else "")
+                + " ORDER BY u.unit_no, c.id",
+                (parent,) if parent else (),
+            )
+            return [
+                (r["title"] if parent else f"{r['ut']} · {r['title']}", r["id"])
+                for r in rows
+            ]
         raise ValueError(f"Unknown lookup {name!r}")
 
     # ---- validation ------------------------------------------------------
@@ -2081,7 +3494,11 @@ class Repository:
             if v is None or v == "":
                 if f.required:
                     raise ValidationError(f"{f.label} is required.")
-                out[f.key] = None if f.kind in ("int", "float", "fk") else (0 if f.kind == "bool" else "")
+                out[f.key] = (
+                    None
+                    if f.kind in ("int", "float", "fk")
+                    else (0 if f.kind == "bool" else "")
+                )
                 continue
             if f.kind in ("int", "float"):
                 n = safe_float(v)
@@ -2090,7 +3507,9 @@ class Repository:
                 if f.lo is not None and n < f.lo or f.hi is not None and n > f.hi:
                     lo = "" if f.lo is None else fmt_num(f.lo)
                     hi = "" if f.hi is None else fmt_num(f.hi)
-                    raise ValidationError(f"{f.label} must be between {lo or 'any'} and {hi or 'any'}.")
+                    raise ValidationError(
+                        f"{f.label} must be between {lo or 'any'} and {hi or 'any'}."
+                    )
                 out[f.key] = int(n) if f.kind == "int" else n
             elif f.kind == "fk":
                 out[f.key] = safe_int(v) or None
@@ -2114,80 +3533,188 @@ class Repository:
     def _within(self, c: dict, got: str, mx: str, label: str) -> None:
         g, m = safe_float(c.get(got)), safe_float(c.get(mx))
         if g is not None and m is not None and g > m:
-            raise ValidationError(f"{label}: marks obtained cannot exceed the maximum marks.")
+            raise ValidationError(
+                f"{label}: marks obtained cannot exceed the maximum marks."
+            )
 
     def _exists(self, sql: str, args: Sequence) -> bool:
         return self.db.one(sql, args) is not None
 
-    def validate(self, ent: Entity, c: dict, rid: Optional[int], current: Optional[dict] = None) -> None:
+    def validate(
+        self, ent: Entity, c: dict, rid: Optional[int], current: Optional[dict] = None
+    ) -> None:
         t = ent.table
         merged = {**(current or {}), **c}
         rid = rid or -1
         if t == "subjects":
-            if "name" in c and self._exists("SELECT 1 FROM subjects WHERE semester_id IS ? AND lower(name)=lower(?) AND id<>?",
-                                            (merged.get("semester_id"), merged.get("name"), rid)):
-                raise ValidationError("This semester already has a subject with that name.")
+            if "name" in c and self._exists(
+                "SELECT 1 FROM subjects WHERE semester_id IS ? AND lower(name)=lower(?) AND id<>?",
+                (merged.get("semester_id"), merged.get("name"), rid),
+            ):
+                raise ValidationError(
+                    "This semester already has a subject with that name."
+                )
         elif t == "units":
-            if self._exists("SELECT 1 FROM units WHERE subject_id=? AND unit_no=? AND id<>?", (merged.get("subject_id"), merged.get("unit_no"), rid)):
-                raise ValidationError("That subject already has a unit with this number.")
+            if self._exists(
+                "SELECT 1 FROM units WHERE subject_id=? AND unit_no=? AND id<>?",
+                (merged.get("subject_id"), merged.get("unit_no"), rid),
+            ):
+                raise ValidationError(
+                    "That subject already has a unit with this number."
+                )
         elif t == "assignments":
-            self._before(merged, "given_date", "due_date", "The deadline cannot be before the date the assignment was given.")
+            self._before(
+                merged,
+                "given_date",
+                "due_date",
+                "The deadline cannot be before the date the assignment was given.",
+            )
             self._within(merged, "marks_obtained", "max_marks", "Assignment")
-            self._link_check(merged, "unit_id", "subject_id", "units", "The chosen unit belongs to a different subject.")
+            self._link_check(
+                merged,
+                "unit_id",
+                "subject_id",
+                "units",
+                "The chosen unit belongs to a different subject.",
+            )
         elif t == "exams":
             self._within(merged, "marks_obtained", "max_marks", "Exam")
             if safe_float(merged.get("max_marks")) == 0:
                 raise ValidationError("Maximum marks must be greater than zero.")
         elif t == "marks":
             self._within(merged, "marks_obtained", "max_marks", "Assessment")
-            self._link_check(merged, "unit_id", "subject_id", "units", "The chosen unit belongs to a different subject.")
+            self._link_check(
+                merged,
+                "unit_id",
+                "subject_id",
+                "units",
+                "The chosen unit belongs to a different subject.",
+            )
         elif t == "subject_results":
             for k in ("internal", "external", "practical"):
                 self._within(merged, f"{k}_marks", f"{k}_max", k.title())
-                if safe_float(merged.get(f"{k}_marks")) is not None and not safe_float(merged.get(f"{k}_max")):
+                if safe_float(merged.get(f"{k}_marks")) is not None and not safe_float(
+                    merged.get(f"{k}_max")
+                ):
                     raise ValidationError(f"Enter the {k} maximum marks as well.")
-            if self._exists("SELECT 1 FROM subject_results WHERE subject_id=? AND attempt_no=? AND id<>?",
-                            (merged.get("subject_id"), merged.get("attempt_no"), rid)):
-                raise ValidationError("A result for this subject and attempt already exists. Use the next attempt number.")
-            gp, mxp = safe_float(merged.get("grade_points")), self.settings.grading().max_points
+            if self._exists(
+                "SELECT 1 FROM subject_results WHERE subject_id=? AND attempt_no=? AND id<>?",
+                (merged.get("subject_id"), merged.get("attempt_no"), rid),
+            ):
+                raise ValidationError(
+                    "A result for this subject and attempt already exists. Use the next attempt number."
+                )
+            gp, mxp = (
+                safe_float(merged.get("grade_points")),
+                self.settings.grading().max_points,
+            )
             if gp is not None and gp > mxp:
-                raise ValidationError(f"Grade points cannot exceed {fmt_num(mxp)} (change the scale in Grading settings).")
+                raise ValidationError(
+                    f"Grade points cannot exceed {fmt_num(mxp)} (change the scale in Grading settings)."
+                )
         elif t == "attendance":
-            held, att = safe_int(merged.get("classes_held")), safe_int(merged.get("classes_attended"))
+            held, att = safe_int(merged.get("classes_held")), safe_int(
+                merged.get("classes_attended")
+            )
             if att > held:
                 raise ValidationError("Classes attended cannot exceed classes held.")
         elif t == "semesters":
-            self._before(merged, "start_date", "end_date", "The end date cannot be before the start date.")
-            if merged.get("semester_no") and merged.get("programme_id") and self._exists(
+            self._before(
+                merged,
+                "start_date",
+                "end_date",
+                "The end date cannot be before the start date.",
+            )
+            if (
+                merged.get("semester_no")
+                and merged.get("programme_id")
+                and self._exists(
                     "SELECT 1 FROM semesters WHERE programme_id=? AND semester_no=? AND id<>?",
-                    (merged["programme_id"], merged["semester_no"], rid)):
-                raise ValidationError("That programme already has a semester with this number.")
-            self._link_check(merged, "academic_year_id", "programme_id", "academic_years", "The academic year belongs to a different programme.")
+                    (merged["programme_id"], merged["semester_no"], rid),
+                )
+            ):
+                raise ValidationError(
+                    "That programme already has a semester with this number."
+                )
+            self._link_check(
+                merged,
+                "academic_year_id",
+                "programme_id",
+                "academic_years",
+                "The academic year belongs to a different programme.",
+            )
         elif t == "academic_years":
-            self._before(merged, "start_date", "end_date", "The end date cannot be before the start date.")
-            if self._exists("SELECT 1 FROM academic_years WHERE programme_id=? AND year_no=? AND id<>?",
-                            (merged.get("programme_id"), merged.get("year_no"), rid)):
-                raise ValidationError("That programme already has an academic year with this number.")
+            self._before(
+                merged,
+                "start_date",
+                "end_date",
+                "The end date cannot be before the start date.",
+            )
+            if self._exists(
+                "SELECT 1 FROM academic_years WHERE programme_id=? AND year_no=? AND id<>?",
+                (merged.get("programme_id"), merged.get("year_no"), rid),
+            ):
+                raise ValidationError(
+                    "That programme already has an academic year with this number."
+                )
         elif t == "programmes":
-            sy, ey = safe_int(merged.get("start_year")), safe_int(merged.get("end_year"))
+            sy, ey = safe_int(merged.get("start_year")), safe_int(
+                merged.get("end_year")
+            )
             if sy and ey and ey < sy:
                 raise ValidationError("The end year cannot be before the start year.")
         elif t == "projects":
-            self._before(merged, "start_date", "deadline", "The deadline cannot be before the start date.")
+            self._before(
+                merged,
+                "start_date",
+                "deadline",
+                "The deadline cannot be before the start date.",
+            )
             self._within(merged, "marks_obtained", "max_marks", "Project")
         elif t == "calendar_events":
-            self._before(merged, "start_date", "end_date", "The end date cannot be before the start date.")
+            self._before(
+                merged,
+                "start_date",
+                "end_date",
+                "The end date cannot be before the start date.",
+            )
         elif t == "study_sessions":
-            self._link_check(merged, "unit_id", "subject_id", "units", "The chosen unit belongs to a different subject.")
-            self._link_check(merged, "chapter_id", "unit_id", "chapters", "The chosen chapter belongs to a different unit.")
+            self._link_check(
+                merged,
+                "unit_id",
+                "subject_id",
+                "units",
+                "The chosen unit belongs to a different subject.",
+            )
+            self._link_check(
+                merged,
+                "chapter_id",
+                "unit_id",
+                "chapters",
+                "The chosen chapter belongs to a different unit.",
+            )
         elif t == "notes":
-            self._link_check(merged, "chapter_id", "unit_id", "chapters", "The chosen chapter belongs to a different unit.")
+            self._link_check(
+                merged,
+                "chapter_id",
+                "unit_id",
+                "chapters",
+                "The chosen chapter belongs to a different unit.",
+            )
         elif t == "attachments":
             self._check_file(merged.get("file_path"))
 
-    def _link_check(self, c: dict, child: str, parent: str, table: str, msg: str) -> None:
+    def _link_check(
+        self, c: dict, child: str, parent: str, table: str, msg: str
+    ) -> None:
         cid, pid = c.get(child), c.get(parent)
-        if cid and pid and not self._exists(f"SELECT 1 FROM {table} WHERE id=? AND {parent}=?", (cid, pid)):
+        if (
+            cid
+            and pid
+            and not self._exists(
+                f"SELECT 1 FROM {table} WHERE id=? AND {parent}=?", (cid, pid)
+            )
+        ):
             raise ValidationError(msg)
 
     @staticmethod
@@ -2196,8 +3723,11 @@ class Repository:
         if not p.is_file():
             raise ValidationError("That file could not be found.")
         if p.suffix.lower() not in ATTACH_EXT:
-            raise ValidationError(f"{p.suffix or 'This'} files are not supported. Allowed: "
-                                  + ", ".join(sorted(e.lstrip('.') for e in ATTACH_EXT)) + ".")
+            raise ValidationError(
+                f"{p.suffix or 'This'} files are not supported. Allowed: "
+                + ", ".join(sorted(e.lstrip(".") for e in ATTACH_EXT))
+                + "."
+            )
         return p.resolve()
 
     @staticmethod
@@ -2240,7 +3770,8 @@ class Repository:
             with self.db.transaction():
                 rid = self.db.conn.execute(
                     f"INSERT INTO {ent.table}({','.join(cols)}) VALUES({','.join('?' * len(cols))})",
-                    [c[k] for k in cols]).lastrowid
+                    [c[k] for k in cols],
+                ).lastrowid
         except sqlite3.IntegrityError as exc:
             raise ValidationError(self._friendly(exc)) from exc
         self.bus.notify(table)
@@ -2250,7 +3781,9 @@ class Repository:
         ent = self.entity(table)
         current = self.get(table, rid)
         if current is None:
-            raise ValidationError("This record no longer exists. Refresh and try again.")
+            raise ValidationError(
+                "This record no longer exists. Refresh and try again."
+            )
         c = self.clean(ent, values)
         self.validate(ent, c, rid, current)
         c = self._prepare(ent, c)
@@ -2258,8 +3791,10 @@ class Repository:
             return
         try:
             with self.db.transaction():
-                self.db.conn.execute(f"UPDATE {ent.table} SET {','.join(f'{k}=?' for k in c)} WHERE id=?",
-                                     [*c.values(), rid])
+                self.db.conn.execute(
+                    f"UPDATE {ent.table} SET {','.join(f'{k}=?' for k in c)} WHERE id=?",
+                    [*c.values(), rid],
+                )
         except sqlite3.IntegrityError as exc:
             raise ValidationError(self._friendly(exc)) from exc
         self.bus.notify(table)
@@ -2267,7 +3802,10 @@ class Repository:
     def bulk_update(self, table: str, ids: Sequence[int], updates: dict) -> int:
         """Apply the same field change to many records ('@today' expands to today's date)."""
         ent = self.entity(table)
-        updates = {k: (self.today().isoformat() if v == "@today" else v) for k, v in updates.items()}
+        updates = {
+            k: (self.today().isoformat() if v == "@today" else v)
+            for k, v in updates.items()
+        }
         c = self.clean(ent, updates)
         c = self._prepare(ent, c)
         if not ids or not c:
@@ -2275,7 +3813,10 @@ class Repository:
         try:
             with self.db.transaction():
                 for rid in ids:
-                    self.db.conn.execute(f"UPDATE {ent.table} SET {','.join(f'{k}=?' for k in c)} WHERE id=?", [*c.values(), int(rid)])
+                    self.db.conn.execute(
+                        f"UPDATE {ent.table} SET {','.join(f'{k}=?' for k in c)} WHERE id=?",
+                        [*c.values(), int(rid)],
+                    )
         except sqlite3.IntegrityError as exc:
             raise ValidationError(self._friendly(exc)) from exc
         self.bus.notify(table)
@@ -2290,7 +3831,9 @@ class Repository:
         marks = ",".join("?" * len(ids))
         out = []
         for child, where, label, effect in ent.children:
-            n = self.db.scalar(f"SELECT COUNT(*) FROM {child} WHERE {where.format(ids=marks)}", ids, 0)
+            n = self.db.scalar(
+                f"SELECT COUNT(*) FROM {child} WHERE {where.format(ids=marks)}", ids, 0
+            )
             if n:
                 out.append((label, int(n), effect))
         return out
@@ -2304,13 +3847,23 @@ class Repository:
         deps = self.dependents(table, ids)
         blockers = [f"{n} {label}" for label, n, eff in deps if eff == _BLOCK]
         if blockers:
-            raise ValidationError("This cannot be deleted while it still contains " + ", ".join(blockers)
-                                  + ". Move or delete those first.")
-        if (any(eff == _DELETE for _, _, eff in deps) or len(ids) > 1) and self.snapshot_hook:
+            raise ValidationError(
+                "This cannot be deleted while it still contains "
+                + ", ".join(blockers)
+                + ". Move or delete those first."
+            )
+        if (
+            any(eff == _DELETE for _, _, eff in deps) or len(ids) > 1
+        ) and self.snapshot_hook:
             self.snapshot_hook(f"before_delete_{table}")
         try:
             with self.db.transaction():
-                n = sum(self.db.conn.execute(f"DELETE FROM {ent.table} WHERE id=?", (i,)).rowcount for i in ids)
+                n = sum(
+                    self.db.conn.execute(
+                        f"DELETE FROM {ent.table} WHERE id=?", (i,)
+                    ).rowcount
+                    for i in ids
+                )
         except sqlite3.IntegrityError as exc:
             raise ValidationError(self._friendly(exc)) from exc
         self.bus.notify(table, *{c[0] for c in ent.children})
@@ -2321,8 +3874,9 @@ class Repository:
         sid = self.settings.get_int("current_semester_id", 0)
         if sid and self._exists("SELECT 1 FROM semesters WHERE id=?", (sid,)):
             return sid
-        row = (self.db.one("SELECT id FROM semesters WHERE status='Active' ORDER BY id DESC LIMIT 1")
-               or self.db.one("SELECT id FROM semesters ORDER BY id DESC LIMIT 1"))
+        row = self.db.one(
+            "SELECT id FROM semesters WHERE status='Active' ORDER BY id DESC LIMIT 1"
+        ) or self.db.one("SELECT id FROM semesters ORDER BY id DESC LIMIT 1")
         return int(row["id"]) if row else None
 
     def set_current_semester(self, sid: int) -> None:
@@ -2336,13 +3890,27 @@ class Repository:
         scope = self.settings.get("scope_semester").strip().lower()
         if scope == "all":
             return None
-        if scope.isdigit() and self._exists("SELECT 1 FROM semesters WHERE id=?", (int(scope),)):
+        if scope.isdigit() and self._exists(
+            "SELECT 1 FROM semesters WHERE id=?", (int(scope),)
+        ):
             return int(scope)
         return self.current_semester_id()
 
-    def create_structure(self, name: str, *, degree_level: str = "Undergraduate", branch: str = "", specialisation: str = "",
-                         college: str = "", university: str = "", start_year: Optional[int] = None, years: int = 4,
-                         per_year: int = 2, term_word: str = "Semester", semester_names: Optional[Sequence[str]] = None) -> dict:
+    def create_structure(
+        self,
+        name: str,
+        *,
+        degree_level: str = "Undergraduate",
+        branch: str = "",
+        specialisation: str = "",
+        college: str = "",
+        university: str = "",
+        start_year: Optional[int] = None,
+        years: int = 4,
+        per_year: int = 2,
+        term_word: str = "Semester",
+        semester_names: Optional[Sequence[str]] = None,
+    ) -> dict:
         """Create a programme with its academic years and semesters in one transaction."""
         name = (name or "").strip()
         if not name:
@@ -2353,34 +3921,78 @@ class Repository:
             pid = self.db.conn.execute(
                 "INSERT INTO programmes(name,degree_level,branch,specialisation,college_name,university_name,session_label,"
                 "start_year,end_year,years_count,semesters_per_year) VALUES(?,?,?,?,?,?,?,?,?,?,?)",
-                (name, degree_level, branch, specialisation, college, university,
-                 f"{sy}–{sy + years}" if sy else "", sy, sy + years if sy else None, years, per_year)).lastrowid
+                (
+                    name,
+                    degree_level,
+                    branch,
+                    specialisation,
+                    college,
+                    university,
+                    f"{sy}–{sy + years}" if sy else "",
+                    sy,
+                    sy + years if sy else None,
+                    years,
+                    per_year,
+                ),
+            ).lastrowid
             sem_ids, year_ids = [], []
             for y in range(1, years + 1):
                 label = f"{sy + y - 1}-{str(sy + y)[-2:]}" if sy else ""
-                yid = self.db.conn.execute("INSERT INTO academic_years(programme_id,year_no,name,session_label,status) VALUES(?,?,?,?,?)",
-                                           (pid, y, ordinal_year_name(y), label, "Active" if y == 1 else "Upcoming")).lastrowid
+                yid = self.db.conn.execute(
+                    "INSERT INTO academic_years(programme_id,year_no,name,session_label,status) VALUES(?,?,?,?,?)",
+                    (
+                        pid,
+                        y,
+                        ordinal_year_name(y),
+                        label,
+                        "Active" if y == 1 else "Upcoming",
+                    ),
+                ).lastrowid
                 year_ids.append(yid)
                 for k in range(1, per_year + 1):
                     n = (y - 1) * per_year + k
-                    sname = (semester_names[n - 1].strip() if semester_names and n - 1 < len(semester_names)
-                             and semester_names[n - 1].strip() else f"{term_word} {n}")
+                    sname = (
+                        semester_names[n - 1].strip()
+                        if semester_names
+                        and n - 1 < len(semester_names)
+                        and semester_names[n - 1].strip()
+                        else f"{term_word} {n}"
+                    )
                     status = "Active" if n == 1 else "Upcoming"
-                    sem_ids.append(self.db.conn.execute(
-                        "INSERT INTO semesters(name,is_active,programme_id,academic_year_id,semester_no,status) VALUES(?,?,?,?,?,?)",
-                        (sname, 1 if n == 1 else 0, pid, yid, n, status)).lastrowid)
-        if not self.current_semester_id() or not self.settings.get_int("current_semester_id", 0):
+                    sem_ids.append(
+                        self.db.conn.execute(
+                            "INSERT INTO semesters(name,is_active,programme_id,academic_year_id,semester_no,status) VALUES(?,?,?,?,?,?)",
+                            (sname, 1 if n == 1 else 0, pid, yid, n, status),
+                        ).lastrowid
+                    )
+        if not self.current_semester_id() or not self.settings.get_int(
+            "current_semester_id", 0
+        ):
             self.settings.set("current_semester_id", sem_ids[0])
         self.bus.notify("programmes", "academic_years", "semesters")
         return {"programme_id": pid, "year_ids": year_ids, "semester_ids": sem_ids}
 
     def ensure_default_structure(self) -> None:
-        if self.db.scalar("SELECT COUNT(*) FROM programmes", default=0) == 0 and \
-                self.db.scalar("SELECT COUNT(*) FROM semesters", default=0) == 0:
+        if (
+            self.db.scalar("SELECT COUNT(*) FROM programmes", default=0) == 0
+            and self.db.scalar("SELECT COUNT(*) FROM semesters", default=0) == 0
+        ):
             self.create_structure("My Programme", years=1, per_year=1)
 
-    PROFILE_FIELDS = ("student_name", "college_name", "university_name", "course", "branch", "admission_year",
-                      "expected_graduation_year", "roll_no", "student_id", "email", "goals", "photo_path")
+    PROFILE_FIELDS = (
+        "student_name",
+        "college_name",
+        "university_name",
+        "course",
+        "branch",
+        "admission_year",
+        "expected_graduation_year",
+        "roll_no",
+        "student_id",
+        "email",
+        "goals",
+        "photo_path",
+    )
 
     def profile(self) -> dict:
         r = self.db.one("SELECT * FROM student_profile WHERE id=1")
@@ -2404,30 +4016,69 @@ class Repository:
             raise ValidationError("Enter a valid email address (or leave it blank).")
         if c.get("photo_path"):
             p = Path(c["photo_path"]).expanduser()
-            if not p.is_file() or p.suffix.lower() not in {".png", ".jpg", ".jpeg", ".bmp", ".gif", ".webp"}:
-                raise ValidationError("The profile photograph must be an existing image file.")
+            if not p.is_file() or p.suffix.lower() not in {
+                ".png",
+                ".jpg",
+                ".jpeg",
+                ".bmp",
+                ".gif",
+                ".webp",
+            }:
+                raise ValidationError(
+                    "The profile photograph must be an existing image file."
+                )
             c["photo_path"] = str(p.resolve())
         c["updated_at"] = datetime.now().isoformat(timespec="seconds")
         with self.db.transaction():
             self.db.conn.execute("INSERT OR IGNORE INTO student_profile(id) VALUES(1)")
-            self.db.conn.execute(f"UPDATE student_profile SET {','.join(f'{k}=?' for k in c)} WHERE id=1", list(c.values()))
+            self.db.conn.execute(
+                f"UPDATE student_profile SET {','.join(f'{k}=?' for k in c)} WHERE id=1",
+                list(c.values()),
+            )
         self.bus.notify("student_profile")
 
     # ---- files, milestones, revisions ------------------------------------
     def attachments_for(self, entity_type: str, record_id: int) -> list[dict]:
-        rows = [dict(r) for r in self.db.q("SELECT * FROM attachments WHERE entity_type=? AND record_id=? ORDER BY id", (entity_type, record_id))]
+        rows = [
+            dict(r)
+            for r in self.db.q(
+                "SELECT * FROM attachments WHERE entity_type=? AND record_id=? ORDER BY id",
+                (entity_type, record_id),
+            )
+        ]
         for r in rows:
             r["exists"] = Path(r["file_path"]).exists()
         return rows
 
-    def add_attachment(self, entity_type: str, record_id: int, path: Any, name: str = "", category: str = "Document", notes: str = "") -> int:
+    def add_attachment(
+        self,
+        entity_type: str,
+        record_id: int,
+        path: Any,
+        name: str = "",
+        category: str = "Document",
+        notes: str = "",
+    ) -> int:
         if entity_type not in CLEANUP_TABLES:
             raise ValidationError("Files can only be attached to records.")
         p = self._check_file(path)
-        if self._exists("SELECT 1 FROM attachments WHERE entity_type=? AND record_id=? AND file_path=?", (entity_type, record_id, str(p))):
+        if self._exists(
+            "SELECT 1 FROM attachments WHERE entity_type=? AND record_id=? AND file_path=?",
+            (entity_type, record_id, str(p)),
+        ):
             raise ValidationError("That file is already attached to this record.")
-        rid = self.db.run("INSERT INTO attachments(entity_type,record_id,file_path,display_name,category,size_bytes,notes) VALUES(?,?,?,?,?,?,?)",
-                          (entity_type, record_id, str(p), name or p.name, category, p.stat().st_size, notes))
+        rid = self.db.run(
+            "INSERT INTO attachments(entity_type,record_id,file_path,display_name,category,size_bytes,notes) VALUES(?,?,?,?,?,?,?)",
+            (
+                entity_type,
+                record_id,
+                str(p),
+                name or p.name,
+                category,
+                p.stat().st_size,
+                notes,
+            ),
+        )
         self.bus.notify("attachments")
         return rid
 
@@ -2437,17 +4088,36 @@ class Repository:
         self.bus.notify("attachments")
 
     def milestones(self, project_id: int) -> list[dict]:
-        return [dict(r) for r in self.db.q("SELECT * FROM project_milestones WHERE project_id=? ORDER BY COALESCE(NULLIF(due_date,''),'9999'), id", (project_id,))]
+        return [
+            dict(r)
+            for r in self.db.q(
+                "SELECT * FROM project_milestones WHERE project_id=? ORDER BY COALESCE(NULLIF(due_date,''),'9999'), id",
+                (project_id,),
+            )
+        ]
 
-    def save_milestone(self, project_id: int, title: str, due: str = "", status: str = "Pending", mid: Optional[int] = None) -> int:
+    def save_milestone(
+        self,
+        project_id: int,
+        title: str,
+        due: str = "",
+        status: str = "Pending",
+        mid: Optional[int] = None,
+    ) -> int:
         title = (title or "").strip()
         if not title:
             raise ValidationError("Milestone title is required.")
         due = self._date_ok("Due date", (due or "").strip())
         if mid:
-            self.db.run("UPDATE project_milestones SET title=?, due_date=?, status=? WHERE id=? AND project_id=?", (title, due, status, mid, project_id))
+            self.db.run(
+                "UPDATE project_milestones SET title=?, due_date=?, status=? WHERE id=? AND project_id=?",
+                (title, due, status, mid, project_id),
+            )
         else:
-            mid = self.db.run("INSERT INTO project_milestones(project_id,title,due_date,status) VALUES(?,?,?,?)", (project_id, title, due, status))
+            mid = self.db.run(
+                "INSERT INTO project_milestones(project_id,title,due_date,status) VALUES(?,?,?,?)",
+                (project_id, title, due, status),
+            )
         self.bus.notify("project_milestones", "projects")
         return int(mid)
 
@@ -2456,27 +4126,60 @@ class Repository:
         self.bus.notify("project_milestones", "projects")
 
     def schedule_revision(self, unit_id: int, in_days: int = 1) -> int:
-        if self._exists("SELECT 1 FROM revisions WHERE unit_id=? AND status='Due'", (unit_id,)):
+        if self._exists(
+            "SELECT 1 FROM revisions WHERE unit_id=? AND status='Due'", (unit_id,)
+        ):
             raise ValidationError("This unit already has an active revision schedule.")
-        return self.insert("revisions", {"unit_id": unit_id, "due_date": (self.today() + timedelta(days=in_days)).isoformat()})
+        return self.insert(
+            "revisions",
+            {
+                "unit_id": unit_id,
+                "due_date": (self.today() + timedelta(days=in_days)).isoformat(),
+            },
+        )
 
     def review_revision(self, rid: int, quality: int) -> dict:
         """Record a review (1 Again · 3 Hard · 4 Good · 5 Easy) and schedule the next one (SM-2)."""
         rec = self.get("revisions", rid)
         if not rec:
             raise ValidationError("This revision no longer exists.")
-        reps, ease, days = sm2_next(rec["repetitions"], rec["ease"], rec["interval_days"], quality)
+        reps, ease, days = sm2_next(
+            rec["repetitions"], rec["ease"], rec["interval_days"], quality
+        )
         due = (self.today() + timedelta(days=days)).isoformat()
-        self.db.run("UPDATE revisions SET repetitions=?, ease=?, interval_days=?, due_date=?, last_reviewed=?, status='Due' WHERE id=?",
-                    (reps, ease, days, due, self.today().isoformat(), rid))
+        self.db.run(
+            "UPDATE revisions SET repetitions=?, ease=?, interval_days=?, due_date=?, last_reviewed=?, status='Due' WHERE id=?",
+            (reps, ease, days, due, self.today().isoformat(), rid),
+        )
         self.bus.notify("revisions")
-        return {"repetitions": reps, "ease": ease, "interval_days": days, "due_date": due}
+        return {
+            "repetitions": reps,
+            "ease": ease,
+            "interval_days": days,
+            "due_date": due,
+        }
 
-    def quick_log_study(self, subject_id: int, minutes: int, topic: str = "", session_type: str = "Study") -> int:
-        return self.insert("study_sessions", {"subject_id": subject_id, "study_date": self.today().isoformat(),
-                                              "duration_minutes": minutes, "topic": topic, "session_type": session_type})
+    def quick_log_study(
+        self,
+        subject_id: int,
+        minutes: int,
+        topic: str = "",
+        session_type: str = "Study",
+    ) -> int:
+        return self.insert(
+            "study_sessions",
+            {
+                "subject_id": subject_id,
+                "study_date": self.today().isoformat(),
+                "duration_minutes": minutes,
+                "topic": topic,
+                "session_type": session_type,
+            },
+        )
 
-    def mark_attendance(self, day: str, marks: dict[int, Optional[bool]], kind: str = "Lecture") -> int:
+    def mark_attendance(
+        self, day: str, marks: dict[int, Optional[bool]], kind: str = "Lecture"
+    ) -> int:
         """Record one class per subject for ``day``: True present, False absent, None skip."""
         day = self._date_ok("Date", day)
         if not day:
@@ -2486,8 +4189,10 @@ class Repository:
             for sid, present in marks.items():
                 if present is None:
                     continue
-                self.db.conn.execute("INSERT INTO attendance(subject_id,att_date,classes_held,classes_attended,kind) VALUES(?,?,1,?,?)",
-                                     (sid, day, 1 if present else 0, kind))
+                self.db.conn.execute(
+                    "INSERT INTO attendance(subject_id,att_date,classes_held,classes_attended,kind) VALUES(?,?,1,?,?)",
+                    (sid, day, 1 if present else 0, kind),
+                )
                 n += 1
         self.bus.notify("attendance")
         return n
@@ -2495,15 +4200,24 @@ class Repository:
     # ---- legacy custom fields (kept for compatibility with 2.x data) -----
     def custom_fields(self, table: str, rid: int) -> list[dict]:
         self.entity(table)
-        return [dict(r) for r in self.db.q("SELECT id, field_name, field_value FROM custom_fields WHERE entity_type=? AND record_id=? ORDER BY field_name", (table, rid))]
+        return [
+            dict(r)
+            for r in self.db.q(
+                "SELECT id, field_name, field_value FROM custom_fields WHERE entity_type=? AND record_id=? ORDER BY field_name",
+                (table, rid),
+            )
+        ]
 
     def set_custom_field(self, table: str, rid: int, name: str, value: str) -> None:
         self.entity(table)
         name = (name or "").strip()
         if not name:
             raise ValidationError("Field name is required.")
-        self.db.run("INSERT INTO custom_fields(entity_type,record_id,field_name,field_value) VALUES(?,?,?,?) "
-                    "ON CONFLICT(entity_type,record_id,field_name) DO UPDATE SET field_value=excluded.field_value", (table, rid, name, (value or "").strip()))
+        self.db.run(
+            "INSERT INTO custom_fields(entity_type,record_id,field_name,field_value) VALUES(?,?,?,?) "
+            "ON CONFLICT(entity_type,record_id,field_name) DO UPDATE SET field_value=excluded.field_value",
+            (table, rid, name, (value or "").strip()),
+        )
 
     def delete_custom_field(self, fid: int) -> None:
         self.db.run("DELETE FROM custom_fields WHERE id=?", (fid,))
@@ -2512,20 +4226,22 @@ class Repository:
 # ════════════════════════════════════════════════════════════════════════════
 # 7 · ANALYTICS, ALERTS & APPLICATION CORE  (every figure comes from stored records)
 # ════════════════════════════════════════════════════════════════════════════
-SCORES_SQL = ("SELECT m.subject_id, m.assessment_date AS dt, m.marks_obtained AS got, m.max_marks AS mx, "
-              "COALESCE(NULLIF(m.title,''), m.assessment_type) AS title FROM marks m WHERE m.max_marks > 0 "
-              "UNION ALL SELECT e.subject_id, e.exam_date, e.marks_obtained, e.max_marks, e.title FROM exams e "
-              "WHERE e.marks_obtained IS NOT NULL AND e.max_marks > 0")
+SCORES_SQL = (
+    "SELECT m.subject_id, m.assessment_date AS dt, m.marks_obtained AS got, m.max_marks AS mx, "
+    "COALESCE(NULLIF(m.title,''), m.assessment_type) AS title FROM marks m WHERE m.max_marks > 0 "
+    "UNION ALL SELECT e.subject_id, e.exam_date, e.marks_obtained, e.max_marks, e.title FROM exams e "
+    "WHERE e.marks_obtained IS NOT NULL AND e.max_marks > 0"
+)
 STRONG_PCT, WEAK_PCT = 75.0, 50.0
 Range = tuple  # (date_from | None, date_to | None) as ISO strings
 
 
 @dataclass
 class Alert:
-    severity: str   # danger | warning | info
+    severity: str  # danger | warning | info
     title: str
     detail: str
-    page: str       # page key to open
+    page: str  # page key to open
 
 
 class Analytics:
@@ -2556,15 +4272,22 @@ class Analytics:
         return sql, args
 
     # ---- assignments ------------------------------------------------------
-    def assignment_stats(self, sid: Optional[int] = None, rng: Optional[Range] = None) -> dict:
+    def assignment_stats(
+        self, sid: Optional[int] = None, rng: Optional[Range] = None
+    ) -> dict:
         sc, sa = self._sc(sid)
         rg, ra = self._rg("t.due_date", rng)
         today = self.repo.today()
         by: Counter = Counter()
         due_week = 0
-        for r in self.db.q("SELECT t.status, t.due_date, t.submission_date FROM assignments t JOIN subjects s ON s.id=t.subject_id "
-                           f"WHERE 1=1{sc}{rg}", sa + ra):
-            st = effective_assignment_status(r["status"], r["due_date"], r["submission_date"], today)
+        for r in self.db.q(
+            "SELECT t.status, t.due_date, t.submission_date FROM assignments t JOIN subjects s ON s.id=t.subject_id "
+            f"WHERE 1=1{sc}{rg}",
+            sa + ra,
+        ):
+            st = effective_assignment_status(
+                r["status"], r["due_date"], r["submission_date"], today
+            )
             by[st] += 1
             d = parse_date(r["due_date"])
             if st in PENDING_ASSIGNMENT and d and 0 <= (d - today).days <= 7:
@@ -2572,33 +4295,76 @@ class Analytics:
         total = sum(by.values())
         submitted = by["Submitted"] + by["Late Submission"] + by["Evaluated"]
         done = submitted + by["Completed"]
-        return {"total": total, "by_status": dict(by), "pending": sum(by[s] for s in PENDING_ASSIGNMENT),
-                "overdue": by["Overdue"], "due_week": due_week, "submitted": submitted, "done": done, "late": by["Late Submission"],
-                "completion_rate": percent(done, total), "submit_rate": percent(submitted, total)}
+        return {
+            "total": total,
+            "by_status": dict(by),
+            "pending": sum(by[s] for s in PENDING_ASSIGNMENT),
+            "overdue": by["Overdue"],
+            "due_week": due_week,
+            "submitted": submitted,
+            "done": done,
+            "late": by["Late Submission"],
+            "completion_rate": percent(done, total),
+            "submit_rate": percent(submitted, total),
+        }
 
     # ---- syllabus ----------------------------------------------------------
     def syllabus_by_subject(self, sid: Optional[int] = None) -> list[dict]:
         sc, sa = self._sc(sid)
-        chap = {r["subject_id"]: (r["n"], r["d"] or 0) for r in self.db.q(
-            "SELECT u.subject_id, COUNT(c.id) n, SUM(c.status='Completed') d FROM chapters c JOIN units u ON u.id=c.unit_id GROUP BY u.subject_id")}
+        chap = {
+            r["subject_id"]: (r["n"], r["d"] or 0)
+            for r in self.db.q(
+                "SELECT u.subject_id, COUNT(c.id) n, SUM(c.status='Completed') d FROM chapters c JOIN units u ON u.id=c.unit_id GROUP BY u.subject_id"
+            )
+        }
         out = []
-        for r in self.db.q("SELECT s.id, s.name, s.color, COUNT(u.id) units, SUM(u.status='Completed') done, SUM(u.status='In Progress') doing "
-                           f"FROM subjects s LEFT JOIN units u ON u.subject_id=s.id WHERE 1=1{sc} GROUP BY s.id ORDER BY s.name", sa):
+        for r in self.db.q(
+            "SELECT s.id, s.name, s.color, COUNT(u.id) units, SUM(u.status='Completed') done, SUM(u.status='In Progress') doing "
+            f"FROM subjects s LEFT JOIN units u ON u.subject_id=s.id WHERE 1=1{sc} GROUP BY s.id ORDER BY s.name",
+            sa,
+        ):
             cn, cd = chap.get(r["id"], (0, 0))
-            out.append({"subject_id": r["id"], "subject": r["name"], "color": r["color"], "units": r["units"], "done": r["done"] or 0,
-                        "doing": r["doing"] or 0, "pct": percent(r["done"] or 0, r["units"]), "chapters": cn, "chapters_done": cd,
-                        "chapter_pct": percent(cd, cn)})
+            out.append(
+                {
+                    "subject_id": r["id"],
+                    "subject": r["name"],
+                    "color": r["color"],
+                    "units": r["units"],
+                    "done": r["done"] or 0,
+                    "doing": r["doing"] or 0,
+                    "pct": percent(r["done"] or 0, r["units"]),
+                    "chapters": cn,
+                    "chapters_done": cd,
+                    "chapter_pct": percent(cd, cn),
+                }
+            )
         return out
 
     # ---- scores / performance ---------------------------------------------
-    def subject_performance(self, sid: Optional[int] = None, rng: Optional[Range] = None) -> list[dict]:
+    def subject_performance(
+        self, sid: Optional[int] = None, rng: Optional[Range] = None
+    ) -> list[dict]:
         """Per subject: pooled % (Σ obtained ÷ Σ maximum), score count, trend (needs ≥4 dated scores)."""
         sc, sa = self._sc(sid)
         rg, ra = self._rg("sc.dt", rng)
         data: dict[int, dict] = {}
-        for r in self.db.q(f"SELECT s.id, s.name, s.color, sc.dt, sc.got, sc.mx FROM ({SCORES_SQL}) sc JOIN subjects s ON s.id=sc.subject_id "
-                           f"WHERE 1=1{sc}{rg} ORDER BY s.name, CASE WHEN sc.dt='' THEN 1 ELSE 0 END, sc.dt", sa + ra):
-            d = data.setdefault(r["id"], {"subject_id": r["id"], "subject": r["name"], "color": r["color"], "got": 0.0, "mx": 0.0, "series": [], "n": 0})
+        for r in self.db.q(
+            f"SELECT s.id, s.name, s.color, sc.dt, sc.got, sc.mx FROM ({SCORES_SQL}) sc JOIN subjects s ON s.id=sc.subject_id "
+            f"WHERE 1=1{sc}{rg} ORDER BY s.name, CASE WHEN sc.dt='' THEN 1 ELSE 0 END, sc.dt",
+            sa + ra,
+        ):
+            d = data.setdefault(
+                r["id"],
+                {
+                    "subject_id": r["id"],
+                    "subject": r["name"],
+                    "color": r["color"],
+                    "got": 0.0,
+                    "mx": 0.0,
+                    "series": [],
+                    "n": 0,
+                },
+            )
             d["got"] += r["got"]
             d["mx"] += r["mx"]
             d["n"] += 1
@@ -2611,94 +4377,201 @@ class Analytics:
             out.append(d)
         return sorted(out, key=lambda x: x["subject"].casefold())
 
-    def score_overall(self, sid: Optional[int] = None, rng: Optional[Range] = None) -> Optional[float]:
+    def score_overall(
+        self, sid: Optional[int] = None, rng: Optional[Range] = None
+    ) -> Optional[float]:
         perf = self.subject_performance(sid, rng)
-        return percent(sum(p["got"] for p in perf), sum(p["mx"] for p in perf)) if perf else None
+        return (
+            percent(sum(p["got"] for p in perf), sum(p["mx"] for p in perf))
+            if perf
+            else None
+        )
 
-    def score_trend(self, sid: Optional[int] = None, rng: Optional[Range] = None) -> list[tuple[str, float]]:
+    def score_trend(
+        self, sid: Optional[int] = None, rng: Optional[Range] = None
+    ) -> list[tuple[str, float]]:
         """Chronological (date, %) of every dated score — for the performance-trend chart."""
         sc, sa = self._sc(sid)
         rg, ra = self._rg("sc.dt", rng)
-        return [(r["dt"], r["got"] / r["mx"] * 100) for r in self.db.q(
-            f"SELECT sc.dt, sc.got, sc.mx FROM ({SCORES_SQL}) sc JOIN subjects s ON s.id=sc.subject_id WHERE sc.dt<>''{sc}{rg} ORDER BY sc.dt", sa + ra)]
+        return [
+            (r["dt"], r["got"] / r["mx"] * 100)
+            for r in self.db.q(
+                f"SELECT sc.dt, sc.got, sc.mx FROM ({SCORES_SQL}) sc JOIN subjects s ON s.id=sc.subject_id WHERE sc.dt<>''{sc}{rg} ORDER BY sc.dt",
+                sa + ra,
+            )
+        ]
 
     # ---- attendance ---------------------------------------------------------
-    def attendance_by_subject(self, sid: Optional[int] = None, rng: Optional[Range] = None) -> list[dict]:
+    def attendance_by_subject(
+        self, sid: Optional[int] = None, rng: Optional[Range] = None
+    ) -> list[dict]:
         sc, sa = self._sc(sid)
         rg, ra = self._rg("a.att_date", rng)
         default = self.settings.get_float("attendance_min", 75.0)
         out = []
-        for r in self.db.q("SELECT s.id, s.name, s.color, s.attendance_target tgt, COALESCE(SUM(a.classes_held),0) h, "
-                           "COALESCE(SUM(a.classes_attended),0) c FROM subjects s LEFT JOIN attendance a ON a.subject_id=s.id"
-                           f"{rg} WHERE 1=1{sc} GROUP BY s.id ORDER BY s.name", ra + sa):
-            st = attendance_stats(r["h"], r["c"], r["tgt"] if r["tgt"] is not None else default)
-            out.append({"subject_id": r["id"], "subject": r["name"], "color": r["color"], **st})
+        for r in self.db.q(
+            "SELECT s.id, s.name, s.color, s.attendance_target tgt, COALESCE(SUM(a.classes_held),0) h, "
+            "COALESCE(SUM(a.classes_attended),0) c FROM subjects s LEFT JOIN attendance a ON a.subject_id=s.id"
+            f"{rg} WHERE 1=1{sc} GROUP BY s.id ORDER BY s.name",
+            ra + sa,
+        ):
+            st = attendance_stats(
+                r["h"], r["c"], r["tgt"] if r["tgt"] is not None else default
+            )
+            out.append(
+                {"subject_id": r["id"], "subject": r["name"], "color": r["color"], **st}
+            )
         return out
 
-    def attendance_overall(self, sid: Optional[int] = None, rng: Optional[Range] = None) -> dict:
+    def attendance_overall(
+        self, sid: Optional[int] = None, rng: Optional[Range] = None
+    ) -> dict:
         rows = self.attendance_by_subject(sid, rng)
-        return attendance_stats(sum(r["held"] for r in rows), sum(r["attended"] for r in rows), self.settings.get_float("attendance_min", 75.0))
+        return attendance_stats(
+            sum(r["held"] for r in rows),
+            sum(r["attended"] for r in rows),
+            self.settings.get_float("attendance_min", 75.0),
+        )
 
     def attendance_monthly(self, sid: Optional[int] = None) -> list[tuple[str, float]]:
         sc, sa = self._sc(sid)
-        return [(r["m"], r["c"] / r["h"] * 100) for r in self.db.q(
-            "SELECT substr(a.att_date,1,7) m, SUM(a.classes_held) h, SUM(a.classes_attended) c FROM attendance a "
-            f"JOIN subjects s ON s.id=a.subject_id WHERE a.att_date<>''{sc} GROUP BY m HAVING h>0 ORDER BY m", sa)]
+        return [
+            (r["m"], r["c"] / r["h"] * 100)
+            for r in self.db.q(
+                "SELECT substr(a.att_date,1,7) m, SUM(a.classes_held) h, SUM(a.classes_attended) c FROM attendance a "
+                f"JOIN subjects s ON s.id=a.subject_id WHERE a.att_date<>''{sc} GROUP BY m HAVING h>0 ORDER BY m",
+                sa,
+            )
+        ]
 
     # ---- study ----------------------------------------------------------------
-    def study_daily(self, days: int = 30, sid: Optional[int] = None) -> list[tuple[str, int]]:
+    def study_daily(
+        self, days: int = 30, sid: Optional[int] = None
+    ) -> list[tuple[str, int]]:
         today = self.repo.today()
         start = (today - timedelta(days=days - 1)).isoformat()
         sc, sa = self._sc(sid)
-        got = {r["d"]: r["m"] for r in self.db.q("SELECT t.study_date d, SUM(t.duration_minutes) m FROM study_sessions t "
-                                                 f"JOIN subjects s ON s.id=t.subject_id WHERE t.study_date >= ?{sc} GROUP BY d", [start] + sa)}
-        return [((today - timedelta(days=i)).isoformat(), int(got.get((today - timedelta(days=i)).isoformat(), 0))) for i in range(days - 1, -1, -1)]
+        got = {
+            r["d"]: r["m"]
+            for r in self.db.q(
+                "SELECT t.study_date d, SUM(t.duration_minutes) m FROM study_sessions t "
+                f"JOIN subjects s ON s.id=t.subject_id WHERE t.study_date >= ?{sc} GROUP BY d",
+                [start] + sa,
+            )
+        }
+        return [
+            (
+                (today - timedelta(days=i)).isoformat(),
+                int(got.get((today - timedelta(days=i)).isoformat(), 0)),
+            )
+            for i in range(days - 1, -1, -1)
+        ]
 
-    def study_by_subject(self, sid: Optional[int] = None, rng: Optional[Range] = None) -> list[dict]:
+    def study_by_subject(
+        self, sid: Optional[int] = None, rng: Optional[Range] = None
+    ) -> list[dict]:
         sc, sa = self._sc(sid)
         rg, ra = self._rg("t.study_date", rng)
-        rows = self.db.q("SELECT s.id, s.name, s.color, s.target_hours, COALESCE(SUM(t.duration_minutes),0) m, COUNT(t.id) n "
-                         f"FROM subjects s LEFT JOIN study_sessions t ON t.subject_id=s.id{rg} WHERE 1=1{sc} GROUP BY s.id ORDER BY m DESC, s.name", ra + sa)
+        rows = self.db.q(
+            "SELECT s.id, s.name, s.color, s.target_hours, COALESCE(SUM(t.duration_minutes),0) m, COUNT(t.id) n "
+            f"FROM subjects s LEFT JOIN study_sessions t ON t.subject_id=s.id{rg} WHERE 1=1{sc} GROUP BY s.id ORDER BY m DESC, s.name",
+            ra + sa,
+        )
         total = sum(r["m"] for r in rows)
-        return [{"subject_id": r["id"], "subject": r["name"], "color": r["color"], "minutes": r["m"], "sessions": r["n"],
-                 "share": percent(r["m"], total), "target_hours": r["target_hours"]} for r in rows]
+        return [
+            {
+                "subject_id": r["id"],
+                "subject": r["name"],
+                "color": r["color"],
+                "minutes": r["m"],
+                "sessions": r["n"],
+                "share": percent(r["m"], total),
+                "target_hours": r["target_hours"],
+            }
+            for r in rows
+        ]
 
     def study_habits(self, days: int = 14) -> dict:
         goal = self.settings.get_int("daily_goal", 180)
         daily = self.study_daily(days)
-        all_days = {r[0] for r in self.db.q("SELECT DISTINCT study_date FROM study_sessions")}
+        all_days = {
+            r[0] for r in self.db.q("SELECT DISTINCT study_date FROM study_sessions")
+        }
         studied = sum(1 for _, m in daily if m > 0)
-        return {"days": days, "goal": goal, "studied_days": studied, "goal_days": sum(1 for _, m in daily if goal and m >= goal),
-                "avg_minutes": sum(m for _, m in daily) / days, "today_minutes": daily[-1][1] if daily else 0,
-                "streak": study_streak(all_days, self.repo.today()), "consistency": percent(studied, days),
-                "goal_rate": percent(sum(1 for _, m in daily if goal and m >= goal), days)}
+        return {
+            "days": days,
+            "goal": goal,
+            "studied_days": studied,
+            "goal_days": sum(1 for _, m in daily if goal and m >= goal),
+            "avg_minutes": sum(m for _, m in daily) / days,
+            "today_minutes": daily[-1][1] if daily else 0,
+            "streak": study_streak(all_days, self.repo.today()),
+            "consistency": percent(studied, days),
+            "goal_rate": percent(sum(1 for _, m in daily if goal and m >= goal), days),
+        }
 
     # ---- results, SGPA & CGPA -------------------------------------------------
     def semester_history(self) -> list[dict]:
         """One row per semester: SGPA, running CGPA (per programme), credits, backlogs, attendance, study, assignments."""
         cfg, q = self.settings.grading(), self.db.q
-        sems = [dict(r) for r in q(
-            "SELECT sem.id, sem.name, sem.status, sem.semester_no, sem.programme_id, p.name AS programme, ay.name AS year_name "
-            "FROM semesters sem LEFT JOIN programmes p ON p.id=sem.programme_id LEFT JOIN academic_years ay ON ay.id=sem.academic_year_id "
-            "ORDER BY COALESCE(sem.programme_id,0), COALESCE(sem.semester_no,9999), sem.id")]
-        rrows = [dict(r) for r in q("SELECT r.*, s.semester_id, s.credits AS subject_credits FROM subject_results r JOIN subjects s ON s.id=r.subject_id")]
+        sems = [
+            dict(r)
+            for r in q(
+                "SELECT sem.id, sem.name, sem.status, sem.semester_no, sem.programme_id, p.name AS programme, ay.name AS year_name "
+                "FROM semesters sem LEFT JOIN programmes p ON p.id=sem.programme_id LEFT JOIN academic_years ay ON ay.id=sem.academic_year_id "
+                "ORDER BY COALESCE(sem.programme_id,0), COALESCE(sem.semester_no,9999), sem.id"
+            )
+        ]
+        rrows = [
+            dict(r)
+            for r in q(
+                "SELECT r.*, s.semester_id, s.credits AS subject_credits FROM subject_results r JOIN subjects s ON s.id=r.subject_id"
+            )
+        ]
         for r in rrows:
             r["ev"] = evaluate_result(r, cfg, r["subject_credits"] or 0)
         by_sem: dict[Any, list[dict]] = defaultdict(list)
         for r in pick_attempts(rrows, cfg):
             by_sem[r["semester_id"]].append(r)
-        subj = {r["semester_id"]: (r["n"], r["cr"] or 0) for r in q("SELECT semester_id, COUNT(*) n, SUM(credits) cr FROM subjects GROUP BY semester_id")}
-        att = {r["sid"]: (r["h"], r["c"]) for r in q("SELECT s.semester_id sid, SUM(a.classes_held) h, SUM(a.classes_attended) c FROM attendance a "
-                                                    "JOIN subjects s ON s.id=a.subject_id GROUP BY s.semester_id")}
-        study = {r["sid"]: r["m"] for r in q("SELECT s.semester_id sid, SUM(t.duration_minutes) m FROM study_sessions t "
-                                             "JOIN subjects s ON s.id=t.subject_id GROUP BY s.semester_id")}
-        syl = {r["sid"]: (r["n"], r["d"] or 0) for r in q("SELECT s.semester_id sid, COUNT(u.id) n, SUM(u.status='Completed') d FROM units u "
-                                                         "JOIN subjects s ON s.id=u.subject_id GROUP BY s.semester_id")}
+        subj = {
+            r["semester_id"]: (r["n"], r["cr"] or 0)
+            for r in q(
+                "SELECT semester_id, COUNT(*) n, SUM(credits) cr FROM subjects GROUP BY semester_id"
+            )
+        }
+        att = {
+            r["sid"]: (r["h"], r["c"])
+            for r in q(
+                "SELECT s.semester_id sid, SUM(a.classes_held) h, SUM(a.classes_attended) c FROM attendance a "
+                "JOIN subjects s ON s.id=a.subject_id GROUP BY s.semester_id"
+            )
+        }
+        study = {
+            r["sid"]: r["m"]
+            for r in q(
+                "SELECT s.semester_id sid, SUM(t.duration_minutes) m FROM study_sessions t "
+                "JOIN subjects s ON s.id=t.subject_id GROUP BY s.semester_id"
+            )
+        }
+        syl = {
+            r["sid"]: (r["n"], r["d"] or 0)
+            for r in q(
+                "SELECT s.semester_id sid, COUNT(u.id) n, SUM(u.status='Completed') d FROM units u "
+                "JOIN subjects s ON s.id=u.subject_id GROUP BY s.semester_id"
+            )
+        }
         asg: dict[Any, list[int]] = defaultdict(lambda: [0, 0])
         today = self.repo.today()
-        for r in q("SELECT s.semester_id sid, t.status, t.due_date, t.submission_date FROM assignments t JOIN subjects s ON s.id=t.subject_id"):
+        for r in q(
+            "SELECT s.semester_id sid, t.status, t.due_date, t.submission_date FROM assignments t JOIN subjects s ON s.id=t.subject_id"
+        ):
             asg[r["sid"]][0] += 1
-            if effective_assignment_status(r["status"], r["due_date"], r["submission_date"], today) not in PENDING_ASSIGNMENT:
+            if (
+                effective_assignment_status(
+                    r["status"], r["due_date"], r["submission_date"], today
+                )
+                not in PENDING_ASSIGNMENT
+            ):
                 asg[r["sid"]][1] += 1
         cum: dict[Any, list[list[dict]]] = {}
         out = []
@@ -2710,153 +4583,385 @@ class Analytics:
             marked = [e for e in evals if e["maximum"]]
             h, c = att.get(s["id"], (0, 0))
             n_units, d_units = syl.get(s["id"], (0, 0))
-            out.append({**s, "subjects": subj.get(s["id"], (0, 0))[0], "credits_planned": subj.get(s["id"], (0, 0))[1],
-                        "results": len(evals), "sgpa": compute_sgpa(evals, cfg), "cgpa": compute_cgpa(bucket, cfg) if evals else None,
-                        "credits_registered": sum(e["credits"] or 0 for e in evals if e["counted"]),
-                        "credits_earned": sum(e["credits"] or 0 for e in evals if e["passed"]),
-                        "pct": percent(sum(e["obtained"] for e in marked), sum(e["maximum"] for e in marked)) if marked else None,
-                        "backlogs": sum(1 for e in evals if e["passed"] is False),
-                        "attendance_pct": percent(c, h) if h else None, "study_minutes": int(study.get(s["id"], 0) or 0),
-                        "assign_total": asg[s["id"]][0], "assign_done": asg[s["id"]][1], "syllabus_pct": percent(d_units, n_units)})
+            out.append(
+                {
+                    **s,
+                    "subjects": subj.get(s["id"], (0, 0))[0],
+                    "credits_planned": subj.get(s["id"], (0, 0))[1],
+                    "results": len(evals),
+                    "sgpa": compute_sgpa(evals, cfg),
+                    "cgpa": compute_cgpa(bucket, cfg) if evals else None,
+                    "credits_registered": sum(
+                        e["credits"] or 0 for e in evals if e["counted"]
+                    ),
+                    "credits_earned": sum(
+                        e["credits"] or 0 for e in evals if e["passed"]
+                    ),
+                    "pct": (
+                        percent(
+                            sum(e["obtained"] for e in marked),
+                            sum(e["maximum"] for e in marked),
+                        )
+                        if marked
+                        else None
+                    ),
+                    "backlogs": sum(1 for e in evals if e["passed"] is False),
+                    "attendance_pct": percent(c, h) if h else None,
+                    "study_minutes": int(study.get(s["id"], 0) or 0),
+                    "assign_total": asg[s["id"]][0],
+                    "assign_done": asg[s["id"]][1],
+                    "syllabus_pct": percent(d_units, n_units),
+                }
+            )
         return out
 
     def grade_distribution(self, sid: Optional[int] = None) -> list[tuple[str, int]]:
         cfg = self.settings.grading()
         sc, sa = self._sc(sid)
-        rows = [dict(r) for r in self.db.q("SELECT r.*, s.semester_id, s.credits AS subject_credits FROM subject_results r "
-                                           f"JOIN subjects s ON s.id=r.subject_id WHERE 1=1{sc}", sa)]
+        rows = [
+            dict(r)
+            for r in self.db.q(
+                "SELECT r.*, s.semester_id, s.credits AS subject_credits FROM subject_results r "
+                f"JOIN subjects s ON s.id=r.subject_id WHERE 1=1{sc}",
+                sa,
+            )
+        ]
         for r in rows:
             r["ev"] = evaluate_result(r, cfg, r["subject_credits"] or 0)
-        grades = Counter(r["ev"]["grade"] for r in pick_attempts(rows, cfg) if r["ev"]["grade"])
+        grades = Counter(
+            r["ev"]["grade"] for r in pick_attempts(rows, cfg) if r["ev"]["grade"]
+        )
         order = [str(r["grade"]) for r in cfg._sorted()]
-        return [(g, grades[g]) for g in order if grades[g]] + [(g, n) for g, n in grades.items() if g not in order]
+        return [(g, grades[g]) for g in order if grades[g]] + [
+            (g, n) for g, n in grades.items() if g not in order
+        ]
 
     def sgpa_series(self) -> list[dict]:
         return [h for h in self.semester_history() if h["sgpa"] is not None]
 
     # ---- upcoming / recent ----------------------------------------------------------
-    def deadlines(self, sid: Optional[int] = None, days: int = 14, include_overdue: bool = True) -> list[dict]:
+    def deadlines(
+        self, sid: Optional[int] = None, days: int = 14, include_overdue: bool = True
+    ) -> list[dict]:
         today = self.repo.today()
         end = (today + timedelta(days=days)).isoformat()
         sc, sa = self._sc(sid)
         items = []
-        for r in self.db.q("SELECT t.title, t.due_date d, t.status, t.submission_date sub, s.name sn FROM assignments t JOIN subjects s ON s.id=t.subject_id "
-                           f"WHERE t.due_date<>''{sc}", sa):
+        for r in self.db.q(
+            "SELECT t.title, t.due_date d, t.status, t.submission_date sub, s.name sn FROM assignments t JOIN subjects s ON s.id=t.subject_id "
+            f"WHERE t.due_date<>''{sc}",
+            sa,
+        ):
             st = effective_assignment_status(r["status"], r["d"], r["sub"], today)
-            if st in PENDING_ASSIGNMENT and (r["d"] <= end) and (include_overdue or r["d"] >= today.isoformat()):
-                items.append({"kind": "Assignment", "title": r["title"], "subject": r["sn"], "date": r["d"], "status": st})
-        for r in self.db.q("SELECT t.title, t.exam_date d, t.prep_status ps, s.name sn FROM exams t JOIN subjects s ON s.id=t.subject_id "
-                           f"WHERE t.exam_date >= ? AND t.exam_date <= ?{sc}", [today.isoformat(), end] + sa):
-            items.append({"kind": "Exam", "title": r["title"], "subject": r["sn"], "date": r["d"], "status": r["ps"]})
-        for r in self.db.q("SELECT t.title, t.deadline d, t.status, s.name sn FROM projects t LEFT JOIN subjects s ON s.id=t.subject_id "
-                           "WHERE t.deadline<>'' AND t.status IN ('Not Started','In Progress','On Hold') AND t.deadline <= ?"
-                           + (" AND (t.subject_id IS NULL OR s.semester_id = ?)" if sid else ""), [end] + sa):
-            items.append({"kind": "Project", "title": r["title"], "subject": r["sn"] or "", "date": r["d"],
-                          "status": "Overdue" if r["d"] < today.isoformat() else r["status"]})
+            if (
+                st in PENDING_ASSIGNMENT
+                and (r["d"] <= end)
+                and (include_overdue or r["d"] >= today.isoformat())
+            ):
+                items.append(
+                    {
+                        "kind": "Assignment",
+                        "title": r["title"],
+                        "subject": r["sn"],
+                        "date": r["d"],
+                        "status": st,
+                    }
+                )
+        for r in self.db.q(
+            "SELECT t.title, t.exam_date d, t.prep_status ps, s.name sn FROM exams t JOIN subjects s ON s.id=t.subject_id "
+            f"WHERE t.exam_date >= ? AND t.exam_date <= ?{sc}",
+            [today.isoformat(), end] + sa,
+        ):
+            items.append(
+                {
+                    "kind": "Exam",
+                    "title": r["title"],
+                    "subject": r["sn"],
+                    "date": r["d"],
+                    "status": r["ps"],
+                }
+            )
+        for r in self.db.q(
+            "SELECT t.title, t.deadline d, t.status, s.name sn FROM projects t LEFT JOIN subjects s ON s.id=t.subject_id "
+            "WHERE t.deadline<>'' AND t.status IN ('Not Started','In Progress','On Hold') AND t.deadline <= ?"
+            + (" AND (t.subject_id IS NULL OR s.semester_id = ?)" if sid else ""),
+            [end] + sa,
+        ):
+            items.append(
+                {
+                    "kind": "Project",
+                    "title": r["title"],
+                    "subject": r["sn"] or "",
+                    "date": r["d"],
+                    "status": "Overdue" if r["d"] < today.isoformat() else r["status"],
+                }
+            )
         for it in items:
-            it["days_left"] = (parse_date(it["date"]) - today).days if parse_date(it["date"]) else None
+            it["days_left"] = (
+                (parse_date(it["date"]) - today).days
+                if parse_date(it["date"])
+                else None
+            )
         return sorted(items, key=lambda x: (x["date"], x["kind"]))
 
     def recent_activity(self, sid: Optional[int] = None, limit: int = 8) -> list[dict]:
         sc, sa = self._sc(sid)
         items = []
-        for r in self.db.q("SELECT t.study_date d, t.duration_minutes m, s.name sn FROM study_sessions t JOIN subjects s ON s.id=t.subject_id "
-                           f"WHERE 1=1{sc} ORDER BY t.study_date DESC, t.id DESC LIMIT ?", sa + [limit]):
-            items.append({"date": r["d"], "kind": "Study", "text": f"Studied {r['sn']} for {fmt_minutes(r['m'])}"})
-        for r in self.db.q("SELECT t.title, t.submission_date d, s.name sn FROM assignments t JOIN subjects s ON s.id=t.subject_id WHERE t.submission_date<>''"
-                           f"{sc} ORDER BY t.submission_date DESC LIMIT ?", sa + [limit]):
-            items.append({"date": r["d"], "kind": "Assignment", "text": f"Submitted “{r['title']}” ({r['sn']})"})
-        for r in self.db.q(f"SELECT sc.title, sc.dt d, sc.got, sc.mx, s.name sn FROM ({SCORES_SQL}) sc JOIN subjects s ON s.id=sc.subject_id "
-                           f"WHERE sc.dt<>''{sc} ORDER BY sc.dt DESC LIMIT ?", sa + [limit]):
-            items.append({"date": r["d"], "kind": "Score", "text": f"{r['title']}: {fmt_num(r['got'])}/{fmt_num(r['mx'])} in {r['sn']}"})
+        for r in self.db.q(
+            "SELECT t.study_date d, t.duration_minutes m, s.name sn FROM study_sessions t JOIN subjects s ON s.id=t.subject_id "
+            f"WHERE 1=1{sc} ORDER BY t.study_date DESC, t.id DESC LIMIT ?",
+            sa + [limit],
+        ):
+            items.append(
+                {
+                    "date": r["d"],
+                    "kind": "Study",
+                    "text": f"Studied {r['sn']} for {fmt_minutes(r['m'])}",
+                }
+            )
+        for r in self.db.q(
+            "SELECT t.title, t.submission_date d, s.name sn FROM assignments t JOIN subjects s ON s.id=t.subject_id WHERE t.submission_date<>''"
+            f"{sc} ORDER BY t.submission_date DESC LIMIT ?",
+            sa + [limit],
+        ):
+            items.append(
+                {
+                    "date": r["d"],
+                    "kind": "Assignment",
+                    "text": f"Submitted “{r['title']}” ({r['sn']})",
+                }
+            )
+        for r in self.db.q(
+            f"SELECT sc.title, sc.dt d, sc.got, sc.mx, s.name sn FROM ({SCORES_SQL}) sc JOIN subjects s ON s.id=sc.subject_id "
+            f"WHERE sc.dt<>''{sc} ORDER BY sc.dt DESC LIMIT ?",
+            sa + [limit],
+        ):
+            items.append(
+                {
+                    "date": r["d"],
+                    "kind": "Score",
+                    "text": f"{r['title']}: {fmt_num(r['got'])}/{fmt_num(r['mx'])} in {r['sn']}",
+                }
+            )
         return sorted(items, key=lambda x: x["date"], reverse=True)[:limit]
 
     # ---- dashboard bundle -----------------------------------------------------------
     def overview(self, sid: Optional[int] = None, rng: Optional[Range] = None) -> dict:
         sc, sa = self._sc(sid)
         today = self.repo.today()
-        units = self.db.one(f"SELECT COUNT(*) n, SUM(u.status='Completed') d FROM units u JOIN subjects s ON s.id=u.subject_id WHERE 1=1{sc}", sa)
-        nxt = self.db.one("SELECT t.title, t.exam_date d, s.name sn FROM exams t JOIN subjects s ON s.id=t.subject_id WHERE t.exam_date >= ?"
-                          f"{sc} ORDER BY t.exam_date LIMIT 1", [today.isoformat()] + sa)
-        month = self.db.scalar("SELECT COUNT(*) FROM exams t JOIN subjects s ON s.id=t.subject_id WHERE t.exam_date >= ? AND t.exam_date <= ?" + sc,
-                               [today.isoformat(), (today + timedelta(days=30)).isoformat()] + sa, 0)
+        units = self.db.one(
+            f"SELECT COUNT(*) n, SUM(u.status='Completed') d FROM units u JOIN subjects s ON s.id=u.subject_id WHERE 1=1{sc}",
+            sa,
+        )
+        nxt = self.db.one(
+            "SELECT t.title, t.exam_date d, s.name sn FROM exams t JOIN subjects s ON s.id=t.subject_id WHERE t.exam_date >= ?"
+            f"{sc} ORDER BY t.exam_date LIMIT 1",
+            [today.isoformat()] + sa,
+        )
+        month = self.db.scalar(
+            "SELECT COUNT(*) FROM exams t JOIN subjects s ON s.id=t.subject_id WHERE t.exam_date >= ? AND t.exam_date <= ?"
+            + sc,
+            [today.isoformat(), (today + timedelta(days=30)).isoformat()] + sa,
+            0,
+        )
         rg, ra = self._rg("t.study_date", rng)
         week_start = (today - timedelta(days=6)).isoformat()
         hist = self.semester_history()
-        ids = None if not sid else ([int(sid)] if isinstance(sid, (int, str)) else [int(i) for i in sid])
-        cur = next((h for h in hist if h["id"] == ids[0]), None) if ids and len(ids) == 1 else None
+        ids = (
+            None
+            if not sid
+            else ([int(sid)] if isinstance(sid, (int, str)) else [int(i) for i in sid])
+        )
+        cur = (
+            next((h for h in hist if h["id"] == ids[0]), None)
+            if ids and len(ids) == 1
+            else None
+        )
         latest = [h for h in hist if h["cgpa"] is not None]
         habits = self.study_habits(14)
-        out = {"subjects": self.db.scalar(f"SELECT COUNT(*) FROM subjects s WHERE 1=1{sc}", sa, 0),
-               "units_total": units["n"] or 0, "units_done": units["d"] or 0, "syllabus_pct": percent(units["d"] or 0, units["n"]),
-               "assignments": self.assignment_stats(sid, rng), "attendance": self.attendance_overall(sid, rng),
-               "exams_30d": month, "next_exam": dict(nxt) if nxt else None, "score_pct": self.score_overall(sid, rng),
-               "study_minutes": self.db.scalar("SELECT COALESCE(SUM(t.duration_minutes),0) FROM study_sessions t JOIN subjects s ON s.id=t.subject_id "
-                                               f"WHERE 1=1{sc}{rg}", sa + ra, 0),
-               "study_week": self.db.scalar("SELECT COALESCE(SUM(t.duration_minutes),0) FROM study_sessions t JOIN subjects s ON s.id=t.subject_id "
-                                            f"WHERE t.study_date >= ?{sc}", [week_start] + sa, 0),
-               "habits": habits, "sgpa": cur["sgpa"] if cur else None,
-               "cgpa": (cur["cgpa"] if cur and cur["cgpa"] is not None else (latest[-1]["cgpa"] if latest else None)),
-               "backlogs": sum(h["backlogs"] for h in hist if ids is None or h["id"] in ids), "credits_earned": sum(h["credits_earned"] for h in hist if ids is None or h["id"] in ids)}
+        out = {
+            "subjects": self.db.scalar(
+                f"SELECT COUNT(*) FROM subjects s WHERE 1=1{sc}", sa, 0
+            ),
+            "units_total": units["n"] or 0,
+            "units_done": units["d"] or 0,
+            "syllabus_pct": percent(units["d"] or 0, units["n"]),
+            "assignments": self.assignment_stats(sid, rng),
+            "attendance": self.attendance_overall(sid, rng),
+            "exams_30d": month,
+            "next_exam": dict(nxt) if nxt else None,
+            "score_pct": self.score_overall(sid, rng),
+            "study_minutes": self.db.scalar(
+                "SELECT COALESCE(SUM(t.duration_minutes),0) FROM study_sessions t JOIN subjects s ON s.id=t.subject_id "
+                f"WHERE 1=1{sc}{rg}",
+                sa + ra,
+                0,
+            ),
+            "study_week": self.db.scalar(
+                "SELECT COALESCE(SUM(t.duration_minutes),0) FROM study_sessions t JOIN subjects s ON s.id=t.subject_id "
+                f"WHERE t.study_date >= ?{sc}",
+                [week_start] + sa,
+                0,
+            ),
+            "habits": habits,
+            "sgpa": cur["sgpa"] if cur else None,
+            "cgpa": (
+                cur["cgpa"]
+                if cur and cur["cgpa"] is not None
+                else (latest[-1]["cgpa"] if latest else None)
+            ),
+            "backlogs": sum(
+                h["backlogs"] for h in hist if ids is None or h["id"] in ids
+            ),
+            "credits_earned": sum(
+                h["credits_earned"] for h in hist if ids is None or h["id"] in ids
+            ),
+        }
         return out
 
     # ---- plain-language findings -----------------------------------------------------
-    def insights(self, sid: Optional[int] = None, rng: Optional[Range] = None) -> list[dict]:
+    def insights(
+        self, sid: Optional[int] = None, rng: Optional[Range] = None
+    ) -> list[dict]:
         out: list[dict] = []
-        add = lambda kind, level, text: out.append({"kind": kind, "level": level, "text": text})
+        add = lambda kind, level, text: out.append(
+            {"kind": kind, "level": level, "text": text}
+        )
         perf = [p for p in self.subject_performance(sid, rng) if p["n"]]
         fmt = lambda ps: ", ".join(f"{p['subject']} {p['pct']:.1f}%" for p in ps)
-        strong = sorted([p for p in perf if p["n"] >= 2 and p["pct"] >= STRONG_PCT], key=lambda p: -p["pct"])
-        weak = sorted([p for p in perf if p["n"] >= 2 and p["pct"] < WEAK_PCT], key=lambda p: p["pct"])
+        strong = sorted(
+            [p for p in perf if p["n"] >= 2 and p["pct"] >= STRONG_PCT],
+            key=lambda p: -p["pct"],
+        )
+        weak = sorted(
+            [p for p in perf if p["n"] >= 2 and p["pct"] < WEAK_PCT],
+            key=lambda p: p["pct"],
+        )
         if strong:
-            add("strong", "good", f"Strong subjects (average ≥ {STRONG_PCT:.0f}% over at least 2 scores): {fmt(strong)}.")
+            add(
+                "strong",
+                "good",
+                f"Strong subjects (average ≥ {STRONG_PCT:.0f}% over at least 2 scores): {fmt(strong)}.",
+            )
         if weak:
-            add("weak", "bad", f"Need extra preparation (average below {WEAK_PCT:.0f}% over at least 2 scores): {fmt(weak)}.")
+            add(
+                "weak",
+                "bad",
+                f"Need extra preparation (average below {WEAK_PCT:.0f}% over at least 2 scores): {fmt(weak)}.",
+            )
         imp = [p for p in perf if p["trend"] == "Improving"]
         dec = [p for p in perf if p["trend"] == "Declining"]
         if imp:
-            add("improving", "good", "Improving: " + ", ".join(f"{p['subject']} (+{p['delta']:.1f} pts)" for p in imp) + ".")
+            add(
+                "improving",
+                "good",
+                "Improving: "
+                + ", ".join(f"{p['subject']} (+{p['delta']:.1f} pts)" for p in imp)
+                + ".",
+            )
         if dec:
-            add("declining", "warn", "Declining: " + ", ".join(f"{p['subject']} ({p['delta']:.1f} pts)" for p in dec) + ".")
-        short = [a for a in self.attendance_by_subject(sid, rng) if a["status"] == "Shortage"]
+            add(
+                "declining",
+                "warn",
+                "Declining: "
+                + ", ".join(f"{p['subject']} ({p['delta']:.1f} pts)" for p in dec)
+                + ".",
+            )
+        short = [
+            a for a in self.attendance_by_subject(sid, rng) if a["status"] == "Shortage"
+        ]
         for a in short:
-            tip = (f"attend the next {a['need']} classes in a row to reach {a['target']:.0f}%" if a["need"] else "the target can no longer be reached")
-            add("attendance", "bad", f"Attendance below target in {a['subject']}: {a['pct']:.1f}% (target {a['target']:.0f}%) — {tip}.")
+            tip = (
+                f"attend the next {a['need']} classes in a row to reach {a['target']:.0f}%"
+                if a["need"]
+                else "the target can no longer be reached"
+            )
+            add(
+                "attendance",
+                "bad",
+                f"Attendance below target in {a['subject']}: {a['pct']:.1f}% (target {a['target']:.0f}%) — {tip}.",
+            )
         asg = self.assignment_stats(sid, rng)
         if asg["overdue"]:
-            add("deadlines", "bad", f"{asg['overdue']} assignment(s) are past their deadline and not yet submitted.")
+            add(
+                "deadlines",
+                "bad",
+                f"{asg['overdue']} assignment(s) are past their deadline and not yet submitted.",
+            )
         late = asg["late"]
         if late:
             add("deadlines", "warn", f"{late} assignment(s) were submitted late.")
-        syl = [s for s in self.syllabus_by_subject(sid) if s["units"] and s["done"] < s["units"]]
+        syl = [
+            s
+            for s in self.syllabus_by_subject(sid)
+            if s["units"] and s["done"] < s["units"]
+        ]
         if syl:
-            add("syllabus", "info", "Incomplete syllabus: " + ", ".join(f"{s['subject']} {s['done']}/{s['units']} units" for s in syl[:6])
-                + ("…" if len(syl) > 6 else "") + ".")
+            add(
+                "syllabus",
+                "info",
+                "Incomplete syllabus: "
+                + ", ".join(
+                    f"{s['subject']} {s['done']}/{s['units']} units" for s in syl[:6]
+                )
+                + ("…" if len(syl) > 6 else "")
+                + ".",
+            )
         study = self.study_by_subject(sid, rng)
         used = [s for s in study if s["minutes"] > 0]
         if len(used) >= 2:
             top, low = used[0], used[-1]
-            add("study", "info", f"Most study time: {top['subject']} ({fmt_minutes(top['minutes'])}, {top['share']:.0f}%). "
-                                 f"Least: {low['subject']} ({fmt_minutes(low['minutes'])}, {low['share']:.0f}%).")
+            add(
+                "study",
+                "info",
+                f"Most study time: {top['subject']} ({fmt_minutes(top['minutes'])}, {top['share']:.0f}%). "
+                f"Least: {low['subject']} ({fmt_minutes(low['minutes'])}, {low['share']:.0f}%).",
+            )
         none = [s["subject"] for s in study if s["minutes"] == 0]
         if none and used:
-            add("study", "warn", "No study time recorded for: " + ", ".join(none[:6]) + ("…" if len(none) > 6 else "") + ".")
+            add(
+                "study",
+                "warn",
+                "No study time recorded for: "
+                + ", ".join(none[:6])
+                + ("…" if len(none) > 6 else "")
+                + ".",
+            )
         today = self.repo.today().isoformat()
         sc, sa = self._sc(sid)
-        due_rev = self.db.scalar("SELECT COUNT(*) FROM revisions t JOIN units u ON u.id=t.unit_id JOIN subjects s ON s.id=u.subject_id "
-                                 f"WHERE t.status='Due' AND t.due_date <= ?{sc}", [today] + sa, 0)
-        low_conf = self.db.scalar("SELECT COUNT(*) FROM units u JOIN subjects s ON s.id=u.subject_id "
-                                  f"WHERE u.confidence <= 2 AND u.status<>'Completed'{sc}", sa, 0)
-        bits = ([f"{due_rev} unit(s) are due for revision"] if due_rev else []) + ([f"{low_conf} unfinished unit(s) have confidence 2 or lower"] if low_conf else [])
+        due_rev = self.db.scalar(
+            "SELECT COUNT(*) FROM revisions t JOIN units u ON u.id=t.unit_id JOIN subjects s ON s.id=u.subject_id "
+            f"WHERE t.status='Due' AND t.due_date <= ?{sc}",
+            [today] + sa,
+            0,
+        )
+        low_conf = self.db.scalar(
+            "SELECT COUNT(*) FROM units u JOIN subjects s ON s.id=u.subject_id "
+            f"WHERE u.confidence <= 2 AND u.status<>'Completed'{sc}",
+            sa,
+            0,
+        )
+        bits = ([f"{due_rev} unit(s) are due for revision"] if due_rev else []) + (
+            [f"{low_conf} unfinished unit(s) have confidence 2 or lower"]
+            if low_conf
+            else []
+        )
         if bits:
             add("revision", "warn", "; ".join(bits).capitalize() + ".")
         h = self.study_habits(14)
         if self.db.scalar("SELECT COUNT(*) FROM study_sessions", default=0):
-            add("habits", "good" if (h["goal_rate"] or 0) >= 50 else "info",
+            add(
+                "habits",
+                "good" if (h["goal_rate"] or 0) >= 50 else "info",
                 f"Daily goal ({fmt_minutes(h['goal'])}) reached on {h['goal_days']} of the last {h['days']} days; studied on {h['studied_days']} days "
-                f"({h['consistency']:.0f}% consistency); current streak {h['streak']} day(s).")
+                f"({h['consistency']:.0f}% consistency); current streak {h['streak']} day(s).",
+            )
         if not out:
-            add("empty", "info", "Not enough data yet. Add marks, attendance and study sessions to see strengths, trends and recommendations.")
+            add(
+                "empty",
+                "info",
+                "Not enough data yet. Add marks, attendance and study sessions to see strengths, trends and recommendations.",
+            )
         return out
 
     # ---- alerts (top-bar bell) ----------------------------------------------------------
@@ -2865,32 +4970,87 @@ class Analytics:
         today = self.repo.today()
         asg = self.assignment_stats(sid)
         if asg["overdue"]:
-            titles = [d["title"] for d in self.deadlines(sid, 0, True) if d["kind"] == "Assignment" and d["status"] == "Overdue"][:3]
-            out.append(Alert("danger", f"{asg['overdue']} overdue assignment(s)", ", ".join(titles), "assignments"))
+            titles = [
+                d["title"]
+                for d in self.deadlines(sid, 0, True)
+                if d["kind"] == "Assignment" and d["status"] == "Overdue"
+            ][:3]
+            out.append(
+                Alert(
+                    "danger",
+                    f"{asg['overdue']} overdue assignment(s)",
+                    ", ".join(titles),
+                    "assignments",
+                )
+            )
         soon = [d for d in self.deadlines(sid, 3, False) if d["kind"] == "Assignment"]
         if soon:
-            out.append(Alert("warning", f"{len(soon)} assignment(s) due within 3 days", ", ".join(d["title"] for d in soon[:3]), "assignments"))
+            out.append(
+                Alert(
+                    "warning",
+                    f"{len(soon)} assignment(s) due within 3 days",
+                    ", ".join(d["title"] for d in soon[:3]),
+                    "assignments",
+                )
+            )
         for d in [x for x in self.deadlines(sid, 7, False) if x["kind"] == "Exam"][:3]:
             ready = d["status"] in ("Prepared", "Completed")
-            out.append(Alert("info" if ready else "warning", f"Exam in {d['days_left']} day(s): {d['title']}",
-                             f"{d['subject']} — preparation: {d['status'] or 'Not Started'}", "exams"))
+            out.append(
+                Alert(
+                    "info" if ready else "warning",
+                    f"Exam in {d['days_left']} day(s): {d['title']}",
+                    f"{d['subject']} — preparation: {d['status'] or 'Not Started'}",
+                    "exams",
+                )
+            )
         for a in self.attendance_by_subject(sid):
             if a["status"] == "Shortage":
-                out.append(Alert("danger", f"Attendance shortage: {a['subject']}", f"{a['pct']:.1f}% (target {a['target']:.0f}%)", "attendance"))
+                out.append(
+                    Alert(
+                        "danger",
+                        f"Attendance shortage: {a['subject']}",
+                        f"{a['pct']:.1f}% (target {a['target']:.0f}%)",
+                        "attendance",
+                    )
+                )
         sc, sa = self._sc(sid)
-        due = self.db.scalar("SELECT COUNT(*) FROM revisions t JOIN units u ON u.id=t.unit_id JOIN subjects s ON s.id=u.subject_id "
-                             f"WHERE t.status='Due' AND t.due_date <= ?{sc}", [today.isoformat()] + sa, 0)
+        due = self.db.scalar(
+            "SELECT COUNT(*) FROM revisions t JOIN units u ON u.id=t.unit_id JOIN subjects s ON s.id=u.subject_id "
+            f"WHERE t.status='Due' AND t.due_date <= ?{sc}",
+            [today.isoformat()] + sa,
+            0,
+        )
         if due:
-            out.append(Alert("info", f"{due} revision(s) due", "Open the Study hub to review them.", "study"))
-        for d in [x for x in self.deadlines(sid, 7, True) if x["kind"] == "Project"][:2]:
-            out.append(Alert("danger" if d["status"] == "Overdue" else "warning", f"Project deadline: {d['title']}", fmt_date(d["date"]), "projects"))
+            out.append(
+                Alert(
+                    "info",
+                    f"{due} revision(s) due",
+                    "Open the Study hub to review them.",
+                    "study",
+                )
+            )
+        for d in [x for x in self.deadlines(sid, 7, True) if x["kind"] == "Project"][
+            :2
+        ]:
+            out.append(
+                Alert(
+                    "danger" if d["status"] == "Overdue" else "warning",
+                    f"Project deadline: {d['title']}",
+                    fmt_date(d["date"]),
+                    "projects",
+                )
+            )
         return out
 
 
 class AppCore:
     """Wires database, settings, repository, analytics and backups (no GUI)."""
 
-    def __init__(self, data_dir: Optional[Path | str] = None, db_path: Optional[Path | str] = None) -> None:
+    def __init__(
+        self,
+        data_dir: Optional[Path | str] = None,
+        db_path: Optional[Path | str] = None,
+    ) -> None:
         self.dir = Path(data_dir) if data_dir else resolve_data_dir()
         self.dir.mkdir(parents=True, exist_ok=True)
         self.db_path = Path(db_path) if db_path else self.dir / DB_FILENAME
@@ -2899,7 +5059,9 @@ class AppCore:
         self.bus = ChangeBus()
         self.repo = Repository(self.db, self.settings, self.bus)
         self.backups = BackupManager(self.db_path.parent / "backups")
-        self.repo.snapshot_hook = lambda reason: self.backups.create(self.db, kind="safety", reason=reason)
+        self.repo.snapshot_hook = lambda reason: self.backups.create(
+            self.db, kind="safety", reason=reason
+        )
         self.analytics = Analytics(self.repo)
         self.settings.set("app_version", APP_VERSION)
 
@@ -2908,7 +5070,9 @@ class AppCore:
         if not self.settings.get_bool("auto_backup"):
             return None
         try:
-            made = self.backups.daily_auto_backup(self.db, max(1, self.settings.get_int("backup_keep", 14)))
+            made = self.backups.daily_auto_backup(
+                self.db, max(1, self.settings.get_int("backup_keep", 14))
+            )
             return f"Automatic backup saved: {made.name}" if made else None
         except Exception as exc:  # never block start-up because of a backup problem
             LOG.warning("Automatic backup failed: %s", exc)
@@ -2921,9 +5085,14 @@ class AppCore:
         return safety
 
     def info(self) -> dict:
-        return {"path": str(self.db_path), "size": self.db_path.stat().st_size if self.db_path.exists() else 0,
-                "schema": self.db.schema_version(), "integrity": self.db.integrity_check(), "version": APP_VERSION,
-                "fk_problems": len(self.db.foreign_key_violations())}
+        return {
+            "path": str(self.db_path),
+            "size": self.db_path.stat().st_size if self.db_path.exists() else 0,
+            "schema": self.db.schema_version(),
+            "integrity": self.db.integrity_check(),
+            "version": APP_VERSION,
+            "fk_problems": len(self.db.foreign_key_violations()),
+        }
 
     def close(self) -> None:
         self.db.close()
@@ -2948,11 +5117,20 @@ class ReadCore:
 
 def setup_logging(folder: Path) -> None:
     folder.mkdir(parents=True, exist_ok=True)
-    handler = logging.handlers.RotatingFileHandler(folder / "study_space_pro.log", maxBytes=1_000_000, backupCount=3, encoding="utf-8")
-    handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s"))
+    handler = logging.handlers.RotatingFileHandler(
+        folder / "study_space_pro.log",
+        maxBytes=1_000_000,
+        backupCount=3,
+        encoding="utf-8",
+    )
+    handler.setFormatter(
+        logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s")
+    )
     root = logging.getLogger()
     root.setLevel(logging.INFO)
-    if not any(isinstance(h, logging.handlers.RotatingFileHandler) for h in root.handlers):
+    if not any(
+        isinstance(h, logging.handlers.RotatingFileHandler) for h in root.handlers
+    ):
         root.addHandler(handler)
 
 
@@ -2970,8 +5148,22 @@ try:
     from reportlab.pdfbase.ttfonts import TTFont
     from reportlab.pdfgen import canvas as rl_canvas
     from reportlab.platypus.doctemplate import LayoutError
-    from reportlab.platypus import (BaseDocTemplate, CondPageBreak, Flowable, Frame, Image as RLImage, KeepTogether,
-                                    LongTable, PageBreak, PageTemplate, Paragraph, Spacer, Table, TableStyle)
+    from reportlab.platypus import (
+        BaseDocTemplate,
+        CondPageBreak,
+        Flowable,
+        Frame,
+        Image as RLImage,
+        KeepTogether,
+        LongTable,
+        PageBreak,
+        PageTemplate,
+        Paragraph,
+        Spacer,
+        Table,
+        TableStyle,
+    )
+
     HAS_REPORTLAB = True
 except ImportError:  # the app still starts; report generation explains what to install
     HAS_REPORTLAB = False
@@ -2979,28 +5171,106 @@ except ImportError:  # the app still starts; report generation explains what to 
     LayoutError = Exception  # type: ignore[assignment,misc]
 try:
     import uharfbuzz  # noqa: F401  (optional: shaping for Devanagari and other Indic scripts)
+
     HAS_SHAPING = True
 except ImportError:
     HAS_SHAPING = False
 
 REPORT_SECTIONS = {
-    "profile": "Student profile", "summary": "Executive summary", "structure": "Academic structure",
-    "history": "Semester-wise performance (SGPA / CGPA)", "subjects": "Subject performance", "results": "Subject results",
-    "assignments": "Assignments", "exams": "Examinations", "assessments": "Assessments & marks", "attendance": "Attendance",
-    "study": "Study activity", "syllabus": "Syllabus completion", "projects": "Projects, labs & activities",
-    "analysis": "Performance analysis", "grading": "Grading & calculation method", "notes": "Notes & remarks"}
+    "profile": "Student profile",
+    "summary": "Executive summary",
+    "structure": "Academic structure",
+    "history": "Semester-wise performance (SGPA / CGPA)",
+    "subjects": "Subject performance",
+    "results": "Subject results",
+    "assignments": "Assignments",
+    "exams": "Examinations",
+    "assessments": "Assessments & marks",
+    "attendance": "Attendance",
+    "study": "Study activity",
+    "syllabus": "Syllabus completion",
+    "projects": "Projects, labs & activities",
+    "analysis": "Performance analysis",
+    "grading": "Grading & calculation method",
+    "notes": "Notes & remarks",
+}
 REPORT_KINDS: dict[str, tuple[str, list[str]]] = {
-    "complete": ("Complete academic report", ["profile", "summary", "structure", "history", "subjects", "results", "assignments",
-                                              "exams", "assessments", "attendance", "study", "syllabus", "projects", "analysis", "grading", "notes"]),
-    "profile": ("Student profile report", ["profile", "structure", "history", "grading"]),
-    "year": ("Academic year report", ["profile", "summary", "history", "subjects", "results", "attendance", "analysis", "grading"]),
-    "semester": ("Semester report", ["profile", "summary", "subjects", "results", "assignments", "exams", "assessments",
-                                     "attendance", "study", "syllabus", "projects", "analysis", "grading"]),
-    "subject": ("Subject performance report", ["summary", "subjects", "results", "assignments", "exams", "assessments",
-                                               "attendance", "study", "syllabus"]),
+    "complete": (
+        "Complete academic report",
+        [
+            "profile",
+            "summary",
+            "structure",
+            "history",
+            "subjects",
+            "results",
+            "assignments",
+            "exams",
+            "assessments",
+            "attendance",
+            "study",
+            "syllabus",
+            "projects",
+            "analysis",
+            "grading",
+            "notes",
+        ],
+    ),
+    "profile": (
+        "Student profile report",
+        ["profile", "structure", "history", "grading"],
+    ),
+    "year": (
+        "Academic year report",
+        [
+            "profile",
+            "summary",
+            "history",
+            "subjects",
+            "results",
+            "attendance",
+            "analysis",
+            "grading",
+        ],
+    ),
+    "semester": (
+        "Semester report",
+        [
+            "profile",
+            "summary",
+            "subjects",
+            "results",
+            "assignments",
+            "exams",
+            "assessments",
+            "attendance",
+            "study",
+            "syllabus",
+            "projects",
+            "analysis",
+            "grading",
+        ],
+    ),
+    "subject": (
+        "Subject performance report",
+        [
+            "summary",
+            "subjects",
+            "results",
+            "assignments",
+            "exams",
+            "assessments",
+            "attendance",
+            "study",
+            "syllabus",
+        ],
+    ),
     "assignments": ("Assignment report", ["summary", "assignments"]),
     "exams": ("Examination report", ["exams", "assessments"]),
-    "results": ("Marks and results report", ["history", "results", "assessments", "grading"]),
+    "results": (
+        "Marks and results report",
+        ["history", "results", "assessments", "grading"],
+    ),
     "attendance": ("Attendance report", ["attendance"]),
     "study": ("Study activity report", ["study", "syllabus"]),
     "syllabus": ("Syllabus completion report", ["syllabus"]),
@@ -3009,58 +5279,181 @@ REPORT_KINDS: dict[str, tuple[str, list[str]]] = {
     "custom": ("Custom report", ["summary", "subjects"]),
 }
 PAPER_SIZES = ("A4", "A3", "Letter")
-DEFAULT_HIDDEN = {"exams": {"venue"}}   # optional columns off by default (can be switched on)
-PALETTES = {"Professional blue": "#2457A7", "Graphite": "#374151", "Emerald": "#0B7A4B", "Burgundy": "#8C2F39",
-            "Teal": "#087F75", "Custom": ""}
+DEFAULT_HIDDEN = {
+    "exams": {"venue"}
+}  # optional columns off by default (can be switched on)
+PALETTES = {
+    "Professional blue": "#2457A7",
+    "Graphite": "#374151",
+    "Emerald": "#0B7A4B",
+    "Burgundy": "#8C2F39",
+    "Teal": "#087F75",
+    "Custom": "",
+}
 # section -> [(column key, heading, width weight, align l|c|r)]
 SECTION_COLUMNS: dict[str, list[tuple[str, str, float, str]]] = {
-    "structure": [("programme", "Programme", 2.2, "l"), ("year", "Year", 1.2, "l"), ("semester", "Semester", 1.8, "l"),
-                  ("status", "Status", 1.1, "l"), ("subjects", "Subjects", 0.9, "r"), ("credits", "Credits", 0.9, "r")],
-    "history": [("semester", "Semester", 2.0, "l"), ("status", "Status", 1.1, "l"), ("subjects", "Subjects", 0.9, "r"),
-                ("credits", "Credits (earned/total)", 1.5, "c"), ("sgpa", "SGPA", 0.8, "r"), ("cgpa", "CGPA", 0.8, "r"),
-                ("pct", "Marks %", 0.9, "r"), ("backlogs", "Backlogs", 0.9, "r"), ("attendance", "Attendance", 1.1, "r"),
-                ("study", "Study time", 1.1, "r"), ("assignments", "Assignments", 1.1, "c")],
-    "results": [("subject", "Subject", 2.6, "l"), ("semester", "Semester", 1.4, "l"), ("attempt", "Attempt", 0.8, "c"),
-                ("internal", "Internal", 1.0, "c"), ("external", "External", 1.0, "c"), ("practical", "Practical", 1.0, "c"),
-                ("total", "Total", 1.0, "c"), ("pct", "%", 0.8, "r"), ("grade", "Grade", 0.8, "c"), ("points", "Points", 0.8, "r"),
-                ("credits", "Credits", 0.8, "r"), ("result", "Result", 1.0, "l")],
-    "subjects": [("subject", "Subject", 2.8, "l"), ("code", "Code", 1.0, "l"), ("credits", "Credits", 0.8, "r"), ("score", "Score %", 0.9, "r"),
-                 ("n", "Scores", 0.7, "r"), ("trend", "Trend", 1.2, "l"), ("attendance", "Attendance", 1.0, "r"),
-                 ("syllabus", "Syllabus", 0.9, "r"), ("study", "Study time", 1.0, "r")],
-    "assignments": [("no", "No.", 0.6, "l"), ("title", "Assignment", 3.0, "l"), ("subject", "Subject", 2.2, "l"), ("type", "Type", 1.1, "l"),
-                    ("deadline", "Deadline", 1.3, "l"), ("submitted", "Submitted", 1.3, "l"), ("status", "Status", 1.4, "l"),
-                    ("priority", "Priority", 0.9, "l"), ("marks", "Marks", 0.9, "c")],
-    "exams": [("title", "Examination", 2.6, "l"), ("subject", "Subject", 2.2, "l"), ("type", "Type", 1.5, "l"), ("date", "Date", 1.2, "l"),
-              ("marks", "Marks", 0.9, "c"), ("pct", "%", 0.7, "r"), ("grade", "Grade", 0.7, "c"), ("result", "Result", 0.9, "l"),
-              ("attempt", "Attempt", 0.7, "c"), ("prep", "Preparation", 1.2, "l"), ("venue", "Venue", 1.2, "l")],
-    "assessments": [("date", "Date", 1.2, "l"), ("title", "Title", 2.4, "l"), ("type", "Type", 1.5, "l"), ("subject", "Subject", 2.2, "l"),
-                    ("obtained", "Obtained", 0.9, "r"), ("max", "Maximum", 0.9, "r"), ("pct", "%", 0.8, "r")],
-    "attendance": [("subject", "Subject", 2.8, "l"), ("held", "Held", 0.8, "r"), ("attended", "Attended", 0.9, "r"), ("missed", "Missed", 0.8, "r"),
-                   ("pct", "%", 0.8, "r"), ("target", "Target", 0.8, "r"), ("status", "Status", 1.1, "l"), ("action", "To reach target / can skip", 2.2, "l")],
-    "study_subjects": [("subject", "Subject", 3.0, "l"), ("time", "Time", 1.2, "r"), ("sessions", "Sessions", 1.0, "r"),
-                       ("share", "Share", 0.9, "r"), ("target", "Weekly target", 1.2, "r")],
-    "study": [("date", "Date", 1.2, "l"), ("subject", "Subject", 2.4, "l"), ("topic", "Topic", 2.8, "l"), ("time", "Time", 1.0, "r"), ("type", "Type", 1.0, "l")],
-    "syllabus": [("subject", "Subject", 2.8, "l"), ("units", "Units done", 1.2, "c"), ("unit_pct", "Units %", 0.9, "r"),
-                 ("chapters", "Chapters done", 1.3, "c"), ("chapter_pct", "Chapters %", 1.0, "r")],
-    "syllabus_open": [("subject", "Subject", 2.4, "l"), ("unit", "Unit", 0.7, "c"), ("title", "Title", 3.0, "l"),
-                      ("status", "Status", 1.2, "l"), ("confidence", "Confidence", 1.0, "c")],
-    "projects": [("category", "Category", 1.6, "l"), ("title", "Title", 2.8, "l"), ("subject", "Subject", 1.8, "l"), ("status", "Status", 1.1, "l"),
-                 ("deadline", "Deadline", 1.2, "l"), ("milestones", "Milestones", 1.0, "c"), ("supervisor", "Supervisor", 1.5, "l"), ("marks", "Marks", 0.9, "c")],
-    "trend": [("subject", "Subject", 3.0, "l"), ("score", "Score %", 1.0, "r"), ("n", "Scores", 0.8, "r"), ("trend", "Trend", 1.3, "l"), ("delta", "Change (pts)", 1.2, "r")],
-    "grading": [("grade", "Grade", 1.0, "c"), ("min", "Minimum %", 1.2, "r"), ("points", "Grade points", 1.2, "r"), ("label", "Description", 3.0, "l")],
+    "structure": [
+        ("programme", "Programme", 2.2, "l"),
+        ("year", "Year", 1.2, "l"),
+        ("semester", "Semester", 1.8, "l"),
+        ("status", "Status", 1.1, "l"),
+        ("subjects", "Subjects", 0.9, "r"),
+        ("credits", "Credits", 0.9, "r"),
+    ],
+    "history": [
+        ("semester", "Semester", 2.0, "l"),
+        ("status", "Status", 1.1, "l"),
+        ("subjects", "Subjects", 0.9, "r"),
+        ("credits", "Credits (earned/total)", 1.5, "c"),
+        ("sgpa", "SGPA", 0.8, "r"),
+        ("cgpa", "CGPA", 0.8, "r"),
+        ("pct", "Marks %", 0.9, "r"),
+        ("backlogs", "Backlogs", 0.9, "r"),
+        ("attendance", "Attendance", 1.1, "r"),
+        ("study", "Study time", 1.1, "r"),
+        ("assignments", "Assignments", 1.1, "c"),
+    ],
+    "results": [
+        ("subject", "Subject", 2.6, "l"),
+        ("semester", "Semester", 1.4, "l"),
+        ("attempt", "Attempt", 0.8, "c"),
+        ("internal", "Internal", 1.0, "c"),
+        ("external", "External", 1.0, "c"),
+        ("practical", "Practical", 1.0, "c"),
+        ("total", "Total", 1.0, "c"),
+        ("pct", "%", 0.8, "r"),
+        ("grade", "Grade", 0.8, "c"),
+        ("points", "Points", 0.8, "r"),
+        ("credits", "Credits", 0.8, "r"),
+        ("result", "Result", 1.0, "l"),
+    ],
+    "subjects": [
+        ("subject", "Subject", 2.8, "l"),
+        ("code", "Code", 1.0, "l"),
+        ("credits", "Credits", 0.8, "r"),
+        ("score", "Score %", 0.9, "r"),
+        ("n", "Scores", 0.7, "r"),
+        ("trend", "Trend", 1.2, "l"),
+        ("attendance", "Attendance", 1.0, "r"),
+        ("syllabus", "Syllabus", 0.9, "r"),
+        ("study", "Study time", 1.0, "r"),
+    ],
+    "assignments": [
+        ("no", "No.", 0.6, "l"),
+        ("title", "Assignment", 3.0, "l"),
+        ("subject", "Subject", 2.2, "l"),
+        ("type", "Type", 1.1, "l"),
+        ("deadline", "Deadline", 1.3, "l"),
+        ("submitted", "Submitted", 1.3, "l"),
+        ("status", "Status", 1.4, "l"),
+        ("priority", "Priority", 0.9, "l"),
+        ("marks", "Marks", 0.9, "c"),
+    ],
+    "exams": [
+        ("title", "Examination", 2.6, "l"),
+        ("subject", "Subject", 2.2, "l"),
+        ("type", "Type", 1.5, "l"),
+        ("date", "Date", 1.2, "l"),
+        ("marks", "Marks", 0.9, "c"),
+        ("pct", "%", 0.7, "r"),
+        ("grade", "Grade", 0.7, "c"),
+        ("result", "Result", 0.9, "l"),
+        ("attempt", "Attempt", 0.7, "c"),
+        ("prep", "Preparation", 1.2, "l"),
+        ("venue", "Venue", 1.2, "l"),
+    ],
+    "assessments": [
+        ("date", "Date", 1.2, "l"),
+        ("title", "Title", 2.4, "l"),
+        ("type", "Type", 1.5, "l"),
+        ("subject", "Subject", 2.2, "l"),
+        ("obtained", "Obtained", 0.9, "r"),
+        ("max", "Maximum", 0.9, "r"),
+        ("pct", "%", 0.8, "r"),
+    ],
+    "attendance": [
+        ("subject", "Subject", 2.8, "l"),
+        ("held", "Held", 0.8, "r"),
+        ("attended", "Attended", 0.9, "r"),
+        ("missed", "Missed", 0.8, "r"),
+        ("pct", "%", 0.8, "r"),
+        ("target", "Target", 0.8, "r"),
+        ("status", "Status", 1.1, "l"),
+        ("action", "To reach target / can skip", 2.2, "l"),
+    ],
+    "study_subjects": [
+        ("subject", "Subject", 3.0, "l"),
+        ("time", "Time", 1.2, "r"),
+        ("sessions", "Sessions", 1.0, "r"),
+        ("share", "Share", 0.9, "r"),
+        ("target", "Weekly target", 1.2, "r"),
+    ],
+    "study": [
+        ("date", "Date", 1.2, "l"),
+        ("subject", "Subject", 2.4, "l"),
+        ("topic", "Topic", 2.8, "l"),
+        ("time", "Time", 1.0, "r"),
+        ("type", "Type", 1.0, "l"),
+    ],
+    "syllabus": [
+        ("subject", "Subject", 2.8, "l"),
+        ("units", "Units done", 1.2, "c"),
+        ("unit_pct", "Units %", 0.9, "r"),
+        ("chapters", "Chapters done", 1.3, "c"),
+        ("chapter_pct", "Chapters %", 1.0, "r"),
+    ],
+    "syllabus_open": [
+        ("subject", "Subject", 2.4, "l"),
+        ("unit", "Unit", 0.7, "c"),
+        ("title", "Title", 3.0, "l"),
+        ("status", "Status", 1.2, "l"),
+        ("confidence", "Confidence", 1.0, "c"),
+    ],
+    "projects": [
+        ("category", "Category", 1.6, "l"),
+        ("title", "Title", 2.8, "l"),
+        ("subject", "Subject", 1.8, "l"),
+        ("status", "Status", 1.1, "l"),
+        ("deadline", "Deadline", 1.2, "l"),
+        ("milestones", "Milestones", 1.0, "c"),
+        ("supervisor", "Supervisor", 1.5, "l"),
+        ("marks", "Marks", 0.9, "c"),
+    ],
+    "trend": [
+        ("subject", "Subject", 3.0, "l"),
+        ("score", "Score %", 1.0, "r"),
+        ("n", "Scores", 0.8, "r"),
+        ("trend", "Trend", 1.3, "l"),
+        ("delta", "Change (pts)", 1.2, "r"),
+    ],
+    "grading": [
+        ("grade", "Grade", 1.0, "c"),
+        ("min", "Minimum %", 1.2, "r"),
+        ("points", "Grade points", 1.2, "r"),
+        ("label", "Description", 3.0, "l"),
+    ],
 }
-_PRINT_TOKENS = {"success": "#146C46", "warning": "#8A5A00", "danger": "#B42318", "info": "#2457A7", "muted": "#566274"}
+_PRINT_TOKENS = {
+    "success": "#146C46",
+    "warning": "#8A5A00",
+    "danger": "#B42318",
+    "info": "#2457A7",
+    "muted": "#566274",
+}
 
 
 @dataclass
 class ReportConfig:
     """Every user-adjustable option of a PDF report (saved as JSON presets)."""
+
     kind: str = "complete"
     title: str = ""
     subtitle: str = ""
     paper: str = "A4"
     orientation: str = "Portrait"
-    margins_mm: list = field(default_factory=lambda: [16.0, 16.0, 16.0, 16.0])   # left, right, top, bottom
+    margins_mm: list = field(
+        default_factory=lambda: [16.0, 16.0, 16.0, 16.0]
+    )  # left, right, top, bottom
     header_text: str = ""
     footer_text: str = ""
     page_numbers: bool = True
@@ -3076,7 +5469,9 @@ class ReportConfig:
     density: str = "Comfortable"
     row_spacing: float = 1.0
     include_charts: bool = True
-    sections: list = field(default_factory=list)          # ordered keys; empty = defaults for the report type
+    sections: list = field(
+        default_factory=list
+    )  # ordered keys; empty = defaults for the report type
     scope_semester_id: Optional[int] = None
     scope_year_id: Optional[int] = None
     scope_subject_id: Optional[int] = None
@@ -3084,11 +5479,17 @@ class ReportConfig:
     date_to: str = ""
     record_limit: int = 500
     notes: str = ""
-    columns: dict = field(default_factory=dict)           # section -> ordered visible column keys
-    widths: dict = field(default_factory=dict)            # section -> {column key: width weight}
+    columns: dict = field(
+        default_factory=dict
+    )  # section -> ordered visible column keys
+    widths: dict = field(default_factory=dict)  # section -> {column key: width weight}
 
     def resolved_sections(self) -> list[str]:
-        base = list(self.sections) if self.sections else list(REPORT_KINDS.get(self.kind, REPORT_KINDS["custom"])[1])
+        base = (
+            list(self.sections)
+            if self.sections
+            else list(REPORT_KINDS.get(self.kind, REPORT_KINDS["custom"])[1])
+        )
         out = [s for s in dict.fromkeys(base) if s in REPORT_SECTIONS]
         if not self.executive_summary and "summary" in out:
             out.remove("summary")
@@ -3097,8 +5498,11 @@ class ReportConfig:
         return out
 
     def effective_accent(self) -> str:
-        return hex_norm(self.accent or PALETTES.get(self.palette) or "#2457A7", "#2457A7") if self.palette == "Custom" \
+        return (
+            hex_norm(self.accent or PALETTES.get(self.palette) or "#2457A7", "#2457A7")
+            if self.palette == "Custom"
             else (PALETTES.get(self.palette) or hex_norm(self.accent, "#2457A7"))
+        )
 
     def page_size(self) -> tuple[float, float]:
         w, h = {"A4": A4, "A3": A3, "Letter": LETTER}[self.paper]
@@ -3107,11 +5511,16 @@ class ReportConfig:
     def validate(self) -> None:
         if self.kind not in REPORT_KINDS:
             raise ValidationError("Unknown report type.")
-        if self.paper not in PAPER_SIZES or self.orientation not in ("Portrait", "Landscape"):
+        if self.paper not in PAPER_SIZES or self.orientation not in (
+            "Portrait",
+            "Landscape",
+        ):
             raise ValidationError("Choose A4, A3 or Letter, in portrait or landscape.")
         if self.density not in DENSITY or self.palette not in PALETTES:
             raise ValidationError("Unknown table density or colour palette.")
-        if len(self.margins_mm) != 4 or any(not (5 <= (safe_float(m, -1) or -1) <= 60) for m in self.margins_mm):
+        if len(self.margins_mm) != 4 or any(
+            not (5 <= (safe_float(m, -1) or -1) <= 60) for m in self.margins_mm
+        ):
             raise ValidationError("Each page margin must be between 5 and 60 mm.")
         if not 0.7 <= (safe_float(self.font_scale, 0) or 0) <= 1.6:
             raise ValidationError("Font scale must be between 70% and 160%.")
@@ -3149,14 +5558,27 @@ class ReportConfig:
 
 
 # ---- fonts: one Unicode family + per-character fallback -----------------------------------
-_COMPLEX_RANGE = re.compile("[\u0900-\u0DFF\u0E00-\u0EFF]")
-_PRIMARY_FONTS = (("segoeui.ttf", "segoeuib.ttf"), ("arial.ttf", "arialbd.ttf"), ("arial.ttf", "arial bold.ttf"),
-                  ("calibri.ttf", "calibrib.ttf"), ("dejavusans.ttf", "dejavusans-bold.ttf"),
-                  ("liberationsans-regular.ttf", "liberationsans-bold.ttf"), ("notosans-regular.ttf", "notosans-bold.ttf"),
-                  ("freesans.ttf", "freesansbold.ttf"))
-_FALLBACK_FONTS = (("nirmala.ttf", "nirmalab.ttf"), ("nirmala.ttc", "nirmalab.ttf"), ("notosansdevanagari-regular.ttf", "notosansdevanagari-bold.ttf"),
-                   ("mangal.ttf", "mangalb.ttf"), ("arialuni.ttf", None), ("seguisym.ttf", None),
-                   ("dejavusans.ttf", "dejavusans-bold.ttf"), ("notosanssymbols-regular.ttf", None))
+_COMPLEX_RANGE = re.compile("[\u0900-\u0dff\u0e00-\u0eff]")
+_PRIMARY_FONTS = (
+    ("segoeui.ttf", "segoeuib.ttf"),
+    ("arial.ttf", "arialbd.ttf"),
+    ("arial.ttf", "arial bold.ttf"),
+    ("calibri.ttf", "calibrib.ttf"),
+    ("dejavusans.ttf", "dejavusans-bold.ttf"),
+    ("liberationsans-regular.ttf", "liberationsans-bold.ttf"),
+    ("notosans-regular.ttf", "notosans-bold.ttf"),
+    ("freesans.ttf", "freesansbold.ttf"),
+)
+_FALLBACK_FONTS = (
+    ("nirmala.ttf", "nirmalab.ttf"),
+    ("nirmala.ttc", "nirmalab.ttf"),
+    ("notosansdevanagari-regular.ttf", "notosansdevanagari-bold.ttf"),
+    ("mangal.ttf", "mangalb.ttf"),
+    ("arialuni.ttf", None),
+    ("seguisym.ttf", None),
+    ("dejavusans.ttf", "dejavusans-bold.ttf"),
+    ("notosanssymbols-regular.ttf", None),
+)
 
 
 class PdfFonts:
@@ -3174,7 +5596,9 @@ class PdfFonts:
 
     def __init__(self) -> None:
         self.index = self._index_fonts()
-        self.chain: list[tuple[str, str, Optional[set]]] = []   # (regular, bold, cmap) — primary first
+        self.chain: list[tuple[str, str, Optional[set]]] = (
+            []
+        )  # (regular, bold, cmap) — primary first
         self.limited = False
         for names, is_primary in ((_PRIMARY_FONTS, True), (_FALLBACK_FONTS, False)):
             for reg, bold in names:
@@ -3192,8 +5616,16 @@ class PdfFonts:
 
     @staticmethod
     def _index_fonts() -> dict[str, Path]:
-        dirs = [Path(os.environ.get("WINDIR", "C:/Windows")) / "Fonts", Path("/System/Library/Fonts"), Path("/System/Library/Fonts/Supplemental"),
-                Path("/Library/Fonts"), Path.home() / "Library/Fonts", Path("/usr/share/fonts"), Path("/usr/local/share/fonts"), Path.home() / ".fonts"]
+        dirs = [
+            Path(os.environ.get("WINDIR", "C:/Windows")) / "Fonts",
+            Path("/System/Library/Fonts"),
+            Path("/System/Library/Fonts/Supplemental"),
+            Path("/Library/Fonts"),
+            Path.home() / "Library/Fonts",
+            Path("/usr/share/fonts"),
+            Path("/usr/local/share/fonts"),
+            Path.home() / ".fonts",
+        ]
         found: dict[str, Path] = {}
         for base in dirs:
             try:
@@ -3205,17 +5637,25 @@ class PdfFonts:
                 continue
         return found
 
-    def _register(self, reg: str, bold: Optional[str]) -> Optional[tuple[str, str, Optional[set]]]:
+    def _register(
+        self, reg: str, bold: Optional[str]
+    ) -> Optional[tuple[str, str, Optional[set]]]:
         if not HAS_REPORTLAB or reg not in self.index:
             return None
         try:
             base = "SS" + re.sub(r"\W", "", reg.rsplit(".", 1)[0])
-            pdfmetrics.registerFont(TTFont(base, str(self.index[reg]), subfontIndex=0) if reg.endswith(".ttc") else TTFont(base, str(self.index[reg])))
+            pdfmetrics.registerFont(
+                TTFont(base, str(self.index[reg]), subfontIndex=0)
+                if reg.endswith(".ttc")
+                else TTFont(base, str(self.index[reg]))
+            )
             bname = base
             if bold and bold in self.index:
                 bname = base + "B"
                 pdfmetrics.registerFont(TTFont(bname, str(self.index[bold])))
-            pdfmetrics.registerFontFamily(base, normal=base, bold=bname, italic=base, boldItalic=bname)
+            pdfmetrics.registerFontFamily(
+                base, normal=base, bold=bname, italic=base, boldItalic=bname
+            )
             return base, bname, set(pdfmetrics.getFont(base).face.charToGlyph)
         except Exception as exc:  # a broken font file must not break reports
             LOG.warning("Font %s could not be registered: %s", reg, exc)
@@ -3233,7 +5673,9 @@ class PdfFonts:
                 continue
             if ch in "\n\t" or ord(ch) < 32:
                 ch = " " if ch == "\t" else ch
-            entry = next((e for e in self.chain if ch in "\n " or self._covers(e, ch)), None)
+            entry = next(
+                (e for e in self.chain if ch in "\n " or self._covers(e, ch)), None
+            )
             if entry is None:
                 entry, ch = self.chain[0], "?"
             name = entry[1] if bold else entry[0]
@@ -3246,17 +5688,35 @@ class PdfFonts:
     def markup(self, text: Any, bold: bool = False) -> str:
         """Escape text for ReportLab Paragraph markup and switch fonts for uncovered characters."""
         from xml.sax.saxutils import escape
+
         parts = []
         for name, chunk in self.runs("" if text is None else str(text), bold):
             esc = escape(chunk).replace("\n", "<br/>")
-            parts.append(esc if name in (self.primary, self.primary_bold) else f'<font name="{name}">{esc}</font>')
+            parts.append(
+                esc
+                if name in (self.primary, self.primary_bold)
+                else f'<font name="{name}">{esc}</font>'
+            )
         return "".join(parts)
 
     def width(self, text: str, size: float, bold: bool = False) -> float:
-        return sum(pdfmetrics.stringWidth(chunk, name, size) for name, chunk in self.runs(text, bold))
+        return sum(
+            pdfmetrics.stringWidth(chunk, name, size)
+            for name, chunk in self.runs(text, bold)
+        )
 
-    def draw(self, c: Any, x: float, y: float, text: str, size: float, color: str = "#111827", bold: bool = False,
-             align: str = "l", maxw: Optional[float] = None) -> None:
+    def draw(
+        self,
+        c: Any,
+        x: float,
+        y: float,
+        text: str,
+        size: float,
+        color: str = "#111827",
+        bold: bool = False,
+        align: str = "l",
+        maxw: Optional[float] = None,
+    ) -> None:
         text = str(text)
         if maxw and self.width(text, size, bold) > maxw:
             while text and self.width(text + "…", size, bold) > maxw:
@@ -3270,7 +5730,9 @@ class PdfFonts:
             c.drawString(x, y, chunk)
             x += pdfmetrics.stringWidth(chunk, name, size)
 
-    def wrap(self, text: str, size: float, width: float, lines: int = 2, bold: bool = False) -> list[str]:
+    def wrap(
+        self, text: str, size: float, width: float, lines: int = 2, bold: bool = False
+    ) -> list[str]:
         words, out, cur = str(text).split(), [], ""
         for w in words:
             trial = (cur + " " + w).strip()
@@ -3283,7 +5745,14 @@ class PdfFonts:
         if len(out) > lines:
             out = out[:lines]
             out[-1] = out[-1].rstrip() + "…"
-        return [(l if self.width(l, size, bold) <= width else self._clip(l, size, width, bold)) for l in out] or [""]
+        return [
+            (
+                l
+                if self.width(l, size, bold) <= width
+                else self._clip(l, size, width, bold)
+            )
+            for l in out
+        ] or [""]
 
     def _clip(self, text: str, size: float, width: float, bold: bool) -> str:
         while text and self.width(text + "…", size, bold) > width:
@@ -3295,14 +5764,36 @@ class PdfFonts:
 class HBars(Flowable):
     """Horizontal bar chart: wrapped labels at the left, value at the bar end, optional target line."""
 
-    def __init__(self, items: Sequence[tuple[str, float, str]], width: float, fonts: PdfFonts, accent: str,
-                 vmax: float = 100.0, unit: str = "%", target: Optional[float] = None, decimals: int = 1,
-                 label_w: Optional[float] = None) -> None:
+    def __init__(
+        self,
+        items: Sequence[tuple[str, float, str]],
+        width: float,
+        fonts: PdfFonts,
+        accent: str,
+        vmax: float = 100.0,
+        unit: str = "%",
+        target: Optional[float] = None,
+        decimals: int = 1,
+        label_w: Optional[float] = None,
+    ) -> None:
         super().__init__()
-        self.items, self.fonts, self.accent, self.vmax, self.unit, self.target, self.dec = list(items), fonts, accent, vmax or 1.0, unit, target, decimals
+        (
+            self.items,
+            self.fonts,
+            self.accent,
+            self.vmax,
+            self.unit,
+            self.target,
+            self.dec,
+        ) = (list(items), fonts, accent, vmax or 1.0, unit, target, decimals)
         self.width, self.size = width, 7.6
-        self.label_w = label_w or min(width * 0.38, max([fonts.width(i[0], self.size) for i in self.items] + [40]) + 6)
-        self.rows = [fonts.wrap(i[0], self.size, self.label_w - 6, 2) for i in self.items]
+        self.label_w = label_w or min(
+            width * 0.38,
+            max([fonts.width(i[0], self.size) for i in self.items] + [40]) + 6,
+        )
+        self.rows = [
+            fonts.wrap(i[0], self.size, self.label_w - 6, 2) for i in self.items
+        ]
         self.heights = [max(15.0, 10.5 * len(r) + 5) for r in self.rows]
         self.height = sum(self.heights) + 4
 
@@ -3319,7 +5810,16 @@ class HBars(Flowable):
             k += 1
         if k == 0 or k >= len(self.items):
             return []
-        args = (self.width, self.fonts, self.accent, self.vmax, self.unit, self.target, self.dec, self.label_w)
+        args = (
+            self.width,
+            self.fonts,
+            self.accent,
+            self.vmax,
+            self.unit,
+            self.target,
+            self.dec,
+            self.label_w,
+        )
         return [HBars(self.items[:k], *args), HBars(self.items[k:], *args)]
 
     def draw(self) -> None:
@@ -3328,13 +5828,28 @@ class HBars(Flowable):
         for (label, val, col), lines in zip(self.items, self.rows):
             h = max(15.0, 10.5 * len(lines) + 5)
             for i, line in enumerate(lines):
-                self.fonts.draw(c, 0, y - 10.5 * (i + 1) + 3 + (h - 10.5 * len(lines)) / 2 - 1, line, self.size, "#1F2937")
+                self.fonts.draw(
+                    c,
+                    0,
+                    y - 10.5 * (i + 1) + 3 + (h - 10.5 * len(lines)) / 2 - 1,
+                    line,
+                    self.size,
+                    "#1F2937",
+                )
             c.setFillColor(rl_colors.HexColor("#EEF2F7"))
             c.rect(x0, y - h + 4, x1 - x0, h - 8, stroke=0, fill=1)
             w = max(0.0, min(1.0, val / self.vmax)) * (x1 - x0)
             c.setFillColor(rl_colors.HexColor(col or self.accent))
             c.rect(x0, y - h + 4, w, h - 8, stroke=0, fill=1)
-            self.fonts.draw(c, x1 + 4, y - h / 2 - 2.5, f"{val:.{self.dec}f}{self.unit}", self.size, "#111827", True)
+            self.fonts.draw(
+                c,
+                x1 + 4,
+                y - h / 2 - 2.5,
+                f"{val:.{self.dec}f}{self.unit}",
+                self.size,
+                "#111827",
+                True,
+            )
             y -= h
         if self.target is not None:
             tx = x0 + max(0.0, min(1.0, self.target / self.vmax)) * (x1 - x0)
@@ -3342,18 +5857,45 @@ class HBars(Flowable):
             c.setDash(2, 2)
             c.line(tx, 1, tx, self.height - 1)
             c.setDash()
-            self.fonts.draw(c, tx, self.height - 1, f"target {self.target:.0f}{self.unit}", 6.4, "#B42318", align="c")
+            self.fonts.draw(
+                c,
+                tx,
+                self.height - 1,
+                f"target {self.target:.0f}{self.unit}",
+                6.4,
+                "#B42318",
+                align="c",
+            )
 
 
 class XYChart(Flowable):
     """Columns or lines over an ordered x axis (study per day, SGPA/CGPA, monthly attendance)."""
 
-    def __init__(self, labels: Sequence[str], series: Sequence[tuple[str, Sequence[Optional[float]], str]], width: float, height: float,
-                 fonts: PdfFonts, kind: str = "bars", vmax: Optional[float] = None, unit: str = "", decimals: int = 1) -> None:
+    def __init__(
+        self,
+        labels: Sequence[str],
+        series: Sequence[tuple[str, Sequence[Optional[float]], str]],
+        width: float,
+        height: float,
+        fonts: PdfFonts,
+        kind: str = "bars",
+        vmax: Optional[float] = None,
+        unit: str = "",
+        decimals: int = 1,
+    ) -> None:
         super().__init__()
-        self.labels, self.series, self.fonts, self.kind, self.unit, self.dec = list(labels), list(series), fonts, kind, unit, decimals
+        self.labels, self.series, self.fonts, self.kind, self.unit, self.dec = (
+            list(labels),
+            list(series),
+            fonts,
+            kind,
+            unit,
+            decimals,
+        )
         self.width, self.height = width, height
-        top = max([v for _, vals, _ in self.series for v in vals if v is not None] + [1e-9])
+        top = max(
+            [v for _, vals, _ in self.series for v in vals if v is not None] + [1e-9]
+        )
         self.vmax = vmax or self._nice(top)
 
     @staticmethod
@@ -3369,7 +5911,12 @@ class XYChart(Flowable):
 
     def draw(self) -> None:
         c, f = self.canv, self.fonts
-        left, bottom, top, right = 34.0, 22.0, 12.0 + (10 if len(self.series) > 1 else 0), 8.0
+        left, bottom, top, right = (
+            34.0,
+            22.0,
+            12.0 + (10 if len(self.series) > 1 else 0),
+            8.0,
+        )
         pw, ph = self.width - left - right, self.height - bottom - top
         n = max(1, len(self.labels))
         for i in range(5):
@@ -3377,12 +5924,29 @@ class XYChart(Flowable):
             c.setStrokeColor(rl_colors.HexColor("#E3E9F2"))
             c.setLineWidth(0.5)
             c.line(left, gy, left + pw, gy)
-            f.draw(c, left - 4, gy - 2.4, f"{self.vmax * i / 4:.{0 if self.vmax >= 10 else 1}f}{self.unit}", 6.4, "#566274", align="r")
+            f.draw(
+                c,
+                left - 4,
+                gy - 2.4,
+                f"{self.vmax * i / 4:.{0 if self.vmax >= 10 else 1}f}{self.unit}",
+                6.4,
+                "#566274",
+                align="r",
+            )
         slot = pw / n
         step = max(1, math.ceil(n * 26 / max(pw, 1)))
         for i, lab in enumerate(self.labels):
             if i % step == 0:
-                f.draw(c, left + slot * (i + 0.5), 8, lab, 6.4, "#566274", align="c", maxw=slot * step)
+                f.draw(
+                    c,
+                    left + slot * (i + 0.5),
+                    8,
+                    lab,
+                    6.4,
+                    "#566274",
+                    align="c",
+                    maxw=slot * step,
+                )
         for si, (name, vals, col) in enumerate(self.series):
             pts = []
             for i, v in enumerate(vals):
@@ -3405,7 +5969,16 @@ class XYChart(Flowable):
                 for x, y, v in pts:
                     c.circle(x, y, 2.4, stroke=0, fill=1)
                     if len(pts) <= 14:
-                        f.draw(c, x, y + 4.5, f"{v:.{self.dec}f}", 6.4, "#111827", True, "c")
+                        f.draw(
+                            c,
+                            x,
+                            y + 4.5,
+                            f"{v:.{self.dec}f}",
+                            6.4,
+                            "#111827",
+                            True,
+                            "c",
+                        )
             if len(self.series) > 1:
                 lx = left + si * 90
                 c.setFillColor(rl_colors.HexColor(col))
@@ -3416,9 +5989,17 @@ class XYChart(Flowable):
 class ReportEngine:
     """Collects data for the selected scope and renders the PDF."""
 
-    def __init__(self, repo: Repository, analytics: Analytics, cfg: ReportConfig, preview: bool = False) -> None:
+    def __init__(
+        self,
+        repo: Repository,
+        analytics: Analytics,
+        cfg: ReportConfig,
+        preview: bool = False,
+    ) -> None:
         if not HAS_REPORTLAB:
-            raise RuntimeError("PDF reports need the ReportLab package.  Install it with:  pip install reportlab")
+            raise RuntimeError(
+                "PDF reports need the ReportLab package.  Install it with:  pip install reportlab"
+            )
         self.repo, self.an, self.cfg, self.preview = repo, analytics, cfg, preview
         cfg.validate()
         self.settings, self.db = repo.settings, repo.db
@@ -3434,43 +6015,101 @@ class ReportEngine:
         self.counts: dict[str, int] = {}
         self.warnings: list[str] = []
         self.charts_off = False
-        self.sids = ([cfg.scope_semester_id] if cfg.scope_semester_id else
-                     ([r["id"] for r in self.db.q("SELECT id FROM semesters WHERE academic_year_id=?", (cfg.scope_year_id,))] or [-1])
-                     if cfg.scope_year_id else None)
+        self.sids = (
+            [cfg.scope_semester_id]
+            if cfg.scope_semester_id
+            else (
+                (
+                    [
+                        r["id"]
+                        for r in self.db.q(
+                            "SELECT id FROM semesters WHERE academic_year_id=?",
+                            (cfg.scope_year_id,),
+                        )
+                    ]
+                    or [-1]
+                )
+                if cfg.scope_year_id
+                else None
+            )
+        )
         self.rng = (cfg.date_from or None, cfg.date_to or None)
         self.today = repo.today()
-        self.logo: Optional[Any] = None   # decoded once, reused on every page header
+        self.logo: Optional[Any] = None  # decoded once, reused on every page header
         if cfg.branding and cfg.logo_path:
             try:
                 self.logo = ImageReader(cfg.logo_path)
                 self.logo.getSize()
             except Exception as exc:
-                self.warnings.append(f"The logo could not be used ({Path(cfg.logo_path).name}); the report was created without it. ({exc})")
+                self.warnings.append(
+                    f"The logo could not be used ({Path(cfg.logo_path).name}); the report was created without it. ({exc})"
+                )
                 self.logo = None
         self._make_styles()
         if self.fonts.limited:
-            self.warnings.append("No Unicode font was found on this computer; characters outside Western European text appear as '?'.")
+            self.warnings.append(
+                "No Unicode font was found on this computer; characters outside Western European text appear as '?'."
+            )
 
     # ---- styles & text helpers -------------------------------------------------
     def _make_styles(self) -> None:
         s, f, fb = self.cfg.font_scale, self.fonts.primary, self.fonts.primary_bold
         hx = rl_colors.HexColor
 
-        def ps(name: str, size: float, bold: bool = False, color: str = "#111827", align: int = TA_LEFT, lead: float = 1.32, **kw: Any) -> ParagraphStyle:
-            return ParagraphStyle(name, fontName=fb if bold else f, fontSize=size * s, leading=size * s * lead, textColor=hx(color), alignment=align, **kw)
+        def ps(
+            name: str,
+            size: float,
+            bold: bool = False,
+            color: str = "#111827",
+            align: int = TA_LEFT,
+            lead: float = 1.32,
+            **kw: Any,
+        ) -> ParagraphStyle:
+            return ParagraphStyle(
+                name,
+                fontName=fb if bold else f,
+                fontSize=size * s,
+                leading=size * s * lead,
+                textColor=hx(color),
+                alignment=align,
+                **kw,
+            )
+
         a = self.accent
         self.st = {
-            "body": ps("body", 9.2, spaceAfter=3), "muted": ps("muted", 8, color="#566274"), "small": ps("small", 7.6, color="#566274"),
-            "h1": ps("h1", 14.5, True, a, spaceBefore=12, spaceAfter=5, keepWithNext=1), "h2": ps("h2", 10.5, True, "#111827", spaceBefore=8, spaceAfter=3, keepWithNext=1),
-            "th": ps("th", 8, True, self.head_fg), "thc": ps("thc", 8, True, self.head_fg, TA_CENTER), "thr": ps("thr", 8, True, self.head_fg, TA_RIGHT),
-            "td": ps("td", 8), "tdc": ps("tdc", 8, align=TA_CENTER), "tdr": ps("tdr", 8, align=TA_RIGHT),
-            "kl": ps("kl", 7, True, "#566274"), "kv": ps("kv", 16, True, a, lead=1.15), "ks": ps("ks", 7.2, color="#566274"),
-            "ct": ps("ct", 27, True, a, lead=1.12), "cs": ps("cs", 13, color="#566274"), "bullet": ps("bullet", 8.8, leftIndent=11, bulletIndent=1, spaceAfter=2)}
+            "body": ps("body", 9.2, spaceAfter=3),
+            "muted": ps("muted", 8, color="#566274"),
+            "small": ps("small", 7.6, color="#566274"),
+            "h1": ps("h1", 14.5, True, a, spaceBefore=12, spaceAfter=5, keepWithNext=1),
+            "h2": ps(
+                "h2", 10.5, True, "#111827", spaceBefore=8, spaceAfter=3, keepWithNext=1
+            ),
+            "th": ps("th", 8, True, self.head_fg),
+            "thc": ps("thc", 8, True, self.head_fg, TA_CENTER),
+            "thr": ps("thr", 8, True, self.head_fg, TA_RIGHT),
+            "td": ps("td", 8),
+            "tdc": ps("tdc", 8, align=TA_CENTER),
+            "tdr": ps("tdr", 8, align=TA_RIGHT),
+            "kl": ps("kl", 7, True, "#566274"),
+            "kv": ps("kv", 16, True, a, lead=1.15),
+            "ks": ps("ks", 7.2, color="#566274"),
+            "ct": ps("ct", 27, True, a, lead=1.12),
+            "cs": ps("cs", 13, color="#566274"),
+            "bullet": ps("bullet", 8.8, leftIndent=11, bulletIndent=1, spaceAfter=2),
+        }
 
-    def P(self, text: Any, style: str = "body", bold: bool = False, cap: int = 700, sty: Optional[dict] = None, **kw: Any) -> "Paragraph":
+    def P(
+        self,
+        text: Any,
+        style: str = "body",
+        bold: bool = False,
+        cap: int = 700,
+        sty: Optional[dict] = None,
+        **kw: Any,
+    ) -> "Paragraph":
         txt = "" if text is None else str(text)
         if len(txt) > cap:
-            txt = txt[:cap].rstrip() + "…"        # a row can never outgrow a page
+            txt = txt[:cap].rstrip() + "…"  # a row can never outgrow a page
         base = (sty or self.st)[style]
         if HAS_SHAPING and _COMPLEX_RANGE.search(txt):
             base = ParagraphStyle(style + "_sh", parent=base, shaping=1)
@@ -3483,29 +6122,54 @@ class ReportEngine:
         out = dict(self.st)
         for name in ("th", "thc", "thr", "td", "tdc", "tdr"):
             base = self.st[name]
-            out[name] = ParagraphStyle(name + "_k", parent=base, fontSize=base.fontSize * k, leading=base.leading * k)
+            out[name] = ParagraphStyle(
+                name + "_k",
+                parent=base,
+                fontSize=base.fontSize * k,
+                leading=base.leading * k,
+            )
         return out
 
     def _colored(self, text: str) -> str:
         tok = STATUS_TOKENS.get(text)
-        return f'<font color="{_PRINT_TOKENS[tok]}">{self.fonts.markup(text, True)}</font>' if tok in _PRINT_TOKENS and tok != "muted" else self.fonts.markup(text)
+        return (
+            f'<font color="{_PRINT_TOKENS[tok]}">{self.fonts.markup(text, True)}</font>'
+            if tok in _PRINT_TOKENS and tok != "muted"
+            else self.fonts.markup(text)
+        )
 
     def _date(self, v: Any) -> str:
-        return fmt_date(v, self.date_style, blank="").replace(" ", "\u00a0")   # keep a date on one line
+        return fmt_date(v, self.date_style, blank="").replace(
+            " ", "\u00a0"
+        )  # keep a date on one line
 
     def heading(self, key: str) -> list:
         return [CondPageBreak(42 * mm), self.P(REPORT_SECTIONS[key], "h1")]
 
-    def table(self, section: str, rows: list[dict], status: Sequence[str] = ("status", "result", "trend", "priority"), note: bool = True) -> list:
+    def table(
+        self,
+        section: str,
+        rows: list[dict],
+        status: Sequence[str] = ("status", "result", "trend", "priority"),
+        note: bool = True,
+    ) -> list:
         defaults = SECTION_COLUMNS[section]
-        want = self.cfg.columns.get(section) or [c[0] for c in defaults if c[0] not in DEFAULT_HIDDEN.get(section, ())]
-        cols = [next(c for c in defaults if c[0] == k) for k in want if any(c[0] == k for c in defaults)] or list(defaults)
+        want = self.cfg.columns.get(section) or [
+            c[0] for c in defaults if c[0] not in DEFAULT_HIDDEN.get(section, ())
+        ]
+        cols = [
+            next(c for c in defaults if c[0] == k)
+            for k in want
+            if any(c[0] == k for c in defaults)
+        ] or list(defaults)
         colw, k = self._col_widths(section, cols, rows)
         sty = self._cell_styles(k)
         al = {"l": ("th", "td"), "c": ("thc", "tdc"), "r": ("thr", "tdr")}
         data = [[self.P(c[1], al[c[3]][0], sty=sty) for c in cols]]
         shown = rows[: self.limit]
-        caps = [max(40, int(10 * w / (8.0 * self.cfg.font_scale * 0.45))) for w in colw]   # ~10 lines max per cell
+        caps = [
+            max(40, int(10 * w / (8.0 * self.cfg.font_scale * 0.45))) for w in colw
+        ]  # ~10 lines max per cell
         for r in shown:
             line = []
             for idx, (k, _, _, a) in enumerate(cols):
@@ -3515,20 +6179,38 @@ class ReportEngine:
                 else:
                     line.append(self.P(v, al[a][1], cap=caps[idx], sty=sty))
             data.append(line)
-        pad = {"Compact": 2.2, "Comfortable": 3.6, "Spacious": 5.6}[self.cfg.density] * self.cfg.row_spacing
+        pad = {"Compact": 2.2, "Comfortable": 3.6, "Spacious": 5.6}[
+            self.cfg.density
+        ] * self.cfg.row_spacing
         t = LongTable(data, colWidths=colw, repeatRows=1, splitByRow=1)
-        style = [("BACKGROUND", (0, 0), (-1, 0), rl_colors.HexColor(self.accent)), ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-                 ("TOPPADDING", (0, 0), (-1, -1), pad), ("BOTTOMPADDING", (0, 0), (-1, -1), pad),
-                 ("LEFTPADDING", (0, 0), (-1, -1), 4.5), ("RIGHTPADDING", (0, 0), (-1, -1), 4.5),
-                 ("LINEBELOW", (0, 0), (-1, -1), 0.35, rl_colors.HexColor("#D5DDE9")), ("BOX", (0, 0), (-1, -1), 0.5, rl_colors.HexColor("#C3CDDC"))]
-        style += [("BACKGROUND", (0, i), (-1, i), rl_colors.HexColor(self.soft)) for i in range(2, len(data), 2)]
+        style = [
+            ("BACKGROUND", (0, 0), (-1, 0), rl_colors.HexColor(self.accent)),
+            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+            ("TOPPADDING", (0, 0), (-1, -1), pad),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), pad),
+            ("LEFTPADDING", (0, 0), (-1, -1), 4.5),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 4.5),
+            ("LINEBELOW", (0, 0), (-1, -1), 0.35, rl_colors.HexColor("#D5DDE9")),
+            ("BOX", (0, 0), (-1, -1), 0.5, rl_colors.HexColor("#C3CDDC")),
+        ]
+        style += [
+            ("BACKGROUND", (0, i), (-1, i), rl_colors.HexColor(self.soft))
+            for i in range(2, len(data), 2)
+        ]
         t.setStyle(TableStyle(style))
         out: list = [t]
         if note and len(rows) > self.limit:
-            out.append(self.P(f"Showing the first {self.limit} of {len(rows)} records. Raise the record limit to include more.", "small"))
+            out.append(
+                self.P(
+                    f"Showing the first {self.limit} of {len(rows)} records. Raise the record limit to include more.",
+                    "small",
+                )
+            )
         return out
 
-    def _col_widths(self, section: str, cols: list, rows: list[dict]) -> tuple[list[float], float]:
+    def _col_widths(
+        self, section: str, cols: list, rows: list[dict]
+    ) -> tuple[list[float], float]:
         """(column widths, font factor). User-set weights win. Otherwise each column gets at least the width of
         its widest header word / unbreakable token; if that exceeds the page the table font shrinks (to ~76%)
         before anything is allowed to wrap mid-word; spare width is shared by weight."""
@@ -3537,15 +6219,23 @@ class ReportEngine:
         if user:
             return [self.frame_w * w / sum(weights) for w in weights], 1.0
         size, f, pad = 8.0 * self.cfg.font_scale, self.fonts, 9.0
-        whole = f.width("W" * 11, size)             # longer unbroken words may be split
+        whole = f.width("W" * 11, size)  # longer unbroken words may be split
         text = []
         for k, label, _, _ in cols:
-            head = max((f.width(w, size, True) for w in str(label).split()), default=0.0)
+            head = max(
+                (f.width(w, size, True) for w in str(label).split()), default=0.0
+            )
             data = 0.0
             for r in rows[:150]:
                 v = str(r.get(k, "") or "")
                 if v:
-                    data = max(data, max(f.width(tok, size, k in ("status", "result", "trend")) for tok in v.split(" ")[:14]))   # real spaces only: NBSP keeps dates whole
+                    data = max(
+                        data,
+                        max(
+                            f.width(tok, size, k in ("status", "result", "trend"))
+                            for tok in v.split(" ")[:14]
+                        ),
+                    )  # real spaces only: NBSP keeps dates whole
             text.append(max(head, min(data, whole)))
         n, k = len(cols), 1.0
         if sum(text) + pad * n > self.frame_w:
@@ -3568,10 +6258,20 @@ class ReportEngine:
         rows = self.repo.rows(ent, self.sids)
         sub = self.cfg.scope_subject_id
         if sub:
-            rows = [r for r in rows if (r.get("id") if table == "subjects" else r.get("subject_id")) == sub]
+            rows = [
+                r
+                for r in rows
+                if (r.get("id") if table == "subjects" else r.get("subject_id")) == sub
+            ]
         lo, hi = self.rng
         if ent.date_key and (lo or hi):
-            rows = [r for r in rows if r.get(ent.date_key) and (not lo or str(r[ent.date_key])[:10] >= lo) and (not hi or str(r[ent.date_key])[:10] <= hi)]
+            rows = [
+                r
+                for r in rows
+                if r.get(ent.date_key)
+                and (not lo or str(r[ent.date_key])[:10] >= lo)
+                and (not hi or str(r[ent.date_key])[:10] <= hi)
+            ]
         return rows
 
     def scope_text(self) -> str:
@@ -3582,9 +6282,15 @@ class ReportEngine:
             bits.append(self.repo.label("academic_years", c.scope_year_id))
         else:
             bits.append("All semesters")
-        bits.append(self.repo.label("subjects", c.scope_subject_id) if c.scope_subject_id else "All subjects")
+        bits.append(
+            self.repo.label("subjects", c.scope_subject_id)
+            if c.scope_subject_id
+            else "All subjects"
+        )
         if c.date_from or c.date_to:
-            bits.append(f"{self._date(c.date_from) or 'start'} – {self._date(c.date_to) or 'today'}")
+            bits.append(
+                f"{self._date(c.date_from) or 'start'} – {self._date(c.date_to) or 'today'}"
+            )
         return " · ".join(bits)
 
     def subject_filter(self, rows: list[dict], key: str = "subject_id") -> list[dict]:
@@ -3595,30 +6301,84 @@ class ReportEngine:
     def sec_profile(self) -> list:
         p = self.repo.profile()
         sid = self.repo.current_semester_id()
-        cur = self.db.one("SELECT sem.name sn, ay.name yn, pr.name pn, pr.degree_level dl, pr.branch br, pr.specialisation sp, pr.college_name cn, pr.university_name un "
-                          "FROM semesters sem LEFT JOIN academic_years ay ON ay.id=sem.academic_year_id LEFT JOIN programmes pr ON pr.id=sem.programme_id WHERE sem.id=?", (sid,)) if sid else None
-        prog = " · ".join(x for x in (cur["pn"], cur["dl"], cur["br"], cur["sp"]) if x) if cur else ""
-        pairs = [("Student", p.get("student_name")), ("University roll no.", p.get("roll_no")), ("Student ID", p.get("student_id")),
-                 ("Programme", prog or p.get("course")), ("College", p.get("college_name") or (cur and cur["cn"])),
-                 ("University", p.get("university_name") or (cur and cur["un"])), ("Admission year", p.get("admission_year")),
-                 ("Expected graduation", p.get("expected_graduation_year")), ("Current academic year", cur and cur["yn"]),
-                 ("Current semester", cur and cur["sn"]), ("College email", p.get("email")), ("Academic goals", p.get("goals"))]
+        cur = (
+            self.db.one(
+                "SELECT sem.name sn, ay.name yn, pr.name pn, pr.degree_level dl, pr.branch br, pr.specialisation sp, pr.college_name cn, pr.university_name un "
+                "FROM semesters sem LEFT JOIN academic_years ay ON ay.id=sem.academic_year_id LEFT JOIN programmes pr ON pr.id=sem.programme_id WHERE sem.id=?",
+                (sid,),
+            )
+            if sid
+            else None
+        )
+        prog = (
+            " · ".join(x for x in (cur["pn"], cur["dl"], cur["br"], cur["sp"]) if x)
+            if cur
+            else ""
+        )
+        pairs = [
+            ("Student", p.get("student_name")),
+            ("University roll no.", p.get("roll_no")),
+            ("Student ID", p.get("student_id")),
+            ("Programme", prog or p.get("course")),
+            ("College", p.get("college_name") or (cur and cur["cn"])),
+            ("University", p.get("university_name") or (cur and cur["un"])),
+            ("Admission year", p.get("admission_year")),
+            ("Expected graduation", p.get("expected_graduation_year")),
+            ("Current academic year", cur and cur["yn"]),
+            ("Current semester", cur and cur["sn"]),
+            ("College email", p.get("email")),
+            ("Academic goals", p.get("goals")),
+        ]
         pairs = [(k, v) for k, v in pairs if v not in (None, "")]
         self.counts["profile"] = len(pairs)
         if not pairs:
-            return self.message("The student profile has not been completed yet (Settings → Student profile).")
-        t = Table([[self.P(k, "kl"), self.P(v, "body")] for k, v in pairs], colWidths=[self.frame_w * 0.27, self.frame_w * 0.73])
-        t.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"), ("LINEBELOW", (0, 0), (-1, -1), 0.35, rl_colors.HexColor("#D5DDE9")),
-                               ("TOPPADDING", (0, 0), (-1, -1), 3.5), ("BOTTOMPADDING", (0, 0), (-1, -1), 3.5), ("LEFTPADDING", (0, 0), (-1, -1), 3)]))
+            return self.message(
+                "The student profile has not been completed yet (Settings → Student profile)."
+            )
+        t = Table(
+            [[self.P(k, "kl"), self.P(v, "body")] for k, v in pairs],
+            colWidths=[self.frame_w * 0.27, self.frame_w * 0.73],
+        )
+        t.setStyle(
+            TableStyle(
+                [
+                    ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                    (
+                        "LINEBELOW",
+                        (0, 0),
+                        (-1, -1),
+                        0.35,
+                        rl_colors.HexColor("#D5DDE9"),
+                    ),
+                    ("TOPPADDING", (0, 0), (-1, -1), 3.5),
+                    ("BOTTOMPADDING", (0, 0), (-1, -1), 3.5),
+                    ("LEFTPADDING", (0, 0), (-1, -1), 3),
+                ]
+            )
+        )
         photo = p.get("photo_path")
         if photo and Path(photo).is_file():
             try:
                 iw, ih = ImageReader(photo).getSize()
                 h = 34 * mm
                 img = RLImage(photo, width=h * iw / ih, height=h)
-                outer = Table([[t, img]], colWidths=[self.frame_w - h * iw / ih - 8, h * iw / ih + 8])
-                outer.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"), ("LEFTPADDING", (0, 0), (-1, -1), 0), ("RIGHTPADDING", (0, 0), (-1, -1), 0)]))
-                t._argW = [(self.frame_w - h * iw / ih - 8) * 0.30, (self.frame_w - h * iw / ih - 8) * 0.70]
+                outer = Table(
+                    [[t, img]],
+                    colWidths=[self.frame_w - h * iw / ih - 8, h * iw / ih + 8],
+                )
+                outer.setStyle(
+                    TableStyle(
+                        [
+                            ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                            ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                            ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+                        ]
+                    )
+                )
+                t._argW = [
+                    (self.frame_w - h * iw / ih - 8) * 0.30,
+                    (self.frame_w - h * iw / ih - 8) * 0.70,
+                ]
                 return [outer]
             except Exception as exc:
                 self.warnings.append(f"Profile photograph skipped: {exc}")
@@ -3627,23 +6387,77 @@ class ReportEngine:
     def _kpi_cards(self, ov: dict) -> list:
         fp = lambda v: "—" if v is None else f"{v:.1f}%"
         a, at, h = ov["assignments"], ov["attendance"], ov["habits"]
-        cards = [("SUBJECTS", str(ov["subjects"]), f"{ov['units_done']}/{ov['units_total']} units complete"),
-                 ("SYLLABUS", fp(ov["syllabus_pct"]), "units completed"),
-                 ("ASSIGNMENTS", f"{a['pending']} pending", f"{a['overdue']} overdue · {a['done']}/{a['total']} done"),
-                 ("ATTENDANCE", fp(at["pct"]), "no records yet" if at["pct"] is None else f"{at['status']} (target {at['target']:.0f}%)"),
-                 ("STUDY TIME", fmt_minutes(ov["study_minutes"]), f"{fmt_minutes(ov['study_week'])} in the last 7 days"),
-                 ("SCORE AVERAGE", fp(ov["score_pct"]), "marks + exams, weighted by maximum"),
-                 ("SGPA", "—" if ov["sgpa"] is None else f"{ov['sgpa']:.2f}", "selected semester" if self.cfg.scope_semester_id else "needs a single semester"),
-                 ("CGPA", "—" if ov["cgpa"] is None else f"{ov['cgpa']:.2f}", f"{fmt_num(ov['credits_earned'])} credits earned · {ov['backlogs']} backlog(s)")]
+        cards = [
+            (
+                "SUBJECTS",
+                str(ov["subjects"]),
+                f"{ov['units_done']}/{ov['units_total']} units complete",
+            ),
+            ("SYLLABUS", fp(ov["syllabus_pct"]), "units completed"),
+            (
+                "ASSIGNMENTS",
+                f"{a['pending']} pending",
+                f"{a['overdue']} overdue · {a['done']}/{a['total']} done",
+            ),
+            (
+                "ATTENDANCE",
+                fp(at["pct"]),
+                (
+                    "no records yet"
+                    if at["pct"] is None
+                    else f"{at['status']} (target {at['target']:.0f}%)"
+                ),
+            ),
+            (
+                "STUDY TIME",
+                fmt_minutes(ov["study_minutes"]),
+                f"{fmt_minutes(ov['study_week'])} in the last 7 days",
+            ),
+            (
+                "SCORE AVERAGE",
+                fp(ov["score_pct"]),
+                "marks + exams, weighted by maximum",
+            ),
+            (
+                "SGPA",
+                "—" if ov["sgpa"] is None else f"{ov['sgpa']:.2f}",
+                (
+                    "selected semester"
+                    if self.cfg.scope_semester_id
+                    else "needs a single semester"
+                ),
+            ),
+            (
+                "CGPA",
+                "—" if ov["cgpa"] is None else f"{ov['cgpa']:.2f}",
+                f"{fmt_num(ov['credits_earned'])} credits earned · {ov['backlogs']} backlog(s)",
+            ),
+        ]
         per_row = 4 if self.frame_w > 150 * mm else 2
-        grid = [[[self.P(l, "kl"), self.P(v, "kv"), self.P(s, "ks")] for l, v, s in cards[i:i + per_row]] for i in range(0, len(cards), per_row)]
+        grid = [
+            [
+                [self.P(l, "kl"), self.P(v, "kv"), self.P(s, "ks")]
+                for l, v, s in cards[i : i + per_row]
+            ]
+            for i in range(0, len(cards), per_row)
+        ]
         for row in grid:
             row += [""] * (per_row - len(row))
         t = Table(grid, colWidths=[self.frame_w / per_row] * per_row)
-        st = [("BACKGROUND", (0, 0), (-1, -1), rl_colors.HexColor(self.soft)), ("INNERGRID", (0, 0), (-1, -1), 5, rl_colors.white),
-              ("BOX", (0, 0), (-1, -1), 5, rl_colors.white), ("VALIGN", (0, 0), (-1, -1), "TOP"), ("TOPPADDING", (0, 0), (-1, -1), 7),
-              ("BOTTOMPADDING", (0, 0), (-1, -1), 8), ("LEFTPADDING", (0, 0), (-1, -1), 8)]
-        st += [("LINEABOVE", (c, r), (c, r), 2.2, rl_colors.HexColor(self.accent)) for r in range(len(grid)) for c in range(per_row)]
+        st = [
+            ("BACKGROUND", (0, 0), (-1, -1), rl_colors.HexColor(self.soft)),
+            ("INNERGRID", (0, 0), (-1, -1), 5, rl_colors.white),
+            ("BOX", (0, 0), (-1, -1), 5, rl_colors.white),
+            ("VALIGN", (0, 0), (-1, -1), "TOP"),
+            ("TOPPADDING", (0, 0), (-1, -1), 7),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
+            ("LEFTPADDING", (0, 0), (-1, -1), 8),
+        ]
+        st += [
+            ("LINEABOVE", (c, r), (c, r), 2.2, rl_colors.HexColor(self.accent))
+            for r in range(len(grid))
+            for c in range(per_row)
+        ]
         t.setStyle(TableStyle(st))
         return [t]
 
@@ -3651,18 +6465,38 @@ class ReportEngine:
         ov = self.an.overview(self.sids, self.rng)
         self.counts["summary"] = 8
         out = self._kpi_cards(ov)
-        finds = [i for i in self.an.insights(self.sids, self.rng) if i["kind"] != "habits"][:6]
+        finds = [
+            i for i in self.an.insights(self.sids, self.rng) if i["kind"] != "habits"
+        ][:6]
         if finds:
             out += [Spacer(1, 6), self.P("Key findings", "h2")]
-            out += [Paragraph(self.fonts.markup(i["text"]), self.st["bullet"], bulletText="•") for i in finds]
+            out += [
+                Paragraph(
+                    self.fonts.markup(i["text"]), self.st["bullet"], bulletText="•"
+                )
+                for i in finds
+            ]
         return out
 
     def sec_structure(self) -> list:
         hist = self.history_rows()
         self.counts["structure"] = len(hist)
-        rows = [{"programme": h["programme"] or "—", "year": h["year_name"] or "—", "semester": h["name"], "status": h["status"] or "",
-                 "subjects": h["subjects"], "credits": fmt_num(h["credits_planned"])} for h in hist]
-        return self.table("structure", rows) if rows else self.message("No academic structure has been set up yet.")
+        rows = [
+            {
+                "programme": h["programme"] or "—",
+                "year": h["year_name"] or "—",
+                "semester": h["name"],
+                "status": h["status"] or "",
+                "subjects": h["subjects"],
+                "credits": fmt_num(h["credits_planned"]),
+            }
+            for h in hist
+        ]
+        return (
+            self.table("structure", rows)
+            if rows
+            else self.message("No academic structure has been set up yet.")
+        )
 
     def history_rows(self) -> list[dict]:
         hist = self.an.semester_history()
@@ -3675,20 +6509,54 @@ class ReportEngine:
         self.counts["history"] = len(hist)
         if not hist:
             return self.message("No semesters in the selected scope.")
-        rows = [{"semester": h["name"], "status": h["status"] or "", "subjects": h["subjects"],
-                 "credits": f"{fmt_num(h['credits_earned'])}/{fmt_num(h['credits_registered'])}" if h["results"] else "—",
-                 "sgpa": "—" if h["sgpa"] is None else f"{h['sgpa']:.2f}", "cgpa": "—" if h["cgpa"] is None else f"{h['cgpa']:.2f}",
-                 "pct": "—" if h["pct"] is None else f"{h['pct']:.1f}%", "backlogs": h["backlogs"] if h["results"] else "—",
-                 "attendance": "—" if h["attendance_pct"] is None else f"{h['attendance_pct']:.1f}%", "study": fmt_minutes(h["study_minutes"]),
-                 "assignments": f"{h['assign_done']}/{h['assign_total']}"} for h in hist]
+        rows = [
+            {
+                "semester": h["name"],
+                "status": h["status"] or "",
+                "subjects": h["subjects"],
+                "credits": (
+                    f"{fmt_num(h['credits_earned'])}/{fmt_num(h['credits_registered'])}"
+                    if h["results"]
+                    else "—"
+                ),
+                "sgpa": "—" if h["sgpa"] is None else f"{h['sgpa']:.2f}",
+                "cgpa": "—" if h["cgpa"] is None else f"{h['cgpa']:.2f}",
+                "pct": "—" if h["pct"] is None else f"{h['pct']:.1f}%",
+                "backlogs": h["backlogs"] if h["results"] else "—",
+                "attendance": (
+                    "—"
+                    if h["attendance_pct"] is None
+                    else f"{h['attendance_pct']:.1f}%"
+                ),
+                "study": fmt_minutes(h["study_minutes"]),
+                "assignments": f"{h['assign_done']}/{h['assign_total']}",
+            }
+            for h in hist
+        ]
         out = self.table("history", rows)
         pts = [h for h in hist if h["sgpa"] is not None]
         if self.chart_ok() and len(pts) >= 2:
             mx = self.settings.grading().max_points
-            out += [Spacer(1, 6), self.P("SGPA and CGPA progression", "h2"),
-                    XYChart([h["name"] for h in pts], [("SGPA", [h["sgpa"] for h in pts], self.accent), ("CGPA", [h["cgpa"] for h in pts], "#D97706")],
-                            self.frame_w, 150, self.fonts, "lines", vmax=mx, decimals=2)]
-        out += self.message("Calculation method: " + " ".join(self.settings.grading().describe()[1:3]))
+            out += [
+                Spacer(1, 6),
+                self.P("SGPA and CGPA progression", "h2"),
+                XYChart(
+                    [h["name"] for h in pts],
+                    [
+                        ("SGPA", [h["sgpa"] for h in pts], self.accent),
+                        ("CGPA", [h["cgpa"] for h in pts], "#D97706"),
+                    ],
+                    self.frame_w,
+                    150,
+                    self.fonts,
+                    "lines",
+                    vmax=mx,
+                    decimals=2,
+                ),
+            ]
+        out += self.message(
+            "Calculation method: " + " ".join(self.settings.grading().describe()[1:3])
+        )
         return out
 
     def sec_results(self) -> list:
@@ -3696,29 +6564,86 @@ class ReportEngine:
         self.counts["results"] = len(rows)
         if not rows:
             return self.message("No semester results recorded in this scope.")
-        data = [{"subject": r["subject"], "semester": r["semester"] or "", "attempt": r["attempt_no"], "internal": r["int_txt"], "external": r["ext_txt"],
-                 "practical": r["prac_txt"], "total": r["total"], "pct": "" if r["pct"] is None else f"{r['pct']:.1f}%", "grade": r["grade_eff"],
-                 "points": fmt_num(r["points_eff"], blank=""), "credits": fmt_num(r["credits_eff"], blank=""), "result": r["result_eff"]} for r in rows]
+        data = [
+            {
+                "subject": r["subject"],
+                "semester": r["semester"] or "",
+                "attempt": r["attempt_no"],
+                "internal": r["int_txt"],
+                "external": r["ext_txt"],
+                "practical": r["prac_txt"],
+                "total": r["total"],
+                "pct": "" if r["pct"] is None else f"{r['pct']:.1f}%",
+                "grade": r["grade_eff"],
+                "points": fmt_num(r["points_eff"], blank=""),
+                "credits": fmt_num(r["credits_eff"], blank=""),
+                "result": r["result_eff"],
+            }
+            for r in rows
+        ]
         out = self.table("results", data)
         dist = self.an.grade_distribution(self.sids)
         if self.chart_ok() and dist:
-            out += [Spacer(1, 6), self.P("Grade distribution", "h2"), XYChart([g for g, _ in dist], [("Subjects", [n for _, n in dist], self.accent)],
-                                                                              min(self.frame_w, 110 * mm), 100, self.fonts, "bars", decimals=0)]
+            out += [
+                Spacer(1, 6),
+                self.P("Grade distribution", "h2"),
+                XYChart(
+                    [g for g, _ in dist],
+                    [("Subjects", [n for _, n in dist], self.accent)],
+                    min(self.frame_w, 110 * mm),
+                    100,
+                    self.fonts,
+                    "bars",
+                    decimals=0,
+                ),
+            ]
         return out
 
     def _subject_perf(self) -> list[dict]:
-        subs = self.rows_of("subjects") if not self.rng[0] and not self.rng[1] else [
-            r for r in self.repo.rows("subjects", self.sids) if not self.cfg.scope_subject_id or r["id"] == self.cfg.scope_subject_id]
-        perf = {p["subject_id"]: p for p in self.an.subject_performance(self.sids, self.rng)}
-        att = {a["subject_id"]: a for a in self.an.attendance_by_subject(self.sids, self.rng)}
+        subs = (
+            self.rows_of("subjects")
+            if not self.rng[0] and not self.rng[1]
+            else [
+                r
+                for r in self.repo.rows("subjects", self.sids)
+                if not self.cfg.scope_subject_id or r["id"] == self.cfg.scope_subject_id
+            ]
+        )
+        perf = {
+            p["subject_id"]: p for p in self.an.subject_performance(self.sids, self.rng)
+        }
+        att = {
+            a["subject_id"]: a
+            for a in self.an.attendance_by_subject(self.sids, self.rng)
+        }
         syl = {s["subject_id"]: s for s in self.an.syllabus_by_subject(self.sids)}
-        stu = {s["subject_id"]: s for s in self.an.study_by_subject(self.sids, self.rng)}
+        stu = {
+            s["subject_id"]: s for s in self.an.study_by_subject(self.sids, self.rng)
+        }
         out = []
         for s in subs:
-            p, a, y, t = perf.get(s["id"]), att.get(s["id"]), syl.get(s["id"]), stu.get(s["id"])
-            out.append({"id": s["id"], "subject": s["name"], "color": s["color"], "code": s["code"], "credits": fmt_num(s["credits"], blank=""),
-                        "pct": p["pct"] if p else None, "n": p["n"] if p else 0, "trend": p["trend"] if p else "", "delta": p["delta"] if p else None,
-                        "att": a["pct"] if a and a["held"] else None, "syl": y["pct"] if y and y["units"] else None, "mins": t["minutes"] if t else 0})
+            p, a, y, t = (
+                perf.get(s["id"]),
+                att.get(s["id"]),
+                syl.get(s["id"]),
+                stu.get(s["id"]),
+            )
+            out.append(
+                {
+                    "id": s["id"],
+                    "subject": s["name"],
+                    "color": s["color"],
+                    "code": s["code"],
+                    "credits": fmt_num(s["credits"], blank=""),
+                    "pct": p["pct"] if p else None,
+                    "n": p["n"] if p else 0,
+                    "trend": p["trend"] if p else "",
+                    "delta": p["delta"] if p else None,
+                    "att": a["pct"] if a and a["held"] else None,
+                    "syl": y["pct"] if y and y["units"] else None,
+                    "mins": t["minutes"] if t else 0,
+                }
+            )
         return out
 
     def sec_subjects(self) -> list:
@@ -3726,13 +6651,33 @@ class ReportEngine:
         self.counts["subjects"] = len(data)
         if not data:
             return self.message("No subjects in the selected scope.")
-        rows = [{"subject": d["subject"], "code": d["code"], "credits": d["credits"], "score": "—" if d["pct"] is None else f"{d['pct']:.1f}%",
-                 "n": d["n"], "trend": d["trend"] if d["trend"] != "Not enough data" else "—", "attendance": "—" if d["att"] is None else f"{d['att']:.1f}%",
-                 "syllabus": "—" if d["syl"] is None else f"{d['syl']:.0f}%", "study": fmt_minutes(d["mins"])} for d in data]
+        rows = [
+            {
+                "subject": d["subject"],
+                "code": d["code"],
+                "credits": d["credits"],
+                "score": "—" if d["pct"] is None else f"{d['pct']:.1f}%",
+                "n": d["n"],
+                "trend": d["trend"] if d["trend"] != "Not enough data" else "—",
+                "attendance": "—" if d["att"] is None else f"{d['att']:.1f}%",
+                "syllabus": "—" if d["syl"] is None else f"{d['syl']:.0f}%",
+                "study": fmt_minutes(d["mins"]),
+            }
+            for d in data
+        ]
         out = self.table("subjects", rows)
         scored = [d for d in data if d["pct"] is not None]
         if self.chart_ok() and scored:
-            out += [Spacer(1, 6), self.P("Average score by subject", "h2"), HBars([(d["subject"], d["pct"], d["color"]) for d in scored], self.frame_w, self.fonts, self.accent)]
+            out += [
+                Spacer(1, 6),
+                self.P("Average score by subject", "h2"),
+                HBars(
+                    [(d["subject"], d["pct"], d["color"]) for d in scored],
+                    self.frame_w,
+                    self.fonts,
+                    self.accent,
+                ),
+            ]
         return out
 
     def sec_assignments(self) -> list:
@@ -3741,16 +6686,51 @@ class ReportEngine:
         if not rows:
             return self.message("No assignments in the selected scope.")
         a = self.an.assignment_stats(self.sids, self.rng)
-        out = self.message(f"Total {a['total']} · pending {a['pending']} · overdue {a['overdue']} · submitted {a['submitted']} · "
-                           f"completion {'—' if a['completion_rate'] is None else format(a['completion_rate'], '.1f') + '%'}")
-        data = [{"no": r["assignment_no"], "title": r["title"], "subject": r["subject"], "type": r["assignment_type"], "deadline": self._date(r["due_date"]),
-                 "submitted": self._date(r["submission_date"]), "status": r["status_eff"], "priority": r["priority"], "marks": r["score"]} for r in rows]
+        out = self.message(
+            f"Total {a['total']} · pending {a['pending']} · overdue {a['overdue']} · submitted {a['submitted']} · "
+            f"completion {'—' if a['completion_rate'] is None else format(a['completion_rate'], '.1f') + '%'}"
+        )
+        data = [
+            {
+                "no": r["assignment_no"],
+                "title": r["title"],
+                "subject": r["subject"],
+                "type": r["assignment_type"],
+                "deadline": self._date(r["due_date"]),
+                "submitted": self._date(r["submission_date"]),
+                "status": r["status_eff"],
+                "priority": r["priority"],
+                "marks": r["score"],
+            }
+            for r in rows
+        ]
         out += self.table("assignments", data)
         if self.chart_ok() and a["by_status"]:
-            cols = {"Overdue": "#B42318", "Late Submission": "#B7791F", "Submitted": "#146C46", "Evaluated": "#146C46", "Completed": "#2457A7"}
-            out += [Spacer(1, 6), self.P("Assignments by status", "h2"),
-                    HBars([(k, v, cols.get(k, "#7A8699")) for k, v in sorted(a["by_status"].items(), key=lambda kv: -kv[1])], min(self.frame_w, 140 * mm),
-                          self.fonts, self.accent, vmax=max(a["by_status"].values()), unit="", decimals=0)]
+            cols = {
+                "Overdue": "#B42318",
+                "Late Submission": "#B7791F",
+                "Submitted": "#146C46",
+                "Evaluated": "#146C46",
+                "Completed": "#2457A7",
+            }
+            out += [
+                Spacer(1, 6),
+                self.P("Assignments by status", "h2"),
+                HBars(
+                    [
+                        (k, v, cols.get(k, "#7A8699"))
+                        for k, v in sorted(
+                            a["by_status"].items(), key=lambda kv: -kv[1]
+                        )
+                    ],
+                    min(self.frame_w, 140 * mm),
+                    self.fonts,
+                    self.accent,
+                    vmax=max(a["by_status"].values()),
+                    unit="",
+                    decimals=0,
+                ),
+            ]
         return out
 
     def sec_exams(self) -> list:
@@ -3758,17 +6738,46 @@ class ReportEngine:
         self.counts["exams"] = len(rows)
         if not rows:
             return self.message("No examinations in the selected scope.")
-        return self.table("exams", [{"title": r["title"], "subject": r["subject"], "type": r["exam_type"], "date": self._date(r["exam_date"]), "marks": r["score"],
-                                     "pct": "" if r["pct"] is None else f"{r['pct']:.1f}%", "grade": r["grade"], "result": r["result"], "attempt": r["attempt_no"],
-                                     "prep": r["prep_status"], "venue": r["venue"]} for r in rows])
+        return self.table(
+            "exams",
+            [
+                {
+                    "title": r["title"],
+                    "subject": r["subject"],
+                    "type": r["exam_type"],
+                    "date": self._date(r["exam_date"]),
+                    "marks": r["score"],
+                    "pct": "" if r["pct"] is None else f"{r['pct']:.1f}%",
+                    "grade": r["grade"],
+                    "result": r["result"],
+                    "attempt": r["attempt_no"],
+                    "prep": r["prep_status"],
+                    "venue": r["venue"],
+                }
+                for r in rows
+            ],
+        )
 
     def sec_assessments(self) -> list:
         rows = self.rows_of("marks")
         self.counts["assessments"] = len(rows)
         if not rows:
             return self.message("No assessments recorded in this scope.")
-        return self.table("assessments", [{"date": self._date(r["assessment_date"]), "title": r["title"] or r["assessment_type"], "type": r["assessment_type"], "subject": r["subject"],
-                                           "obtained": fmt_num(r["marks_obtained"]), "max": fmt_num(r["max_marks"]), "pct": "" if r["pct"] is None else f"{r['pct']:.1f}%"} for r in rows])
+        return self.table(
+            "assessments",
+            [
+                {
+                    "date": self._date(r["assessment_date"]),
+                    "title": r["title"] or r["assessment_type"],
+                    "type": r["assessment_type"],
+                    "subject": r["subject"],
+                    "obtained": fmt_num(r["marks_obtained"]),
+                    "max": fmt_num(r["max_marks"]),
+                    "pct": "" if r["pct"] is None else f"{r['pct']:.1f}%",
+                }
+                for r in rows
+            ],
+        )
 
     def sec_attendance(self) -> list:
         rows = self.subject_filter(self.an.attendance_by_subject(self.sids, self.rng))
@@ -3776,25 +6785,69 @@ class ReportEngine:
         self.counts["attendance"] = len(rows)
         if not rows:
             return self.message("No attendance data in the selected scope.")
+
         def action(r: dict) -> str:
             if r["status"] == "No data":
                 return "—"
             if r["pct"] < r["target"]:
-                return f"Attend next {r['need']} classes in a row" if r["need"] else "Target can no longer be reached"
-            return "Can miss " + (f"{r['can_skip']} more" if r["can_skip"] is not None else "any") + " class(es)"
-        data = [{"subject": r["subject"], "held": r["held"], "attended": r["attended"], "missed": r["missed"], "pct": "—" if r["pct"] is None else f"{r['pct']:.1f}%",
-                 "target": f"{r['target']:.0f}%", "status": r["status"], "action": action(r)} for r in rows]
+                return (
+                    f"Attend next {r['need']} classes in a row"
+                    if r["need"]
+                    else "Target can no longer be reached"
+                )
+            return (
+                "Can miss "
+                + (f"{r['can_skip']} more" if r["can_skip"] is not None else "any")
+                + " class(es)"
+            )
+
+        data = [
+            {
+                "subject": r["subject"],
+                "held": r["held"],
+                "attended": r["attended"],
+                "missed": r["missed"],
+                "pct": "—" if r["pct"] is None else f"{r['pct']:.1f}%",
+                "target": f"{r['target']:.0f}%",
+                "status": r["status"],
+                "action": action(r),
+            }
+            for r in rows
+        ]
         out = self.table("attendance", data, note=True)
         target = self.settings.get_float("attendance_min", 75.0)
         if self.chart_ok():
-            items = [(r["subject"], r["pct"], r["color"]) for r in rows if r["pct"] is not None]
+            items = [
+                (r["subject"], r["pct"], r["color"])
+                for r in rows
+                if r["pct"] is not None
+            ]
             if items:
-                out += [Spacer(1, 6), self.P("Attendance by subject", "h2"), HBars(items, self.frame_w, self.fonts, self.accent, target=target)]
+                out += [
+                    Spacer(1, 6),
+                    self.P("Attendance by subject", "h2"),
+                    HBars(items, self.frame_w, self.fonts, self.accent, target=target),
+                ]
             monthly = self.an.attendance_monthly(self.sids)
             if len(monthly) >= 2:
-                out += [Spacer(1, 6), self.P("Monthly attendance", "h2"), XYChart([m for m, _ in monthly], [("Attendance %", [v for _, v in monthly], self.accent)],
-                                                                                 self.frame_w, 130, self.fonts, "lines", vmax=100, unit="%", decimals=0)]
-        out += self.message("Attendance = classes attended ÷ classes held, pooled over the selected period. Each subject uses its own target if set, otherwise the default.")
+                out += [
+                    Spacer(1, 6),
+                    self.P("Monthly attendance", "h2"),
+                    XYChart(
+                        [m for m, _ in monthly],
+                        [("Attendance %", [v for _, v in monthly], self.accent)],
+                        self.frame_w,
+                        130,
+                        self.fonts,
+                        "lines",
+                        vmax=100,
+                        unit="%",
+                        decimals=0,
+                    ),
+                ]
+        out += self.message(
+            "Attendance = classes attended ÷ classes held, pooled over the selected period. Each subject uses its own target if set, otherwise the default."
+        )
         return out
 
     def sec_study(self) -> list:
@@ -3805,19 +6858,56 @@ class ReportEngine:
         if not sess and not total:
             return self.message("No study sessions in the selected scope.")
         days = len({r["study_date"] for r in sess})
-        out = self.message(f"Total {fmt_minutes(total)} in {len(sess)} session(s) across {days} day(s)"
-                           + (f" · average {fmt_minutes(total / days)} per study day" if days else ""))
-        out += self.table("study_subjects", [{"subject": b["subject"], "time": fmt_minutes(b["minutes"]), "sessions": b["sessions"],
-                                              "share": "" if b["share"] is None else f"{b['share']:.0f}%",
-                                              "target": f"{fmt_num(b['target_hours'])} h" if b["target_hours"] else "—"} for b in by], note=False)
+        out = self.message(
+            f"Total {fmt_minutes(total)} in {len(sess)} session(s) across {days} day(s)"
+            + (f" · average {fmt_minutes(total / days)} per study day" if days else "")
+        )
+        out += self.table(
+            "study_subjects",
+            [
+                {
+                    "subject": b["subject"],
+                    "time": fmt_minutes(b["minutes"]),
+                    "sessions": b["sessions"],
+                    "share": "" if b["share"] is None else f"{b['share']:.0f}%",
+                    "target": (
+                        f"{fmt_num(b['target_hours'])} h" if b["target_hours"] else "—"
+                    ),
+                }
+                for b in by
+            ],
+            note=False,
+        )
         if self.chart_ok():
             daily = self.an.study_daily(30, self.sids)
             if any(m for _, m in daily):
-                out += [Spacer(1, 6), self.P("Study minutes per day (last 30 days)", "h2"),
-                        XYChart([d[5:] for d, _ in daily], [("Minutes", [m for _, m in daily], self.accent)], self.frame_w, 130, self.fonts, "bars", decimals=0)]
+                out += [
+                    Spacer(1, 6),
+                    self.P("Study minutes per day (last 30 days)", "h2"),
+                    XYChart(
+                        [d[5:] for d, _ in daily],
+                        [("Minutes", [m for _, m in daily], self.accent)],
+                        self.frame_w,
+                        130,
+                        self.fonts,
+                        "bars",
+                        decimals=0,
+                    ),
+                ]
         out += [Spacer(1, 6), self.P("Study log", "h2")]
-        out += self.table("study", [{"date": self._date(r["study_date"]), "subject": r["subject"], "topic": r["topic"] or r["unit"] or "", "time": fmt_minutes(r["duration_minutes"]),
-                                     "type": r["session_type"]} for r in sess])
+        out += self.table(
+            "study",
+            [
+                {
+                    "date": self._date(r["study_date"]),
+                    "subject": r["subject"],
+                    "topic": r["topic"] or r["unit"] or "",
+                    "time": fmt_minutes(r["duration_minutes"]),
+                    "type": r["session_type"],
+                }
+                for r in sess
+            ],
+        )
         return out
 
     def sec_syllabus(self) -> list:
@@ -3827,14 +6917,49 @@ class ReportEngine:
         if not syl:
             return self.message("No subjects in the selected scope.")
         fp = lambda v: "—" if v is None else f"{v:.0f}%"
-        out = self.table("syllabus", [{"subject": s["subject"], "units": f"{s['done']}/{s['units']}", "unit_pct": fp(s["pct"]), "chapters": f"{s['chapters_done']}/{s['chapters']}",
-                                       "chapter_pct": fp(s["chapter_pct"])} for s in syl], note=False)
+        out = self.table(
+            "syllabus",
+            [
+                {
+                    "subject": s["subject"],
+                    "units": f"{s['done']}/{s['units']}",
+                    "unit_pct": fp(s["pct"]),
+                    "chapters": f"{s['chapters_done']}/{s['chapters']}",
+                    "chapter_pct": fp(s["chapter_pct"]),
+                }
+                for s in syl
+            ],
+            note=False,
+        )
         scored = [s for s in syl if s["pct"] is not None]
         if self.chart_ok() and scored:
-            out += [Spacer(1, 6), self.P("Syllabus completion by subject", "h2"), HBars([(s["subject"], s["pct"], s["color"]) for s in scored], self.frame_w, self.fonts, self.accent, unit="%", decimals=0)]
+            out += [
+                Spacer(1, 6),
+                self.P("Syllabus completion by subject", "h2"),
+                HBars(
+                    [(s["subject"], s["pct"], s["color"]) for s in scored],
+                    self.frame_w,
+                    self.fonts,
+                    self.accent,
+                    unit="%",
+                    decimals=0,
+                ),
+            ]
         if units:
             out += [Spacer(1, 6), self.P("Units still to complete", "h2")]
-            out += self.table("syllabus_open", [{"subject": u["subject"], "unit": u["unit_no"], "title": u["title"], "status": u["status"], "confidence": u["confidence"]} for u in units])
+            out += self.table(
+                "syllabus_open",
+                [
+                    {
+                        "subject": u["subject"],
+                        "unit": u["unit_no"],
+                        "title": u["title"],
+                        "status": u["status"],
+                        "confidence": u["confidence"],
+                    }
+                    for u in units
+                ],
+            )
         return out
 
     def sec_projects(self) -> list:
@@ -3842,35 +6967,97 @@ class ReportEngine:
         self.counts["projects"] = len(rows)
         if not rows:
             return self.message("No projects, labs or activities in this scope.")
-        return self.table("projects", [{"category": r["category"], "title": r["title"], "subject": r["subject"] or "", "status": r["status"], "deadline": self._date(r["deadline"]),
-                                        "milestones": r["progress"], "supervisor": r["supervisor"], "marks": f"{fmt_num(r['marks_obtained'])}/{fmt_num(r['max_marks'])}" if r["marks_obtained"] is not None and r["max_marks"] else ""} for r in rows])
+        return self.table(
+            "projects",
+            [
+                {
+                    "category": r["category"],
+                    "title": r["title"],
+                    "subject": r["subject"] or "",
+                    "status": r["status"],
+                    "deadline": self._date(r["deadline"]),
+                    "milestones": r["progress"],
+                    "supervisor": r["supervisor"],
+                    "marks": (
+                        f"{fmt_num(r['marks_obtained'])}/{fmt_num(r['max_marks'])}"
+                        if r["marks_obtained"] is not None and r["max_marks"]
+                        else ""
+                    ),
+                }
+                for r in rows
+            ],
+        )
 
     def sec_analysis(self) -> list:
         ins = self.an.insights(self.sids, self.rng)
         data = [d for d in self._subject_perf() if d["pct"] is not None]
         self.counts["analysis"] = len(ins)
-        out: list = [Paragraph(self.fonts.markup(i["text"]), self.st["bullet"], bulletText="•") for i in ins]
+        out: list = [
+            Paragraph(self.fonts.markup(i["text"]), self.st["bullet"], bulletText="•")
+            for i in ins
+        ]
         trend = [d for d in data if d["trend"] != "Not enough data"]
         if trend:
             out += [Spacer(1, 6), self.P("Score trend by subject", "h2")]
-            out += self.table("trend", [{"subject": d["subject"], "score": f"{d['pct']:.1f}%", "n": d["n"], "trend": d["trend"], "delta": f"{d['delta']:+.1f}"} for d in trend], note=False)
-            out += self.message("Trend compares the later half of a subject's dated scores with the earlier half (at least 4 scores; a change of more than 5 points counts).")
+            out += self.table(
+                "trend",
+                [
+                    {
+                        "subject": d["subject"],
+                        "score": f"{d['pct']:.1f}%",
+                        "n": d["n"],
+                        "trend": d["trend"],
+                        "delta": f"{d['delta']:+.1f}",
+                    }
+                    for d in trend
+                ],
+                note=False,
+            )
+            out += self.message(
+                "Trend compares the later half of a subject's dated scores with the earlier half (at least 4 scores; a change of more than 5 points counts)."
+            )
         if self.chart_ok() and data:
-            out += [Spacer(1, 6), self.P("Subject averages", "h2"), HBars([(d["subject"], d["pct"], d["color"]) for d in data], self.frame_w, self.fonts, self.accent,
-                                                                       target=self.settings.get_float("low_mark_pct", 40.0))]
+            out += [
+                Spacer(1, 6),
+                self.P("Subject averages", "h2"),
+                HBars(
+                    [(d["subject"], d["pct"], d["color"]) for d in data],
+                    self.frame_w,
+                    self.fonts,
+                    self.accent,
+                    target=self.settings.get_float("low_mark_pct", 40.0),
+                ),
+            ]
         return out
 
     def sec_grading(self) -> list:
         cfg = self.settings.grading()
         self.counts["grading"] = len(cfg.scale)
-        out = [Paragraph(self.fonts.markup(line), self.st["bullet"], bulletText="•") for line in cfg.describe()]
-        out += [Spacer(1, 5)] + self.table("grading", [{"grade": r["grade"], "min": fmt_num(r["min"]), "points": fmt_num(r["points"]), "label": r.get("label", "")} for r in cfg._sorted()], note=False)
+        out = [
+            Paragraph(self.fonts.markup(line), self.st["bullet"], bulletText="•")
+            for line in cfg.describe()
+        ]
+        out += [Spacer(1, 5)] + self.table(
+            "grading",
+            [
+                {
+                    "grade": r["grade"],
+                    "min": fmt_num(r["min"]),
+                    "points": fmt_num(r["points"]),
+                    "label": r.get("label", ""),
+                }
+                for r in cfg._sorted()
+            ],
+            note=False,
+        )
         return out
 
     def sec_notes(self) -> list:
         text = self.cfg.notes.strip()
         self.counts["notes"] = 1 if text else 0
-        return [self.P(p, "body") for p in text.split("\n") if p.strip()] if text else []
+        return (
+            [self.P(p, "body") for p in text.split("\n") if p.strip()] if text else []
+        )
 
     # ---- document assembly ------------------------------------------------------------------
     def title(self) -> str:
@@ -3878,8 +7065,20 @@ class ReportEngine:
 
     def _student_block(self) -> list:
         p = self.repo.profile()
-        bits = [x for x in (p.get("student_name"), p.get("roll_no") and f"Roll no. {p['roll_no']}", p.get("college_name")) if x]
-        return [self.P(" · ".join(bits), "muted")] if bits and self.cfg.student_info else []
+        bits = [
+            x
+            for x in (
+                p.get("student_name"),
+                p.get("roll_no") and f"Roll no. {p['roll_no']}",
+                p.get("college_name"),
+            )
+            if x
+        ]
+        return (
+            [self.P(" · ".join(bits), "muted")]
+            if bits and self.cfg.student_info
+            else []
+        )
 
     def _cover(self) -> list:
         c, p = self.cfg, self.repo.profile()
@@ -3890,12 +7089,36 @@ class ReportEngine:
         out += [self.P(self.title(), "ct"), Spacer(1, 4 * mm)]
         if c.subtitle.strip():
             out += [self.P(c.subtitle, "cs"), Spacer(1, 6 * mm)]
-        rows = [("Student", p.get("student_name")), ("Roll no.", p.get("roll_no")), ("College", p.get("college_name")), ("University", p.get("university_name")),
-                ("Scope", self.scope_text()), ("Report date", self._date(self.today.isoformat()) if c.show_date else "")]
+        rows = [
+            ("Student", p.get("student_name")),
+            ("Roll no.", p.get("roll_no")),
+            ("College", p.get("college_name")),
+            ("University", p.get("university_name")),
+            ("Scope", self.scope_text()),
+            ("Report date", self._date(self.today.isoformat()) if c.show_date else ""),
+        ]
         rows = [(k, v) for k, v in rows if v]
         if rows:
-            t = Table([[self.P(k, "kl"), self.P(v, "body")] for k, v in rows], colWidths=[self.frame_w * 0.22, self.frame_w * 0.5])
-            t.setStyle(TableStyle([("LINEBELOW", (0, 0), (-1, -1), 0.35, rl_colors.HexColor("#D5DDE9")), ("TOPPADDING", (0, 0), (-1, -1), 5), ("BOTTOMPADDING", (0, 0), (-1, -1), 5), ("LEFTPADDING", (0, 0), (-1, -1), 2)]))
+            t = Table(
+                [[self.P(k, "kl"), self.P(v, "body")] for k, v in rows],
+                colWidths=[self.frame_w * 0.22, self.frame_w * 0.5],
+            )
+            t.setStyle(
+                TableStyle(
+                    [
+                        (
+                            "LINEBELOW",
+                            (0, 0),
+                            (-1, -1),
+                            0.35,
+                            rl_colors.HexColor("#D5DDE9"),
+                        ),
+                        ("TOPPADDING", (0, 0), (-1, -1), 5),
+                        ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+                        ("LEFTPADDING", (0, 0), (-1, -1), 2),
+                    ]
+                )
+            )
             t.hAlign = "LEFT"
             out.append(t)
         return out + [PageBreak()]
@@ -3915,7 +7138,9 @@ class ReportEngine:
             self.warnings.append(f"Logo could not be placed on the cover: {exc}")
             return None
 
-    def build_story(self, progress: Optional[Callable[[int, str], None]] = None) -> list:
+    def build_story(
+        self, progress: Optional[Callable[[int, str], None]] = None
+    ) -> list:
         c = self.cfg
         keys = c.resolved_sections()
         story: list = []
@@ -3926,15 +7151,28 @@ class ReportEngine:
             if c.subtitle.strip():
                 story.append(self.P(c.subtitle, "muted"))
             story += self._student_block()
-            story += [self.P("Scope: " + self.scope_text() + f"  ·  up to {self.limit} records per table", "small"), Spacer(1, 4)]
+            story += [
+                self.P(
+                    "Scope: "
+                    + self.scope_text()
+                    + f"  ·  up to {self.limit} records per table",
+                    "small",
+                ),
+                Spacer(1, 4),
+            ]
         for i, key in enumerate(keys):
             if progress:
-                progress(int(100 * i / max(1, len(keys))), f"Building: {REPORT_SECTIONS[key]}")
+                progress(
+                    int(100 * i / max(1, len(keys))),
+                    f"Building: {REPORT_SECTIONS[key]}",
+                )
             try:
                 body = getattr(self, f"sec_{key}")()
             except Exception as exc:  # one bad section must not lose the whole report
                 LOG.exception("Report section %s failed", key)
-                self.warnings.append(f"The “{REPORT_SECTIONS[key]}” section could not be generated: {exc}")
+                self.warnings.append(
+                    f"The “{REPORT_SECTIONS[key]}” section could not be generated: {exc}"
+                )
                 body = self.message(f"This section could not be generated ({exc}).")
             if body or key == "notes" and False:
                 story += self.heading(key) + body
@@ -3945,7 +7183,10 @@ class ReportEngine:
     def plan(self) -> list[tuple[str, str, int]]:
         """(key, title, record count) per selected section — drives the settings preview."""
         self.build_story()
-        return [(k, REPORT_SECTIONS[k], self.counts.get(k, 0)) for k in self.cfg.resolved_sections()]
+        return [
+            (k, REPORT_SECTIONS[k], self.counts.get(k, 0))
+            for k in self.cfg.resolved_sections()
+        ]
 
     def _decorate(self, c: Any, page: int, total: int) -> None:
         cfg = self.cfg
@@ -3958,25 +7199,67 @@ class ReportEngine:
         c.setStrokeColor(rl_colors.HexColor(self.accent))
         c.setLineWidth(1.1)
         c.line(ml, ph - mt - 6 * mm, pw - mr, ph - mt - 6 * mm)
-        left = cfg.header_text.strip() or (self.repo.profile().get("college_name") if cfg.branding else "") or ""
+        left = (
+            cfg.header_text.strip()
+            or (self.repo.profile().get("college_name") if cfg.branding else "")
+            or ""
+        )
         x = ml
         if self.logo is not None:
             try:
                 iw, ih = self.logo.getSize()
                 h = 5.5 * mm
-                c.drawImage(self.logo, ml, ph - mt - 5.2 * mm, width=h * iw / ih, height=h, mask="auto")
+                c.drawImage(
+                    self.logo,
+                    ml,
+                    ph - mt - 5.2 * mm,
+                    width=h * iw / ih,
+                    height=h,
+                    mask="auto",
+                )
                 x += h * iw / ih + 2 * mm
             except Exception:
                 self.logo = None
         f.draw(c, x, ph - mt - 3.4 * mm, left, 8, ink, True, maxw=(pw - ml - mr) * 0.5)
-        f.draw(c, pw - mr, ph - mt - 3.4 * mm, ("PREVIEW — " if self.preview else "") + self.title(), 8, muted, False, "r", maxw=(pw - ml - mr) * 0.48)
+        f.draw(
+            c,
+            pw - mr,
+            ph - mt - 3.4 * mm,
+            ("PREVIEW — " if self.preview else "") + self.title(),
+            8,
+            muted,
+            False,
+            "r",
+            maxw=(pw - ml - mr) * 0.48,
+        )
         c.setStrokeColor(rl_colors.HexColor("#C3CDDC"))
         c.setLineWidth(0.5)
         c.line(ml, mb + 7 * mm, pw - mr, mb + 7 * mm)
-        foot = " · ".join(x for x in (cfg.footer_text.strip(), f"Generated {self._date(self.today.isoformat())}" if cfg.show_date else "", APP_NAME) if x)
+        foot = " · ".join(
+            x
+            for x in (
+                cfg.footer_text.strip(),
+                (
+                    f"Generated {self._date(self.today.isoformat())}"
+                    if cfg.show_date
+                    else ""
+                ),
+                APP_NAME,
+            )
+            if x
+        )
         f.draw(c, ml, mb + 2.6 * mm, foot, 7.4, muted, maxw=(pw - ml - mr) * 0.75)
         if cfg.page_numbers:
-            f.draw(c, pw - mr, mb + 2.6 * mm, f"Page {page} of {total}", 7.4, muted, True, "r")
+            f.draw(
+                c,
+                pw - mr,
+                mb + 2.6 * mm,
+                f"Page {page} of {total}",
+                7.4,
+                muted,
+                True,
+                "r",
+            )
         c.restoreState()
 
     def _canvas_maker(self) -> Any:
@@ -4000,44 +7283,98 @@ class ReportEngine:
                     decorate(self, self._pageNumber, total)
                     super().showPage()
                 super().save()
+
         return NumberedCanvas
 
-    def generate(self, out_path: Path | str, progress: Optional[Callable[[int, str], None]] = None) -> dict:
+    def generate(
+        self,
+        out_path: Path | str,
+        progress: Optional[Callable[[int, str], None]] = None,
+    ) -> dict:
         """Render to ``out_path`` atomically; the previous file survives any failure."""
         holder = {"story": self.build_story(progress)}
         result: dict[str, Any] = {}
         ml, mr, mt, mb = self.margins
 
         def write(tmp: Path) -> None:
-            doc = BaseDocTemplate(str(tmp), pagesize=self.page, leftMargin=ml, rightMargin=mr, topMargin=mt + 9 * mm, bottomMargin=mb + 10 * mm,
-                                  title=self.title(), author=self.repo.profile().get("student_name") or APP_NAME, subject=self.scope_text(), creator=f"{APP_NAME} {APP_VERSION}")
-            doc.addPageTemplates([PageTemplate(id="body", frames=[Frame(doc.leftMargin, doc.bottomMargin, doc.width, doc.height, id="f",
-                                                                      leftPadding=0, rightPadding=0, topPadding=0, bottomPadding=0)])])
+            doc = BaseDocTemplate(
+                str(tmp),
+                pagesize=self.page,
+                leftMargin=ml,
+                rightMargin=mr,
+                topMargin=mt + 9 * mm,
+                bottomMargin=mb + 10 * mm,
+                title=self.title(),
+                author=self.repo.profile().get("student_name") or APP_NAME,
+                subject=self.scope_text(),
+                creator=f"{APP_NAME} {APP_VERSION}",
+            )
+            doc.addPageTemplates(
+                [
+                    PageTemplate(
+                        id="body",
+                        frames=[
+                            Frame(
+                                doc.leftMargin,
+                                doc.bottomMargin,
+                                doc.width,
+                                doc.height,
+                                id="f",
+                                leftPadding=0,
+                                rightPadding=0,
+                                topPadding=0,
+                                bottomPadding=0,
+                            )
+                        ],
+                    )
+                ]
+            )
             doc.build(holder["story"], canvasmaker=self._canvas_maker())
             result["pages"] = doc.page
             raw = tmp.read_bytes()
             if not raw.startswith(b"%PDF") or b"%%EOF" not in raw[-2048:]:
-                raise RuntimeError("The generated PDF failed its integrity check and was discarded.")
+                raise RuntimeError(
+                    "The generated PDF failed its integrity check and was discarded."
+                )
+
         if progress:
             progress(96, "Writing PDF")
         try:
             atomic_write(out_path, write)
-        except LayoutError as exc:   # safety net: never lose the report because one chart would not fit
+        except (
+            LayoutError
+        ) as exc:  # safety net: never lose the report because one chart would not fit
             LOG.warning("PDF layout problem (%s); retrying without charts", exc)
-            self.warnings.append("A chart did not fit on the page, so charts were left out of this report.")
+            self.warnings.append(
+                "A chart did not fit on the page, so charts were left out of this report."
+            )
             self.charts_off = True
             self.counts.clear()
             holder["story"] = self.build_story()
             atomic_write(out_path, write)
         if progress:
             progress(100, "Done")
-        return {"path": str(out_path), "pages": result.get("pages", 0), "sections": self.cfg.resolved_sections(), "counts": dict(self.counts),
-                "warnings": list(self.warnings), "bytes": Path(out_path).stat().st_size}
+        return {
+            "path": str(out_path),
+            "pages": result.get("pages", 0),
+            "sections": self.cfg.resolved_sections(),
+            "counts": dict(self.counts),
+            "warnings": list(self.warnings),
+            "bytes": Path(out_path).stat().st_size,
+        }
 
 
-def generate_report(core: "AppCore", cfg: ReportConfig, out_path: Path | str, progress: Optional[Callable[[int, str], None]] = None, preview: bool = False) -> dict:
+def generate_report(
+    core: "AppCore",
+    cfg: ReportConfig,
+    out_path: Path | str,
+    progress: Optional[Callable[[int, str], None]] = None,
+    preview: bool = False,
+) -> dict:
     """Convenience entry point (used by the GUI worker thread with its own AppCore/DB connection)."""
-    return ReportEngine(core.repo, core.analytics, cfg, preview).generate(out_path, progress)
+    return ReportEngine(core.repo, core.analytics, cfg, preview).generate(
+        out_path, progress
+    )
 
 
 # ════════════════════════════════════════════════════════════════════════════
@@ -4045,18 +7382,85 @@ def generate_report(core: "AppCore", cfg: ReportConfig, out_path: Path | str, pr
 #     (thin by design: all rules, filtering, sorting and validation live in the tested code above)
 # ════════════════════════════════════════════════════════════════════════════
 try:
-    from PySide6.QtCore import QAbstractTableModel, QDate, QModelIndex, QRect, QSize, Qt, QThread, QTimer, QUrl, Signal
-    from PySide6.QtGui import QAction, QBrush, QColor, QDesktopServices, QFont, QFontMetrics, QGuiApplication, QKeySequence, QPainter, QPalette, QPen, QPixmap, QShortcut, QTextCharFormat
-    from PySide6.QtWidgets import (QAbstractItemView, QApplication, QCalendarWidget, QCheckBox, QColorDialog, QComboBox, QDateEdit, QDialog, QDialogButtonBox,
-                                   QDoubleSpinBox, QFileDialog, QFormLayout, QFrame, QGridLayout, QGroupBox, QHBoxLayout, QHeaderView, QInputDialog, QLabel,
-                                   QLineEdit, QListWidget, QListWidgetItem, QMainWindow, QMenu, QMessageBox, QPlainTextEdit, QProgressBar, QPushButton,
-                                   QScrollArea, QSizePolicy, QSpinBox, QStackedWidget, QTableView, QTableWidget, QTableWidgetItem, QTabWidget,
-                                   QToolButton, QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget)
+    from PySide6.QtCore import (
+        QAbstractTableModel,
+        QDate,
+        QModelIndex,
+        QRect,
+        QSize,
+        Qt,
+        QThread,
+        QTimer,
+        QUrl,
+        Signal,
+    )
+    from PySide6.QtGui import (
+        QAction,
+        QBrush,
+        QColor,
+        QDesktopServices,
+        QFont,
+        QFontMetrics,
+        QGuiApplication,
+        QKeySequence,
+        QPainter,
+        QPalette,
+        QPen,
+        QPixmap,
+        QShortcut,
+        QTextCharFormat,
+    )
+    from PySide6.QtWidgets import (
+        QAbstractItemView,
+        QApplication,
+        QCalendarWidget,
+        QCheckBox,
+        QColorDialog,
+        QComboBox,
+        QDateEdit,
+        QDialog,
+        QDialogButtonBox,
+        QDoubleSpinBox,
+        QFileDialog,
+        QFormLayout,
+        QFrame,
+        QGridLayout,
+        QGroupBox,
+        QHBoxLayout,
+        QHeaderView,
+        QInputDialog,
+        QLabel,
+        QLineEdit,
+        QListWidget,
+        QListWidgetItem,
+        QMainWindow,
+        QMenu,
+        QMessageBox,
+        QPlainTextEdit,
+        QProgressBar,
+        QPushButton,
+        QScrollArea,
+        QSizePolicy,
+        QSpinBox,
+        QStackedWidget,
+        QTableView,
+        QTableWidget,
+        QTableWidgetItem,
+        QTabWidget,
+        QToolButton,
+        QTreeWidget,
+        QTreeWidgetItem,
+        QVBoxLayout,
+        QWidget,
+    )
+
     HAS_QT = True
     A_L = Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
     A_C = Qt.AlignmentFlag.AlignCenter
     A_R = Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
-except ImportError:      # logic-only mode (tests, CLI): placeholders so this module still imports
+except (
+    ImportError
+):  # logic-only mode (tests, CLI): placeholders so this module still imports
     HAS_QT = False
     QAbstractTableModel = QWidget = QDialog = QMainWindow = QFrame = QThread = QTableView = QPushButton = object  # type: ignore[assignment,misc]
 
@@ -4075,8 +7479,21 @@ class TablePrefs:
     def __init__(self, settings: SettingsStore, table_id: str) -> None:
         self.settings, self.key = settings, f"table:{table_id}"
         stored = settings.get_json(self.key, {})
-        self.d: dict[str, Any] = {"order": [], "hidden": None, "widths": {}, "align": {}, "colors": {}, "sort": [], "density": "",
-                                  "alt": True, "grid": True, "row_h": 0, "rules_on": True, "rules": [], "layouts": {}}
+        self.d: dict[str, Any] = {
+            "order": [],
+            "hidden": None,
+            "widths": {},
+            "align": {},
+            "colors": {},
+            "sort": [],
+            "density": "",
+            "alt": True,
+            "grid": True,
+            "row_h": 0,
+            "rules_on": True,
+            "rules": [],
+            "layouts": {},
+        }
         if isinstance(stored, dict):
             self.d.update({k: v for k, v in stored.items() if k in self.d})
 
@@ -4092,22 +7509,53 @@ class TablePrefs:
                 self.d[k] = lay[k]
 
     def reset_layout(self) -> None:
-        self.apply_layout({"order": [], "hidden": None, "widths": {}, "align": {}, "colors": {}, "sort": []})
+        self.apply_layout(
+            {
+                "order": [],
+                "hidden": None,
+                "widths": {},
+                "align": {},
+                "colors": {},
+                "sort": [],
+            }
+        )
 
     def reset_all(self) -> None:
         keep = self.d["layouts"]
-        self.d.update({"density": "", "alt": True, "grid": True, "row_h": 0, "rules_on": True, "rules": []})
+        self.d.update(
+            {
+                "density": "",
+                "alt": True,
+                "grid": True,
+                "row_h": 0,
+                "rules_on": True,
+                "rules": [],
+            }
+        )
         self.reset_layout()
         self.d["layouts"] = keep
 
     def hidden_keys(self, columns: Sequence[Column]) -> set[str]:
-        return set(self.d["hidden"]) if self.d["hidden"] is not None else {c.key for c in columns if not c.vis}
+        return (
+            set(self.d["hidden"])
+            if self.d["hidden"] is not None
+            else {c.key for c in columns if not c.vis}
+        )
 
     def user_rules(self) -> list[Rule]:
         out = []
         for r in self.d["rules"]:
             try:
-                out.append(Rule(str(r["column"]), str(r["op"]), r.get("value", ""), str(r.get("color", "danger")), str(r.get("scope", "cell")), bool(r.get("bold", False))))
+                out.append(
+                    Rule(
+                        str(r["column"]),
+                        str(r["op"]),
+                        r.get("value", ""),
+                        str(r.get("color", "danger")),
+                        str(r.get("scope", "cell")),
+                        bool(r.get("bold", False)),
+                    )
+                )
             except (KeyError, TypeError):
                 continue
         return out
@@ -4122,7 +7570,9 @@ def make_label(text: str = "", name: str = "", wrap: bool = False) -> "QLabel":
     return lab
 
 
-def make_button(text: str, slot: Optional[Callable] = None, kind: str = "", tip: str = "") -> "QPushButton":
+def make_button(
+    text: str, slot: Optional[Callable] = None, kind: str = "", tip: str = ""
+) -> "QPushButton":
     b = QPushButton(text)
     if kind:
         b.setObjectName(kind)
@@ -4133,7 +7583,14 @@ def make_button(text: str, slot: Optional[Callable] = None, kind: str = "", tip:
     return b
 
 
-def add_action(menu: "QMenu", text: str, fn: Callable, checkable: bool = False, checked: bool = False, enabled: bool = True) -> "QAction":
+def add_action(
+    menu: "QMenu",
+    text: str,
+    fn: Callable,
+    checkable: bool = False,
+    checked: bool = False,
+    enabled: bool = True,
+) -> "QAction":
     act = menu.addAction(text)
     act.setEnabled(enabled)
     if checkable:
@@ -4166,7 +7623,7 @@ def confirm(parent: Any, title: str, text: str, danger: bool = False) -> bool:
     box.setIcon(QMessageBox.Icon.Warning if danger else QMessageBox.Icon.Question)
     yes = box.addButton("Yes", QMessageBox.ButtonRole.YesRole)
     no = box.addButton("No", QMessageBox.ButtonRole.NoRole)
-    box.setDefaultButton(no)          # destructive actions default to "No"
+    box.setDefaultButton(no)  # destructive actions default to "No"
     box.exec()
     return box.clickedButton() is yes
 
@@ -4203,7 +7660,12 @@ class UiContext:
             tell(parent, "Please check", str(exc))
         except Exception as exc:
             LOG.exception("Unexpected error")
-            tell(parent, "Something went wrong", f"{exc}\n\nDetails were written to the log file.", True)
+            tell(
+                parent,
+                "Something went wrong",
+                f"{exc}\n\nDetails were written to the log file.",
+                True,
+            )
         return None
 
     def confirm_delete(self, parent: Any, table: str, ids: Sequence[int]) -> bool:
@@ -4211,9 +7673,17 @@ class UiContext:
         deps = self.repo.dependents(table, ids)
         blockers = [f"{n} {label}" for label, n, eff in deps if eff == "block"]
         if blockers:
-            tell(parent, "Cannot delete", f"This still contains {', '.join(blockers)}.\nMove or delete those first.")
+            tell(
+                parent,
+                "Cannot delete",
+                f"This still contains {', '.join(blockers)}.\nMove or delete those first.",
+            )
             return False
-        what = f"{len(ids)} {ent.plural.lower()}" if len(ids) > 1 else f"this {ent.singular.lower()}"
+        what = (
+            f"{len(ids)} {ent.plural.lower()}"
+            if len(ids) > 1
+            else f"this {ent.singular.lower()}"
+        )
         lines = [f"Delete {what}? This cannot be undone."]
         removed = [f"• {n} {label}" for label, n, eff in deps if eff == "delete"]
         kept = [f"• {n} {label}" for label, n, eff in deps if eff == "detach"]
@@ -4230,7 +7700,9 @@ class UiContext:
 class ChartWidget(QWidget):
     """Horizontal bars, columns or lines. Shows an honest empty state when there is no data."""
 
-    def __init__(self, ctx: UiContext, empty: str = "No data yet", parent: Any = None) -> None:
+    def __init__(
+        self, ctx: UiContext, empty: str = "No data yet", parent: Any = None
+    ) -> None:
         super().__init__(parent)
         self.ctx, self.empty, self.mode = ctx, empty, "hbars"
         self.items: list[tuple[str, float, str]] = []
@@ -4240,14 +7712,46 @@ class ChartWidget(QWidget):
         self.setMinimumHeight(150)
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
-    def set_bars(self, items: Sequence[tuple[str, float, str]], vmax: float = 100.0, unit: str = "%", target: Optional[float] = None, dec: int = 1) -> None:
-        self.mode, self.items, self.vmax, self.unit, self.target, self.dec = "hbars", list(items), vmax or 1.0, unit, target, dec
-        self.setMinimumHeight(max(150, 26 * len(self.items) + 14) if self.items else 150)
+    def set_bars(
+        self,
+        items: Sequence[tuple[str, float, str]],
+        vmax: float = 100.0,
+        unit: str = "%",
+        target: Optional[float] = None,
+        dec: int = 1,
+    ) -> None:
+        self.mode, self.items, self.vmax, self.unit, self.target, self.dec = (
+            "hbars",
+            list(items),
+            vmax or 1.0,
+            unit,
+            target,
+            dec,
+        )
+        self.setMinimumHeight(
+            max(150, 26 * len(self.items) + 14) if self.items else 150
+        )
         self.update()
 
-    def set_xy(self, labels: Sequence[str], series: Sequence[tuple[str, Sequence, str]], mode: str = "bars", vmax: Optional[float] = None, unit: str = "", dec: int = 1) -> None:
-        self.mode, self.labels, self.series, self.unit, self.dec = mode, list(labels), [(n, list(v), c) for n, v, c in series], unit, dec
-        top = max([v for _, vals, _ in self.series for v in vals if v is not None] + [1e-9])
+    def set_xy(
+        self,
+        labels: Sequence[str],
+        series: Sequence[tuple[str, Sequence, str]],
+        mode: str = "bars",
+        vmax: Optional[float] = None,
+        unit: str = "",
+        dec: int = 1,
+    ) -> None:
+        self.mode, self.labels, self.series, self.unit, self.dec = (
+            mode,
+            list(labels),
+            [(n, list(v), c) for n, v, c in series],
+            unit,
+            dec,
+        )
+        top = max(
+            [v for _, vals, _ in self.series for v in vals if v is not None] + [1e-9]
+        )
         self.vmax = vmax or XYChart._nice(top)
         self.setMinimumHeight(190)
         self.update()
@@ -4258,24 +7762,41 @@ class ChartWidget(QWidget):
         p.setRenderHint(QPainter.RenderHint.Antialiasing)
         fm = QFontMetrics(self.font())
         w, h = self.width(), self.height()
-        txt, muted, grid = QColor(t.color("text")), QColor(t.color("muted")), QColor(t.color("border"))
-        if (self.mode == "hbars" and not self.items) or (self.mode != "hbars" and not any(v is not None for _, vs, _ in self.series for v in vs)):
+        txt, muted, grid = (
+            QColor(t.color("text")),
+            QColor(t.color("muted")),
+            QColor(t.color("border")),
+        )
+        if (self.mode == "hbars" and not self.items) or (
+            self.mode != "hbars"
+            and not any(v is not None for _, vs, _ in self.series for v in vs)
+        ):
             p.setPen(muted)
             p.drawText(self.rect(), A_C, self.empty)
             p.end()
             return
         if self.mode == "hbars":
-            lw = min(int(w * 0.38), max(fm.horizontalAdvance(i[0]) for i in self.items) + 10)
+            lw = min(
+                int(w * 0.38), max(fm.horizontalAdvance(i[0]) for i in self.items) + 10
+            )
             x0, x1, rh = lw, w - 52, 26
             for i, (label, val, col) in enumerate(self.items):
                 y = 6 + i * rh
                 p.setPen(txt)
-                p.drawText(QRect(0, y, lw - 8, rh), A_R, fm.elidedText(label, Qt.TextElideMode.ElideRight, lw - 10))
-                p.fillRect(x0, y + 5, max(1, x1 - x0), rh - 10, QColor(t.color("panel_alt")))
+                p.drawText(
+                    QRect(0, y, lw - 8, rh),
+                    A_R,
+                    fm.elidedText(label, Qt.TextElideMode.ElideRight, lw - 10),
+                )
+                p.fillRect(
+                    x0, y + 5, max(1, x1 - x0), rh - 10, QColor(t.color("panel_alt"))
+                )
                 bw = int(max(0.0, min(1.0, val / self.vmax)) * (x1 - x0))
                 p.fillRect(x0, y + 5, bw, rh - 10, QColor(col or t.accent))
                 p.setPen(txt)
-                p.drawText(QRect(x1 + 6, y, 46, rh), A_L, f"{val:.{self.dec}f}{self.unit}")
+                p.drawText(
+                    QRect(x1 + 6, y, 46, rh), A_L, f"{val:.{self.dec}f}{self.unit}"
+                )
             if self.target is not None:
                 tx = x0 + int(max(0.0, min(1.0, self.target / self.vmax)) * (x1 - x0))
                 p.setPen(QPen(QColor(t.color("danger")), 1, Qt.PenStyle.DashLine))
@@ -4289,14 +7810,22 @@ class ChartWidget(QWidget):
             p.setPen(QPen(grid, 1))
             p.drawLine(left, gy, left + pw, gy)
             p.setPen(muted)
-            p.drawText(QRect(0, gy - 8, left - 6, 16), A_R, f"{self.vmax * i / 4:.{0 if self.vmax >= 10 else 1}f}{self.unit}")
+            p.drawText(
+                QRect(0, gy - 8, left - 6, 16),
+                A_R,
+                f"{self.vmax * i / 4:.{0 if self.vmax >= 10 else 1}f}{self.unit}",
+            )
         n = max(1, len(self.labels))
         slot = pw / n
         step = max(1, int(math.ceil(n * 44 / max(pw, 1))))
         for i, lab in enumerate(self.labels):
             if i % step == 0:
                 p.setPen(muted)
-                p.drawText(QRect(int(left + slot * i), h - bottom + 4, int(slot * step), 16), A_C, fm.elidedText(lab, Qt.TextElideMode.ElideRight, int(slot * step)))
+                p.drawText(
+                    QRect(int(left + slot * i), h - bottom + 4, int(slot * step), 16),
+                    A_C,
+                    fm.elidedText(lab, Qt.TextElideMode.ElideRight, int(slot * step)),
+                )
         for si, (name, vals, col) in enumerate(self.series):
             pts = []
             for i, v in enumerate(vals):
@@ -4318,7 +7847,9 @@ class ChartWidget(QWidget):
                     p.drawEllipse(x - 3, y - 3, 6, 6)
                     if len(pts) <= 12:
                         p.setPen(txt)
-                        p.drawText(QRect(x - 24, y - 18, 48, 14), A_C, f"{v:.{self.dec}f}")
+                        p.drawText(
+                            QRect(x - 24, y - 18, 48, 14), A_C, f"{v:.{self.dec}f}"
+                        )
                         p.setPen(QPen(QColor(col), 2))
             if len(self.series) > 1:
                 p.fillRect(left + si * 110, 4, 10, 6, QColor(col))
@@ -4331,7 +7862,9 @@ class ChartWidget(QWidget):
 class RecordTableModel(QAbstractTableModel):
     """Thin Qt wrapper over RowSet: formatting, alignment, colours and sort badges."""
 
-    def __init__(self, ctx: UiContext, ent: Entity, prefs: TablePrefs, parent: Any = None) -> None:
+    def __init__(
+        self, ctx: UiContext, ent: Entity, prefs: TablePrefs, parent: Any = None
+    ) -> None:
         super().__init__(parent)
         self.ctx, self.ent, self.prefs = ctx, ent, prefs
         self.cols = list(ent.columns)
@@ -4346,25 +7879,44 @@ class RecordTableModel(QAbstractTableModel):
         self.endResetModel()
 
     def reload_rules(self) -> None:
-        self.rules = (list(self.ent.rules) if self.prefs.d["rules_on"] else []) + (self.prefs.user_rules() if self.prefs.d["rules_on"] else [])
+        self.rules = (list(self.ent.rules) if self.prefs.d["rules_on"] else []) + (
+            self.prefs.user_rules() if self.prefs.d["rules_on"] else []
+        )
         self.layoutChanged.emit()
 
     def rowCount(self, parent: Any = None) -> int:
-        return 0 if parent is not None and hasattr(parent, "isValid") and parent.isValid() else len(self.rows)
+        return (
+            0
+            if parent is not None and hasattr(parent, "isValid") and parent.isValid()
+            else len(self.rows)
+        )
 
     def columnCount(self, parent: Any = None) -> int:
-        return 0 if parent is not None and hasattr(parent, "isValid") and parent.isValid() else len(self.cols)
+        return (
+            0
+            if parent is not None and hasattr(parent, "isValid") and parent.isValid()
+            else len(self.cols)
+        )
 
     def headerData(self, section: int, orientation: Any, role: Any = None) -> Any:
         role = Qt.ItemDataRole.DisplayRole if role is None else role
-        if orientation == Qt.Orientation.Horizontal and role == Qt.ItemDataRole.DisplayRole and 0 <= section < len(self.cols):
+        if (
+            orientation == Qt.Orientation.Horizontal
+            and role == Qt.ItemDataRole.DisplayRole
+            and 0 <= section < len(self.cols)
+        ):
             col, label = self.cols[section], self.cols[section].label
             keys = self.rs.sort_keys if self.rs else []
             for n, (k, asc) in enumerate(keys, 1):
                 if k == col.key:
-                    return f"{label} {'▲' if asc else '▼'}" + (f"{n}" if len(keys) > 1 else "")
+                    return f"{label} {'▲' if asc else '▼'}" + (
+                        f"{n}" if len(keys) > 1 else ""
+                    )
             return label
-        if orientation == Qt.Orientation.Vertical and role == Qt.ItemDataRole.DisplayRole:
+        if (
+            orientation == Qt.Orientation.Vertical
+            and role == Qt.ItemDataRole.DisplayRole
+        ):
             return section + 1
         return None
 
@@ -4372,8 +7924,14 @@ class RecordTableModel(QAbstractTableModel):
         out = []
         for r in self.rules:
             if r.column in row:
-                exp = self.ctx.settings.get_float("low_mark_pct", 40.0) if r.value == "@low" else r.value
-                if rule_matches(r.op, exp, row.get(r.column)) and (r.scope == "row" or r.column == col.key):
+                exp = (
+                    self.ctx.settings.get_float("low_mark_pct", 40.0)
+                    if r.value == "@low"
+                    else r.value
+                )
+                if rule_matches(r.op, exp, row.get(r.column)) and (
+                    r.scope == "row" or r.column == col.key
+                ):
                     out.append(r)
         return out
 
@@ -4384,17 +7942,31 @@ class RecordTableModel(QAbstractTableModel):
         row, col = self.rows[index.row()], self.cols[index.column()]
         th = self.ctx.theme
         if role == Qt.ItemDataRole.DisplayRole:
-            return format_cell(col, row, self.ctx.settings.get("date_style") or "%d %b %Y")
+            return format_cell(
+                col, row, self.ctx.settings.get("date_style") or "%d %b %Y"
+            )
         if role == Qt.ItemDataRole.ToolTipRole:
-            return format_cell(col, row, self.ctx.settings.get("date_style") or "%d %b %Y")
+            return format_cell(
+                col, row, self.ctx.settings.get("date_style") or "%d %b %Y"
+            )
         if role == Qt.ItemDataRole.UserRole:
             return row.get("id")
         if role == Qt.ItemDataRole.TextAlignmentRole:
-            al = self.prefs.d["align"].get(col.key) or col.align or ("r" if col.kind in ("int", "float", "pct", "minutes", "kb") else "l")
+            al = (
+                self.prefs.d["align"].get(col.key)
+                or col.align
+                or (
+                    "r" if col.kind in ("int", "float", "pct", "minutes", "kb") else "l"
+                )
+            )
             return {"l": A_L, "c": A_C, "r": A_R}.get(al, A_L)
         if role == Qt.ItemDataRole.DecorationRole and col.color and row.get(col.color):
             return QColor(hex_norm(row[col.color], "#356AE6"))
-        if role in (Qt.ItemDataRole.ForegroundRole, Qt.ItemDataRole.BackgroundRole, Qt.ItemDataRole.FontRole):
+        if role in (
+            Qt.ItemDataRole.ForegroundRole,
+            Qt.ItemDataRole.BackgroundRole,
+            Qt.ItemDataRole.FontRole,
+        ):
             hits = self._rule_hits(row, col)
             user = self.prefs.d["colors"].get(col.key, {})
             if role == Qt.ItemDataRole.FontRole:
@@ -4405,15 +7977,33 @@ class RecordTableModel(QAbstractTableModel):
                 return None
             for h in reversed(hits):
                 if h.scope == "row":
-                    return QColor(th.text_on_soft(h.color) if role == Qt.ItemDataRole.ForegroundRole else th.soft(h.color)) if h.color in th.t else \
-                        (QColor(ensure_contrast(h.color, th.t["panel"])) if role == Qt.ItemDataRole.ForegroundRole else QColor(mix(th.t["panel"], hex_norm(h.color), 0.16)))
+                    return (
+                        QColor(
+                            th.text_on_soft(h.color)
+                            if role == Qt.ItemDataRole.ForegroundRole
+                            else th.soft(h.color)
+                        )
+                        if h.color in th.t
+                        else (
+                            QColor(ensure_contrast(h.color, th.t["panel"]))
+                            if role == Qt.ItemDataRole.ForegroundRole
+                            else QColor(mix(th.t["panel"], hex_norm(h.color), 0.16))
+                        )
+                    )
             if role == Qt.ItemDataRole.ForegroundRole:
                 for h in reversed(hits):
-                    return QColor(th.t.get(h.color + "_text") or ensure_contrast(th.color(h.color), th.t["panel"]))
+                    return QColor(
+                        th.t.get(h.color + "_text")
+                        or ensure_contrast(th.color(h.color), th.t["panel"])
+                    )
                 if col.kind in ("status", "priority"):
                     tok = STATUS_TOKENS.get(str(row.get(col.key)))
                     if tok and tok != "muted":
-                        return QColor(th.t[tok + "_text"] if tok + "_text" in th.t else th.t["text"])
+                        return QColor(
+                            th.t[tok + "_text"]
+                            if tok + "_text" in th.t
+                            else th.t["text"]
+                        )
                     if tok == "muted":
                         return QColor(th.t["muted"])
                 if user.get("fg"):
@@ -4457,7 +8047,9 @@ class ColorButton(QPushButton):
 
     def _paint(self) -> None:
         self.setText(self.hex)
-        self.setStyleSheet(f"QPushButton {{ background: {self.hex}; color: {readable_on(self.hex)}; border: 1px solid #888; }}")
+        self.setStyleSheet(
+            f"QPushButton {{ background: {self.hex}; color: {readable_on(self.hex)}; border: 1px solid #888; }}"
+        )
 
     def _pick(self) -> None:
         c = QColorDialog.getColor(QColor(self.hex), self, "Choose a colour")
@@ -4474,7 +8066,14 @@ class ColorButton(QPushButton):
 class RecordDialog(QDialog):
     """Add/edit form generated from an entity's field list. Errors never discard what was typed."""
 
-    def __init__(self, ctx: UiContext, table: str, record: Optional[dict] = None, defaults: Optional[dict] = None, parent: Any = None) -> None:
+    def __init__(
+        self,
+        ctx: UiContext,
+        table: str,
+        record: Optional[dict] = None,
+        defaults: Optional[dict] = None,
+        parent: Any = None,
+    ) -> None:
         super().__init__(parent)
         self.ctx, self.ent, self.record = ctx, ENTITIES[table], record
         self.defaults = defaults or {}
@@ -4498,12 +8097,18 @@ class RecordDialog(QDialog):
             form.addRow(f.label + (" *" if f.required else ""), w)
         for f in self.ent.fields:  # dependent drop-downs follow their parent
             if f.kind == "fk" and f.parent in self.widgets:
-                self.widgets[f.parent].currentIndexChanged.connect(lambda _i, ff=f: self._reload_fk(ff))
+                self.widgets[f.parent].currentIndexChanged.connect(
+                    lambda _i, ff=f: self._reload_fk(ff)
+                )
         outer.addWidget(scroll_page(body), 1)
         box = QDialogButtonBox()
         self.btn_save = box.addButton("Save", QDialogButtonBox.ButtonRole.AcceptRole)
         self.btn_save.setObjectName("Primary")
-        self.btn_again = box.addButton("Save && add another", QDialogButtonBox.ButtonRole.ActionRole) if not record else None
+        self.btn_again = (
+            box.addButton("Save && add another", QDialogButtonBox.ButtonRole.ActionRole)
+            if not record
+            else None
+        )
         box.addButton("Cancel", QDialogButtonBox.ButtonRole.RejectRole)
         self.btn_save.clicked.connect(lambda _c=False: self._save(False))
         if self.btn_again:
@@ -4516,7 +8121,13 @@ class RecordDialog(QDialog):
             return self.record[f.key]
         if f.key in self.defaults:
             return self.defaults[f.key]
-        if f.kind == "date" and f.key in ("task_date", "study_date", "att_date", "start_date", "assessment_date"):
+        if f.kind == "date" and f.key in (
+            "task_date",
+            "study_date",
+            "att_date",
+            "start_date",
+            "assessment_date",
+        ):
             return self.ctx.repo.today().isoformat()
         return f.default
 
@@ -4538,9 +8149,11 @@ class RecordDialog(QDialog):
             w = QComboBox()
             items = list(f.choices)
             if v not in (None, "") and str(v) not in items:
-                items.append(str(v))          # keep legacy values selectable
+                items.append(str(v))  # keep legacy values selectable
             w.addItems(items)
-            w.setCurrentText(str(v) if v not in (None, "") else (items[0] if items else ""))
+            w.setCurrentText(
+                str(v) if v not in (None, "") else (items[0] if items else "")
+            )
             return w
         if f.kind == "fk":
             w = QComboBox()
@@ -4556,7 +8169,9 @@ class RecordDialog(QDialog):
             lay.addWidget(make_button("Browse…", lambda e=edit: self._browse(e)))
             holder.edit = edit  # type: ignore[attr-defined]
             return holder
-        w = QLineEdit("" if v is None else (fmt_num(v) if f.kind in ("int", "float") else str(v)))
+        w = QLineEdit(
+            "" if v is None else (fmt_num(v) if f.kind in ("int", "float") else str(v))
+        )
         if f.hint:
             w.setPlaceholderText(f.hint)
         elif f.kind in ("int", "float"):
@@ -4565,14 +8180,23 @@ class RecordDialog(QDialog):
 
     def _browse(self, edit: "QLineEdit") -> None:
         exts = " ".join("*" + e for e in sorted(ATTACH_EXT))
-        path, _ = QFileDialog.getOpenFileName(self, "Choose a file", str(Path.home()), f"Supported files ({exts});;All files (*)")
+        path, _ = QFileDialog.getOpenFileName(
+            self,
+            "Choose a file",
+            str(Path.home()),
+            f"Supported files ({exts});;All files (*)",
+        )
         if path:
             edit.setText(path)
 
     def _fill_fk(self, combo: "QComboBox", f: Field, want: Any) -> None:
         combo.blockSignals(True)
         combo.clear()
-        parent_val = self._read(self.widgets[f.parent], self._field(f.parent)) if f.parent and f.parent in self.widgets else None
+        parent_val = (
+            self._read(self.widgets[f.parent], self._field(f.parent))
+            if f.parent and f.parent in self.widgets
+            else None
+        )
         if not f.required:
             combo.addItem("— none —", None)
         for label, rid in self.ctx.repo.lookup(f.fk, parent_val, self.ctx.scope()):
@@ -4637,14 +8261,30 @@ class RecordDialog(QDialog):
 # ---- the customisable table page ------------------------------------------------------------------------------------
 class EntityPage(QWidget):
     """A full data-management table for one entity: search, filters, multi-sort, column & row customisation,
-    bulk actions, copy/export, context menu, keyboard shortcuts. Preferences persist per table."""
+    bulk actions, copy/export, context menu, keyboard shortcuts. Preferences persist per table.
+    """
 
     DENSITY_ROW = {"Compact": 24, "Comfortable": 32, "Spacious": 42}
 
-    def __init__(self, ctx: UiContext, table: str, *, fixed: Optional[Callable[[dict], bool]] = None, tid: str = "",
-                 defaults: Optional[dict] = None, extra: Optional[Sequence[tuple[str, Callable]]] = None, parent: Any = None) -> None:
+    def __init__(
+        self,
+        ctx: UiContext,
+        table: str,
+        *,
+        fixed: Optional[Callable[[dict], bool]] = None,
+        tid: str = "",
+        defaults: Optional[dict] = None,
+        extra: Optional[Sequence[tuple[str, Callable]]] = None,
+        parent: Any = None,
+    ) -> None:
         super().__init__(parent)
-        self.ctx, self.ent, self.fixed, self.defaults, self.extra = ctx, ENTITIES[table], fixed, defaults or {}, list(extra or [])
+        self.ctx, self.ent, self.fixed, self.defaults, self.extra = (
+            ctx,
+            ENTITIES[table],
+            fixed,
+            defaults or {},
+            list(extra or []),
+        )
         self.prefs = TablePrefs(ctx.settings, tid or table)
         self.rs: Optional[RowSet] = None
         self.filter_boxes: dict[str, QComboBox] = {}
@@ -4689,10 +8329,16 @@ class EntityPage(QWidget):
                 w.edit.dateChanged.connect(lambda _d: self._timer.start(10))
         root.addWidget(bar)
         tools = QHBoxLayout()
-        self.btn_add = make_button(f"＋ Add {ent.singular.lower()}", self.add, "Primary", "Ctrl+N")
+        self.btn_add = make_button(
+            f"＋ Add {ent.singular.lower()}", self.add, "Primary", "Ctrl+N"
+        )
         tools.addWidget(self.btn_add)
-        tools.addWidget(make_button("Edit", self.edit_selected, tip="Enter or double-click"))
-        tools.addWidget(make_button("Delete", self.delete_selected, "Danger", tip="Delete key"))
+        tools.addWidget(
+            make_button("Edit", self.edit_selected, tip="Enter or double-click")
+        )
+        tools.addWidget(
+            make_button("Delete", self.delete_selected, "Danger", tip="Delete key")
+        )
         if ent.quick or self.extra or ent.bulk or ent.attachments:
             more = QToolButton()
             more.setText("Actions ▾")
@@ -4704,10 +8350,16 @@ class EntityPage(QWidget):
         tools.addStretch(1)
         self.count = make_label("", "Muted")
         tools.addWidget(self.count)
-        view_btn = make_button("⚙ View", None, tip="Columns, density, colours and conditional formatting")
+        view_btn = make_button(
+            "⚙ View", None, tip="Columns, density, colours and conditional formatting"
+        )
         view_btn.clicked.connect(lambda _c=False: self._view_menu(view_btn))
         tools.addWidget(view_btn)
-        tools.addWidget(make_button("Export", self.export, tip="Export selected (or all shown) rows to CSV"))
+        tools.addWidget(
+            make_button(
+                "Export", self.export, tip="Export selected (or all shown) rows to CSV"
+            )
+        )
         root.addLayout(tools)
         self.model = RecordTableModel(self.ctx, ent, self.prefs, self)
         self.view = QTableView()
@@ -4721,7 +8373,9 @@ class EntityPage(QWidget):
         self.view.verticalHeader().setVisible(False)
         self.view.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.view.customContextMenuRequested.connect(self._row_menu)
-        self.view.activated.connect(lambda _i: self.edit_selected())   # Enter and double-click (one path: never opens twice)
+        self.view.activated.connect(
+            lambda _i: self.edit_selected()
+        )  # Enter and double-click (one path: never opens twice)
         hh = self.view.horizontalHeader()
         hh.setSectionsMovable(True)
         hh.setSectionsClickable(True)
@@ -4733,7 +8387,10 @@ class EntityPage(QWidget):
         hh.sectionClicked.connect(self._header_clicked)
         hh.sectionMoved.connect(lambda *_a: self._layout_changed())
         hh.sectionResized.connect(lambda *_a: self._layout_changed())
-        self.empty = make_label(f"No {ent.plural.lower()} yet.\nClick “＋ Add {ent.singular.lower()}” to create the first one.", "EmptyState")
+        self.empty = make_label(
+            f"No {ent.plural.lower()} yet.\nClick “＋ Add {ent.singular.lower()}” to create the first one.",
+            "EmptyState",
+        )
         self.empty.setAlignment(A_C)
         root.addWidget(self.empty)
         root.addWidget(self.view, 1)
@@ -4746,6 +8403,7 @@ class EntityPage(QWidget):
             s = QShortcut(QKeySequence(seq), self)
             s.setContext(Qt.ShortcutContext.WidgetWithChildrenShortcut)
             s.activated.connect(fn)
+
         sc("Ctrl+N", self.add)
         sc("Ctrl+F", lambda: (self.search.setFocus(), self.search.selectAll()))
         sc("Delete", self.delete_selected)
@@ -4757,8 +8415,12 @@ class EntityPage(QWidget):
         rows = self.ctx.repo.rows(self.ent, self.ctx.scope())
         if self.fixed:
             rows = [r for r in rows if self.fixed(r)]
-        keep = self.rs.sort_keys if self.rs else [tuple(k) for k in self.prefs.d["sort"]]
-        self.rs = RowSet(self.ent.columns, rows, self.ctx.settings.get("date_style") or "%d %b %Y")
+        keep = (
+            self.rs.sort_keys if self.rs else [tuple(k) for k in self.prefs.d["sort"]]
+        )
+        self.rs = RowSet(
+            self.ent.columns, rows, self.ctx.settings.get("date_style") or "%d %b %Y"
+        )
         self.rs.sort_keys = [(k, bool(a)) for k, a in keep]
         self._rebuild_filters()
         self._apply()
@@ -4779,7 +8441,11 @@ class EntityPage(QWidget):
         if not self.rs:
             return
         self.rs.search_text = self.search.text().strip()
-        self.rs.value_filters = {k: {b.currentText()} for k, b in self.filter_boxes.items() if b.currentIndex() > 0}
+        self.rs.value_filters = {
+            k: {b.currentText()}
+            for k, b in self.filter_boxes.items()
+            if b.currentIndex() > 0
+        }
         if self.ent.date_key:
             lo, hi = self.date_from.value(), self.date_to.value()
             self.rs.date_range = (self.ent.date_key, lo or None, hi or None)
@@ -4787,13 +8453,19 @@ class EntityPage(QWidget):
         total, shown = len(self.rs.all), len(self.model.rows)
         self.empty.setVisible(total == 0)
         self.view.setVisible(total > 0)
-        self.count.setText(f"{shown} of {total} {self.ent.plural.lower()}" if shown != total else f"{total} {self.ent.plural.lower()}")
+        self.count.setText(
+            f"{shown} of {total} {self.ent.plural.lower()}"
+            if shown != total
+            else f"{total} {self.ent.plural.lower()}"
+        )
         self._style_view()
 
     def _style_view(self) -> None:
         d = self.prefs.d
         density = d["density"] or self.ctx.settings.get("density") or "Comfortable"
-        self.view.verticalHeader().setDefaultSectionSize(d["row_h"] or self.DENSITY_ROW.get(density, 32))
+        self.view.verticalHeader().setDefaultSectionSize(
+            d["row_h"] or self.DENSITY_ROW.get(density, 32)
+        )
         self.view.setAlternatingRowColors(bool(d["alt"]))
         self.view.setShowGrid(bool(d["grid"]))
 
@@ -4805,7 +8477,9 @@ class EntityPage(QWidget):
         for i, c in enumerate(cols):
             self.view.setColumnWidth(i, int(self.prefs.d["widths"].get(c.key, c.width)))
             hh.setSectionHidden(i, c.key in hidden)
-        order = [k for k in self.prefs.d["order"] if k in keys] + [k for k in keys if k not in self.prefs.d["order"]]
+        order = [k for k in self.prefs.d["order"] if k in keys] + [
+            k for k in keys if k not in self.prefs.d["order"]
+        ]
         for visual, key in enumerate(order):
             hh.moveSection(hh.visualIndex(keys.index(key)), visual)
         self._style_view()
@@ -4816,9 +8490,17 @@ class EntityPage(QWidget):
 
     def _save_layout(self) -> None:
         hh, cols = self.view.horizontalHeader(), self.model.cols
-        self.prefs.d["order"] = [cols[hh.logicalIndex(v)].key for v in range(hh.count())]
-        self.prefs.d["hidden"] = [c.key for i, c in enumerate(cols) if hh.isSectionHidden(i)]
-        self.prefs.d["widths"] = {c.key: hh.sectionSize(i) for i, c in enumerate(cols) if not hh.isSectionHidden(i)}
+        self.prefs.d["order"] = [
+            cols[hh.logicalIndex(v)].key for v in range(hh.count())
+        ]
+        self.prefs.d["hidden"] = [
+            c.key for i, c in enumerate(cols) if hh.isSectionHidden(i)
+        ]
+        self.prefs.d["widths"] = {
+            c.key: hh.sectionSize(i)
+            for i, c in enumerate(cols)
+            if not hh.isSectionHidden(i)
+        }
         self.prefs.d["sort"] = [list(k) for k in (self.rs.sort_keys if self.rs else [])]
         self.prefs.save()
 
@@ -4831,17 +8513,25 @@ class EntityPage(QWidget):
 
     def visible_keys(self) -> list[str]:
         hh = self.view.horizontalHeader()
-        return [self.model.cols[hh.logicalIndex(v)].key for v in range(hh.count()) if not hh.isSectionHidden(hh.logicalIndex(v))]
+        return [
+            self.model.cols[hh.logicalIndex(v)].key
+            for v in range(hh.count())
+            if not hh.isSectionHidden(hh.logicalIndex(v))
+        ]
 
     # ---- sorting / filtering from the header ---------------------------------------------
     def _header_clicked(self, section: int) -> None:
         if not self.rs:
             return
         key = self.model.cols[section].key
-        multi = bool(QApplication.keyboardModifiers() & Qt.KeyboardModifier.ShiftModifier)
+        multi = bool(
+            QApplication.keyboardModifiers() & Qt.KeyboardModifier.ShiftModifier
+        )
         cur = dict(self.rs.sort_keys)
         if multi:
-            keys = [(k, a) for k, a in self.rs.sort_keys if k != key] + [(key, not cur[key] if key in cur else True)]
+            keys = [(k, a) for k, a in self.rs.sort_keys if k != key] + [
+                (key, not cur[key] if key in cur else True)
+            ]
         else:
             keys = [(key, not cur[key] if key in cur and len(cur) == 1 else True)]
         self.rs.sort_keys = keys
@@ -4855,21 +8545,56 @@ class EntityPage(QWidget):
         m = QMenu(self)
         cm = m.addMenu("Show / hide columns")
         for i, c in enumerate(self.model.cols):
-            add_action(cm, c.label, lambda i=i: (hh.setSectionHidden(i, not hh.isSectionHidden(i)), self._layout_changed()), True, not hh.isSectionHidden(i))
+            add_action(
+                cm,
+                c.label,
+                lambda i=i: (
+                    hh.setSectionHidden(i, not hh.isSectionHidden(i)),
+                    self._layout_changed(),
+                ),
+                True,
+                not hh.isSectionHidden(i),
+            )
         if col:
             m.addSeparator()
-            add_action(m, f"Sort “{col.label}” ascending", lambda: self._sort_by(col.key, True))
-            add_action(m, f"Sort “{col.label}” descending", lambda: self._sort_by(col.key, False))
-            add_action(m, "Add to multi-column sort (Shift+click)", lambda: self._header_clicked(sec))
+            add_action(
+                m, f"Sort “{col.label}” ascending", lambda: self._sort_by(col.key, True)
+            )
+            add_action(
+                m,
+                f"Sort “{col.label}” descending",
+                lambda: self._sort_by(col.key, False),
+            )
+            add_action(
+                m,
+                "Add to multi-column sort (Shift+click)",
+                lambda: self._header_clicked(sec),
+            )
             am = m.addMenu("Align text")
             for label, code in (("Left", "l"), ("Centre", "c"), ("Right", "r")):
                 add_action(am, label, lambda code=code: self._set_align(col.key, code))
             add_action(m, "Column colours…", lambda: self._column_colors(col))
             add_action(m, "Filter this column…", lambda: self._column_filter(col))
-            add_action(m, "Fit this column to its content", lambda: self.view.resizeColumnToContents(sec))
-            add_action(m, "Hide this column", lambda: (hh.setSectionHidden(sec, True), self._layout_changed()))
+            add_action(
+                m,
+                "Fit this column to its content",
+                lambda: self.view.resizeColumnToContents(sec),
+            )
+            add_action(
+                m,
+                "Hide this column",
+                lambda: (hh.setSectionHidden(sec, True), self._layout_changed()),
+            )
         m.addSeparator()
-        add_action(m, "Fit all columns to content", lambda: [self.view.resizeColumnToContents(i) for i in range(hh.count()) if not hh.isSectionHidden(i)])
+        add_action(
+            m,
+            "Fit all columns to content",
+            lambda: [
+                self.view.resizeColumnToContents(i)
+                for i in range(hh.count())
+                if not hh.isSectionHidden(i)
+            ],
+        )
         add_action(m, "Clear sorting and column filters", self._clear_sort_filters)
         add_action(m, "Restore default column layout", self._reset_layout)
         m.exec(hh.mapToGlobal(pos))
@@ -4887,11 +8612,29 @@ class EntityPage(QWidget):
 
     def _column_colors(self, col: Column) -> None:
         cur = self.prefs.d["colors"].get(col.key, {})
-        fg = QColorDialog.getColor(QColor(cur.get("fg") or self.ctx.theme.t["text"]), self, f"Text colour for “{col.label}” (Cancel = none)")
-        bg = QColorDialog.getColor(QColor(cur.get("bg") or self.ctx.theme.t["panel"]), self, f"Background for “{col.label}” (Cancel = none)")
-        entry = {k: hex_norm(c.name()) for k, c in (("fg", fg), ("bg", bg)) if c.isValid()}
-        if entry.get("fg") and entry.get("bg") and contrast_ratio(entry["fg"], entry["bg"]) < 3:
-            tell(self, "Low contrast", "That text and background colour are hard to read together; the text colour was adjusted.")
+        fg = QColorDialog.getColor(
+            QColor(cur.get("fg") or self.ctx.theme.t["text"]),
+            self,
+            f"Text colour for “{col.label}” (Cancel = none)",
+        )
+        bg = QColorDialog.getColor(
+            QColor(cur.get("bg") or self.ctx.theme.t["panel"]),
+            self,
+            f"Background for “{col.label}” (Cancel = none)",
+        )
+        entry = {
+            k: hex_norm(c.name()) for k, c in (("fg", fg), ("bg", bg)) if c.isValid()
+        }
+        if (
+            entry.get("fg")
+            and entry.get("bg")
+            and contrast_ratio(entry["fg"], entry["bg"]) < 3
+        ):
+            tell(
+                self,
+                "Low contrast",
+                "That text and background colour are hard to read together; the text colour was adjusted.",
+            )
             entry["fg"] = readable_on(entry["bg"])
         self.prefs.d["colors"][col.key] = entry
         self.prefs.save()
@@ -4899,7 +8642,13 @@ class EntityPage(QWidget):
 
     def _column_filter(self, col: Column) -> None:
         cur = self.rs.text_filters.get(col.key, "") if self.rs else ""
-        text, ok = QInputDialog.getText(self, "Filter column", f"Show rows where “{col.label}” contains:", QLineEdit.EchoMode.Normal, cur)
+        text, ok = QInputDialog.getText(
+            self,
+            "Filter column",
+            f"Show rows where “{col.label}” contains:",
+            QLineEdit.EchoMode.Normal,
+            cur,
+        )
         if ok and self.rs is not None:
             self.rs.text_filters[col.key] = text.strip()
             self._apply()
@@ -4925,14 +8674,43 @@ class EntityPage(QWidget):
         m, d = QMenu(self), self.prefs.d
         dm = m.addMenu("Row density")
         for name in self.DENSITY_ROW:
-            add_action(dm, name, lambda n=name: self._set_pref("density", n), True, (d["density"] or self.ctx.settings.get("density")) == name)
+            add_action(
+                dm,
+                name,
+                lambda n=name: self._set_pref("density", n),
+                True,
+                (d["density"] or self.ctx.settings.get("density")) == name,
+            )
         add_action(m, "Custom row height…", self._row_height)
-        add_action(m, "Alternating row colours", lambda: self._set_pref("alt", not d["alt"]), True, bool(d["alt"]))
-        add_action(m, "Show grid lines", lambda: self._set_pref("grid", not d["grid"]), True, bool(d["grid"]))
+        add_action(
+            m,
+            "Alternating row colours",
+            lambda: self._set_pref("alt", not d["alt"]),
+            True,
+            bool(d["alt"]),
+        )
+        add_action(
+            m,
+            "Show grid lines",
+            lambda: self._set_pref("grid", not d["grid"]),
+            True,
+            bool(d["grid"]),
+        )
         m.addSeparator()
-        add_action(m, "Conditional formatting (highlight rules)", lambda: self._set_pref("rules_on", not d["rules_on"]), True, bool(d["rules_on"]))
+        add_action(
+            m,
+            "Conditional formatting (highlight rules)",
+            lambda: self._set_pref("rules_on", not d["rules_on"]),
+            True,
+            bool(d["rules_on"]),
+        )
         add_action(m, "Add highlight rule…", self._add_rule)
-        add_action(m, "Remove my highlight rules", lambda: self._set_pref("rules", []), enabled=bool(d["rules"]))
+        add_action(
+            m,
+            "Remove my highlight rules",
+            lambda: self._set_pref("rules", []),
+            enabled=bool(d["rules"]),
+        )
         m.addSeparator()
         add_action(m, "Save current layout as…", self._save_named)
         lm = m.addMenu("Apply saved layout")
@@ -4940,7 +8718,9 @@ class EntityPage(QWidget):
             add_action(lm, name, lambda n=name: self._apply_named(n))
         dl = m.addMenu("Delete saved layout")
         for name in d["layouts"]:
-            add_action(dl, name, lambda n=name: (d["layouts"].pop(n, None), self.prefs.save()))
+            add_action(
+                dl, name, lambda n=name: (d["layouts"].pop(n, None), self.prefs.save())
+            )
         m.addSeparator()
         add_action(m, "Restore default layout and appearance", self._reset_everything)
         m.exec(anchor.mapToGlobal(anchor.rect().bottomLeft()))
@@ -4952,18 +8732,36 @@ class EntityPage(QWidget):
         self._style_view()
 
     def _row_height(self) -> None:
-        n, ok = QInputDialog.getInt(self, "Row height", "Row height in pixels (0 = automatic):", int(self.prefs.d["row_h"]), 0, 120)
+        n, ok = QInputDialog.getInt(
+            self,
+            "Row height",
+            "Row height in pixels (0 = automatic):",
+            int(self.prefs.d["row_h"]),
+            0,
+            120,
+        )
         if ok:
             self._set_pref("row_h", n)
 
     def _add_rule(self) -> None:
         cols = [c for c in self.ent.columns]
-        label, ok = QInputDialog.getItem(self, "Highlight rule", "Column:", [c.label for c in cols], 0, False)
+        label, ok = QInputDialog.getItem(
+            self, "Highlight rule", "Column:", [c.label for c in cols], 0, False
+        )
         if not ok:
             return
         col = next(c for c in cols if c.label == label)
-        ops = {"equals": "eq", "is not": "ne", "contains": "contains", "less than": "lt", "greater than": "gt", "is blank": "blank"}
-        opl, ok = QInputDialog.getItem(self, "Highlight rule", f"“{col.label}” …", list(ops), 0, False)
+        ops = {
+            "equals": "eq",
+            "is not": "ne",
+            "contains": "contains",
+            "less than": "lt",
+            "greater than": "gt",
+            "is blank": "blank",
+        }
+        opl, ok = QInputDialog.getItem(
+            self, "Highlight rule", f"“{col.label}” …", list(ops), 0, False
+        )
         if not ok:
             return
         value = ""
@@ -4971,10 +8769,32 @@ class EntityPage(QWidget):
             value, ok = QInputDialog.getText(self, "Highlight rule", "Value:")
             if not ok:
                 return
-        colour, ok = QInputDialog.getItem(self, "Highlight rule", "Colour:", ["danger", "warning", "success", "info"], 0, False)
-        scope, ok2 = QInputDialog.getItem(self, "Highlight rule", "Highlight:", ["Only this cell's text", "The whole row"], 0, False)
+        colour, ok = QInputDialog.getItem(
+            self,
+            "Highlight rule",
+            "Colour:",
+            ["danger", "warning", "success", "info"],
+            0,
+            False,
+        )
+        scope, ok2 = QInputDialog.getItem(
+            self,
+            "Highlight rule",
+            "Highlight:",
+            ["Only this cell's text", "The whole row"],
+            0,
+            False,
+        )
         if ok and ok2:
-            self.prefs.d["rules"].append({"column": col.key, "op": ops[opl], "value": value.strip(), "color": colour, "scope": "row" if scope.startswith("The") else "cell"})
+            self.prefs.d["rules"].append(
+                {
+                    "column": col.key,
+                    "op": ops[opl],
+                    "value": value.strip(),
+                    "color": colour,
+                    "scope": "row" if scope.startswith("The") else "cell",
+                }
+            )
             self._set_pref("rules_on", True)
 
     def _save_named(self) -> None:
@@ -5003,11 +8823,21 @@ class EntityPage(QWidget):
 
     # ---- selection, CRUD, actions -----------------------------------------------------------------
     def selected_ids(self) -> list[int]:
-        rows = sorted({i.row() for i in self.view.selectionModel().selectedRows()}) if self.view.selectionModel() else []
+        rows = (
+            sorted({i.row() for i in self.view.selectionModel().selectedRows()})
+            if self.view.selectionModel()
+            else []
+        )
         return [self.model.rows[r]["id"] for r in rows if r < len(self.model.rows)]
 
     def selected_rows(self) -> list[dict]:
-        return [self.model.rows[r] for r in sorted({i.row() for i in self.view.selectionModel().selectedRows()}) if r < len(self.model.rows)]
+        return [
+            self.model.rows[r]
+            for r in sorted(
+                {i.row() for i in self.view.selectionModel().selectedRows()}
+            )
+            if r < len(self.model.rows)
+        ]
 
     def _scope_defaults(self) -> dict:
         d = dict(self.defaults)
@@ -5025,7 +8855,9 @@ class EntityPage(QWidget):
     def edit_selected(self) -> None:
         ids = self.selected_ids()
         if len(ids) != 1:
-            return self.ctx.toast("Select one row to edit (or use Actions ▸ Bulk edit for several).")
+            return self.ctx.toast(
+                "Select one row to edit (or use Actions ▸ Bulk edit for several)."
+            )
         rec = self.ctx.repo.get(self.ent.table, ids[0])
         if not rec:
             return self.refresh()
@@ -5036,13 +8868,22 @@ class EntityPage(QWidget):
     def delete_selected(self) -> None:
         ids = self.selected_ids()
         if ids and self.ctx.confirm_delete(self, self.ent.table, ids):
-            if self.ctx.guard(self, lambda: self.ctx.repo.delete(self.ent.table, ids)) is not None:
+            if (
+                self.ctx.guard(self, lambda: self.ctx.repo.delete(self.ent.table, ids))
+                is not None
+            ):
                 self.ctx.toast(f"Deleted {len(ids)} record(s).")
                 self.refresh()
 
     def quick_update(self, updates: dict) -> None:
         ids = self.selected_ids()
-        if ids and self.ctx.guard(self, lambda: self.ctx.repo.bulk_update(self.ent.table, ids, updates)) is not None:
+        if (
+            ids
+            and self.ctx.guard(
+                self, lambda: self.ctx.repo.bulk_update(self.ent.table, ids, updates)
+            )
+            is not None
+        ):
             self.refresh()
 
     def bulk_edit(self) -> None:
@@ -5050,34 +8891,61 @@ class EntityPage(QWidget):
         fields = [f for f in self.ent.fields if f.key in self.ent.bulk]
         if not ids or not fields:
             return
-        label, ok = QInputDialog.getItem(self, "Bulk edit", f"Change which field for {len(ids)} selected record(s)?", [f.label for f in fields], 0, False)
+        label, ok = QInputDialog.getItem(
+            self,
+            "Bulk edit",
+            f"Change which field for {len(ids)} selected record(s)?",
+            [f.label for f in fields],
+            0,
+            False,
+        )
         if not ok:
             return
         f = next(x for x in fields if x.label == label)
         if f.kind == "choice":
-            val, ok = QInputDialog.getItem(self, "Bulk edit", f"New value for {f.label}:", list(f.choices), 0, False)
+            val, ok = QInputDialog.getItem(
+                self,
+                "Bulk edit",
+                f"New value for {f.label}:",
+                list(f.choices),
+                0,
+                False,
+            )
         else:
-            val, ok = QInputDialog.getText(self, "Bulk edit", f"New value for {f.label}:")
+            val, ok = QInputDialog.getText(
+                self, "Bulk edit", f"New value for {f.label}:"
+            )
         if ok:
             self.quick_update({f.key: val})
 
     def copy_selection(self) -> None:
         rows = self.selected_rows()
         if rows and self.rs:
-            QApplication.clipboard().setText(rows_to_tsv(self.rs, rows, self.visible_keys()))
+            QApplication.clipboard().setText(
+                rows_to_tsv(self.rs, rows, self.visible_keys())
+            )
             self.ctx.toast(f"Copied {len(rows)} row(s).")
 
     def copy_cell(self, index: Any) -> None:
         if index.isValid():
-            QApplication.clipboard().setText(str(index.data(Qt.ItemDataRole.DisplayRole) or ""))
+            QApplication.clipboard().setText(
+                str(index.data(Qt.ItemDataRole.DisplayRole) or "")
+            )
 
     def export(self) -> None:
         if not self.rs:
             return
         rows = self.selected_rows() or self.model.rows
-        path, _ = QFileDialog.getSaveFileName(self, "Export to CSV", str(Path.home() / f"{self.ent.plural.lower().replace(' ', '_')}.csv"), "CSV files (*.csv)")
+        path, _ = QFileDialog.getSaveFileName(
+            self,
+            "Export to CSV",
+            str(Path.home() / f"{self.ent.plural.lower().replace(' ', '_')}.csv"),
+            "CSV files (*.csv)",
+        )
         if path:
-            if self.ctx.guard(self, lambda: export_csv(path, self.rs, rows, self.visible_keys())):
+            if self.ctx.guard(
+                self, lambda: export_csv(path, self.rs, rows, self.visible_keys())
+            ):
                 self.ctx.toast(f"Exported {len(rows)} row(s) to {Path(path).name}.")
 
     def _fill_more(self) -> None:
@@ -5091,8 +8959,18 @@ class EntityPage(QWidget):
         for label, fn in self.extra:
             add_action(m, label, lambda f=fn: f(self), enabled=True)
         if self.ent.attachments:
-            add_action(m, "Attached files…", lambda: self._attachments(), enabled=len(self.selected_ids()) == 1)
-        add_action(m, "Custom fields…", lambda: self._custom_fields(), enabled=len(self.selected_ids()) == 1)
+            add_action(
+                m,
+                "Attached files…",
+                lambda: self._attachments(),
+                enabled=len(self.selected_ids()) == 1,
+            )
+        add_action(
+            m,
+            "Custom fields…",
+            lambda: self._custom_fields(),
+            enabled=len(self.selected_ids()) == 1,
+        )
 
     def _attachments(self) -> None:
         ids = self.selected_ids()
@@ -5106,7 +8984,9 @@ class EntityPage(QWidget):
 
     def _row_menu(self, pos: Any) -> None:
         idx = self.view.indexAt(pos)
-        if idx.isValid() and idx.row() not in {i.row() for i in self.view.selectionModel().selectedRows()}:
+        if idx.isValid() and idx.row() not in {
+            i.row() for i in self.view.selectionModel().selectedRows()
+        }:
             self.view.selectRow(idx.row())
         m = QMenu(self)
         n = len(self.selected_ids())
@@ -5119,7 +8999,14 @@ class EntityPage(QWidget):
         add_action(m, "Copy selected rows", self.copy_selection, enabled=n > 0)
         if idx.isValid() and self.rs:
             col = self.model.cols[idx.column()]
-            add_action(m, f"Show only “{idx.data(Qt.ItemDataRole.DisplayRole)}”", lambda: self._only_value(col, str(idx.data(Qt.ItemDataRole.DisplayRole))), enabled=bool(idx.data(Qt.ItemDataRole.DisplayRole)))
+            add_action(
+                m,
+                f"Show only “{idx.data(Qt.ItemDataRole.DisplayRole)}”",
+                lambda: self._only_value(
+                    col, str(idx.data(Qt.ItemDataRole.DisplayRole))
+                ),
+                enabled=bool(idx.data(Qt.ItemDataRole.DisplayRole)),
+            )
         add_action(m, "Export selected…", self.export, enabled=n > 0)
         if self.ent.attachments:
             add_action(m, "Attached files…", self._attachments, enabled=n == 1)
@@ -5135,36 +9022,59 @@ class EntityPage(QWidget):
 class AttachmentsDialog(QDialog):
     """Files attached to one record. Only references are stored — files stay where they are."""
 
-    def __init__(self, ctx: UiContext, table: str, rid: int, parent: Any = None) -> None:
+    def __init__(
+        self, ctx: UiContext, table: str, rid: int, parent: Any = None
+    ) -> None:
         super().__init__(parent)
         self.ctx, self.table, self.rid = ctx, table, rid
         self.setWindowTitle("Attached files")
         self.resize(560, 360)
         lay = QVBoxLayout(self)
-        lay.addWidget(make_label(f"Files linked to this {ENTITIES[table].singular.lower()}", "DialogTitle"))
+        lay.addWidget(
+            make_label(
+                f"Files linked to this {ENTITIES[table].singular.lower()}",
+                "DialogTitle",
+            )
+        )
         self.list = QListWidget()
         self.list.itemDoubleClicked.connect(lambda _i: self.open_file())
         lay.addWidget(self.list, 1)
         row = QHBoxLayout()
-        for text, fn, kind in (("Add file…", self.add_file, "Primary"), ("Open", self.open_file, ""), ("Remove link", self.remove, "Danger")):
+        for text, fn, kind in (
+            ("Add file…", self.add_file, "Primary"),
+            ("Open", self.open_file, ""),
+            ("Remove link", self.remove, "Danger"),
+        ):
             row.addWidget(make_button(text, fn, kind))
         row.addStretch(1)
         row.addWidget(make_button("Close", self.accept))
         lay.addLayout(row)
-        lay.addWidget(make_label("Removing a link never deletes the file itself.", "Muted"))
+        lay.addWidget(
+            make_label("Removing a link never deletes the file itself.", "Muted")
+        )
         self.reload()
 
     def reload(self) -> None:
         self.list.clear()
         for a in self.ctx.repo.attachments_for(self.table, self.rid):
-            it = QListWidgetItem(f"{a['display_name']}   —   {'' if a['exists'] else 'MISSING · '}{a['file_path']}")
+            it = QListWidgetItem(
+                f"{a['display_name']}   —   {'' if a['exists'] else 'MISSING · '}{a['file_path']}"
+            )
             it.setData(Qt.ItemDataRole.UserRole, a)
             self.list.addItem(it)
 
     def add_file(self) -> None:
         exts = " ".join("*" + e for e in sorted(ATTACH_EXT))
-        path, _ = QFileDialog.getOpenFileName(self, "Attach a file", str(Path.home()), f"Supported files ({exts})")
-        if path and self.ctx.guard(self, lambda: self.ctx.repo.add_attachment(self.table, self.rid, path)) is not None:
+        path, _ = QFileDialog.getOpenFileName(
+            self, "Attach a file", str(Path.home()), f"Supported files ({exts})"
+        )
+        if (
+            path
+            and self.ctx.guard(
+                self, lambda: self.ctx.repo.add_attachment(self.table, self.rid, path)
+            )
+            is not None
+        ):
             self.reload()
 
     def _current(self) -> Optional[dict]:
@@ -5176,11 +9086,17 @@ class AttachmentsDialog(QDialog):
         if a and a["exists"]:
             QDesktopServices.openUrl(QUrl.fromLocalFile(a["file_path"]))
         elif a:
-            tell(self, "File not found", "This file has been moved or deleted. Remove the link and attach it again.")
+            tell(
+                self,
+                "File not found",
+                "This file has been moved or deleted. Remove the link and attach it again.",
+            )
 
     def remove(self) -> None:
         a = self._current()
-        if a and confirm(self, "Remove link", "Remove this link? The file itself is not deleted."):
+        if a and confirm(
+            self, "Remove link", "Remove this link? The file itself is not deleted."
+        ):
             self.ctx.repo.remove_attachment(a["id"])
             self.reload()
 
@@ -5188,7 +9104,9 @@ class AttachmentsDialog(QDialog):
 class CustomFieldsDialog(QDialog):
     """Free-form name/value notes on a record (kept from version 2.x)."""
 
-    def __init__(self, ctx: UiContext, table: str, rid: int, parent: Any = None) -> None:
+    def __init__(
+        self, ctx: UiContext, table: str, rid: int, parent: Any = None
+    ) -> None:
         super().__init__(parent)
         self.ctx, self.table, self.rid = ctx, table, rid
         self.setWindowTitle("Custom fields")
@@ -5212,12 +9130,35 @@ class CustomFieldsDialog(QDialog):
             self.list.addItem(it)
 
     def edit(self) -> None:
-        cur = self.list.currentItem().data(Qt.ItemDataRole.UserRole) if self.list.currentItem() else {"field_name": "", "field_value": ""}
-        name, ok = QInputDialog.getText(self, "Custom field", "Field name:", QLineEdit.EchoMode.Normal, cur["field_name"])
+        cur = (
+            self.list.currentItem().data(Qt.ItemDataRole.UserRole)
+            if self.list.currentItem()
+            else {"field_name": "", "field_value": ""}
+        )
+        name, ok = QInputDialog.getText(
+            self,
+            "Custom field",
+            "Field name:",
+            QLineEdit.EchoMode.Normal,
+            cur["field_name"],
+        )
         if not ok:
             return
-        val, ok = QInputDialog.getText(self, "Custom field", f"Value for “{name}”:", QLineEdit.EchoMode.Normal, cur["field_value"] if name == cur["field_name"] else "")
-        if ok and self.ctx.guard(self, lambda: self.ctx.repo.set_custom_field(self.table, self.rid, name, val)) is not None:
+        val, ok = QInputDialog.getText(
+            self,
+            "Custom field",
+            f"Value for “{name}”:",
+            QLineEdit.EchoMode.Normal,
+            cur["field_value"] if name == cur["field_name"] else "",
+        )
+        if (
+            ok
+            and self.ctx.guard(
+                self,
+                lambda: self.ctx.repo.set_custom_field(self.table, self.rid, name, val),
+            )
+            is not None
+        ):
             self.reload()
 
     def remove(self) -> None:
@@ -5234,7 +9175,9 @@ class TaskThread(QThread):
     done = Signal(object)
     failed = Signal(str)
 
-    def __init__(self, fn: Callable[[Callable[[int, str], None]], Any], parent: Any = None) -> None:
+    def __init__(
+        self, fn: Callable[[Callable[[int, str], None]], Any], parent: Any = None
+    ) -> None:
         super().__init__(parent)
         self.fn = fn
 
@@ -5269,13 +9212,24 @@ class Page(QWidget):
             self.dirty = False
             self.ctx.guard(self, self.refresh)
 
-    def run_task(self, job: Callable, on_done: Callable, on_progress: Optional[Callable] = None, on_fail: Optional[Callable] = None) -> None:
+    def run_task(
+        self,
+        job: Callable,
+        on_done: Callable,
+        on_progress: Optional[Callable] = None,
+        on_fail: Optional[Callable] = None,
+    ) -> None:
         t = TaskThread(job, self)
         if on_progress:
             t.progress.connect(on_progress)
         t.done.connect(on_done)
-        t.failed.connect(on_fail or (lambda msg: tell(self, "Could not complete the task", msg, True)))
-        t.finished.connect(lambda th=t: self._threads.remove(th) if th in self._threads else None)
+        t.failed.connect(
+            on_fail
+            or (lambda msg: tell(self, "Could not complete the task", msg, True))
+        )
+        t.finished.connect(
+            lambda th=t: self._threads.remove(th) if th in self._threads else None
+        )
         self._threads.append(t)
         t.start()
 
@@ -5357,8 +9311,16 @@ def text_list(items: Sequence[str], empty: str) -> "QWidget":
 
 
 # ---- dashboard -------------------------------------------------------------------------------------------
-DASH_PANELS = {"deadlines": "Upcoming deadlines", "plan": "Today's plan", "scores": "Score trend", "attendance": "Attendance by subject",
-               "study": "Study — last 14 days", "gpa": "SGPA & CGPA", "syllabus": "Syllabus completion", "recent": "Recent activity"}
+DASH_PANELS = {
+    "deadlines": "Upcoming deadlines",
+    "plan": "Today's plan",
+    "scores": "Score trend",
+    "attendance": "Attendance by subject",
+    "study": "Study — last 14 days",
+    "gpa": "SGPA & CGPA",
+    "syllabus": "Syllabus completion",
+    "recent": "Recent activity",
+}
 
 
 class DashboardPage(Page):
@@ -5379,64 +9341,175 @@ class DashboardPage(Page):
             self.lay.addWidget(w)
         self.lay.addStretch(1)
         outer.addWidget(scroll_page(body))
-        self.charts = {k: ChartWidget(ctx) for k in ("scores", "attendance", "study", "gpa", "syllabus")}
+        self.charts = {
+            k: ChartWidget(ctx)
+            for k in ("scores", "attendance", "study", "gpa", "syllabus")
+        }
 
     def refresh(self) -> None:
         c = self.ctx
         sid, an = c.scope(), c.analytics
         prof, hour = c.repo.profile(), datetime.now().hour
-        greet = "Good morning" if hour < 12 else "Good afternoon" if hour < 18 else "Good evening"
-        self.title.setText(f"{greet}{', ' + prof['student_name'].split()[0] if prof.get('student_name') else ''}")
-        row = c.core.db.one("SELECT sem.name sn, ay.name yn, p.name pn FROM semesters sem LEFT JOIN academic_years ay ON ay.id=sem.academic_year_id "
-                            "LEFT JOIN programmes p ON p.id=sem.programme_id WHERE sem.id=?", (sid,)) if sid else None
-        self.sub.setText(" · ".join(x for x in ((row["pn"], row["yn"], row["sn"]) if row else ("All semesters",)) if x)
-                         + (f" · {prof['college_name']}" if prof.get("college_name") else ""))
+        greet = (
+            "Good morning"
+            if hour < 12
+            else "Good afternoon" if hour < 18 else "Good evening"
+        )
+        self.title.setText(
+            f"{greet}{', ' + prof['student_name'].split()[0] if prof.get('student_name') else ''}"
+        )
+        row = (
+            c.core.db.one(
+                "SELECT sem.name sn, ay.name yn, p.name pn FROM semesters sem LEFT JOIN academic_years ay ON ay.id=sem.academic_year_id "
+                "LEFT JOIN programmes p ON p.id=sem.programme_id WHERE sem.id=?",
+                (sid,),
+            )
+            if sid
+            else None
+        )
+        self.sub.setText(
+            " · ".join(
+                x
+                for x in (
+                    (row["pn"], row["yn"], row["sn"]) if row else ("All semesters",)
+                )
+                if x
+            )
+            + (f" · {prof['college_name']}" if prof.get("college_name") else "")
+        )
         ov = an.overview(sid)
         a, at, h = ov["assignments"], ov["attendance"], ov["habits"]
         fp = lambda v: "—" if v is None else f"{v:.1f}%"
-        self.kpis.set_cards([
-            metric_card("Subjects", str(ov["subjects"]), f"{ov['units_done']}/{ov['units_total']} units complete"),
-            metric_card("Syllabus", fp(ov["syllabus_pct"]), "units completed"),
-            metric_card("Pending work", str(a["pending"]), f"{a['overdue']} overdue · {a['due_week']} due this week"),
-            metric_card("Attendance", fp(at["pct"]), "no records yet" if at["pct"] is None else f"{at['status']} · target {at['target']:.0f}%"),
-            metric_card("Study today", fmt_minutes(h["today_minutes"]), f"goal {fmt_minutes(h['goal'])} · {fmt_minutes(ov['study_week'])} this week"),
-            metric_card("Study streak", f"{h['streak']} days", f"{h['studied_days']} of last {h['days']} days"),
-            metric_card("Score average", fp(ov["score_pct"]), "marks + exams, weighted"),
-            metric_card("SGPA / CGPA", f"{'—' if ov['sgpa'] is None else format(ov['sgpa'], '.2f')} / {'—' if ov['cgpa'] is None else format(ov['cgpa'], '.2f')}",
-                        f"{fmt_num(ov['credits_earned'])} credits · {ov['backlogs']} backlog(s)"),
-        ])
+        self.kpis.set_cards(
+            [
+                metric_card(
+                    "Subjects",
+                    str(ov["subjects"]),
+                    f"{ov['units_done']}/{ov['units_total']} units complete",
+                ),
+                metric_card("Syllabus", fp(ov["syllabus_pct"]), "units completed"),
+                metric_card(
+                    "Pending work",
+                    str(a["pending"]),
+                    f"{a['overdue']} overdue · {a['due_week']} due this week",
+                ),
+                metric_card(
+                    "Attendance",
+                    fp(at["pct"]),
+                    (
+                        "no records yet"
+                        if at["pct"] is None
+                        else f"{at['status']} · target {at['target']:.0f}%"
+                    ),
+                ),
+                metric_card(
+                    "Study today",
+                    fmt_minutes(h["today_minutes"]),
+                    f"goal {fmt_minutes(h['goal'])} · {fmt_minutes(ov['study_week'])} this week",
+                ),
+                metric_card(
+                    "Study streak",
+                    f"{h['streak']} days",
+                    f"{h['studied_days']} of last {h['days']} days",
+                ),
+                metric_card(
+                    "Score average", fp(ov["score_pct"]), "marks + exams, weighted"
+                ),
+                metric_card(
+                    "SGPA / CGPA",
+                    f"{'—' if ov['sgpa'] is None else format(ov['sgpa'], '.2f')} / {'—' if ov['cgpa'] is None else format(ov['cgpa'], '.2f')}",
+                    f"{fmt_num(ov['credits_earned'])} credits · {ov['backlogs']} backlog(s)",
+                ),
+            ]
+        )
         alerts = [x for x in an.alerts(sid) if x.severity in ("danger", "warning")]
         self.alert.setVisible(bool(alerts))
-        self.alert.setText("  •  ".join(f"{x.title}" for x in alerts[:3]) + ("  …" if len(alerts) > 3 else ""))
+        self.alert.setText(
+            "  •  ".join(f"{x.title}" for x in alerts[:3])
+            + ("  …" if len(alerts) > 3 else "")
+        )
         # charts
         ch = self.charts
         trend = an.score_trend(sid)[-30:]
         ch["scores"].empty = "No scored assessments yet"
-        ch["scores"].set_xy([fmt_date(d, "%d %b") for d, _ in trend], [("Score %", [v for _, v in trend], c.theme.accent)], "lines", 100, "%", 0)
+        ch["scores"].set_xy(
+            [fmt_date(d, "%d %b") for d, _ in trend],
+            [("Score %", [v for _, v in trend], c.theme.accent)],
+            "lines",
+            100,
+            "%",
+            0,
+        )
         att = [r for r in an.attendance_by_subject(sid) if r["pct"] is not None]
         ch["attendance"].empty = "No attendance recorded yet"
-        ch["attendance"].set_bars([(r["subject"], r["pct"], r["color"]) for r in att], 100, "%", c.settings.get_float("attendance_min", 75.0), 0)
+        ch["attendance"].set_bars(
+            [(r["subject"], r["pct"], r["color"]) for r in att],
+            100,
+            "%",
+            c.settings.get_float("attendance_min", 75.0),
+            0,
+        )
         daily = an.study_daily(14, sid)
         ch["study"].empty = "No study sessions yet"
-        ch["study"].set_xy([d[5:] for d, _ in daily], [("Minutes", [m if m else None for _, m in daily], c.theme.accent)], "bars", None, "", 0)
+        ch["study"].set_xy(
+            [d[5:] for d, _ in daily],
+            [("Minutes", [m if m else None for _, m in daily], c.theme.accent)],
+            "bars",
+            None,
+            "",
+            0,
+        )
         gp = an.sgpa_series()
         ch["gpa"].empty = "SGPA appears once semester results are entered"
-        ch["gpa"].set_xy([g["name"] for g in gp], [("SGPA", [g["sgpa"] for g in gp], c.theme.accent), ("CGPA", [g["cgpa"] for g in gp], c.theme.color("warning"))],
-                         "lines", c.settings.grading().max_points, "", 2)
+        ch["gpa"].set_xy(
+            [g["name"] for g in gp],
+            [
+                ("SGPA", [g["sgpa"] for g in gp], c.theme.accent),
+                ("CGPA", [g["cgpa"] for g in gp], c.theme.color("warning")),
+            ],
+            "lines",
+            c.settings.grading().max_points,
+            "",
+            2,
+        )
         syl = [s for s in an.syllabus_by_subject(sid) if s["pct"] is not None]
         ch["syllabus"].empty = "Add units to track syllabus completion"
-        ch["syllabus"].set_bars([(s["subject"], s["pct"], s["color"]) for s in syl], 100, "%", None, 0)
-        dl = [f"{fmt_date(d['date'], '%d %b')} · {d['kind']}: {d['title']} ({d['subject']})" + ("  — OVERDUE" if d["status"] == "Overdue" else "") for d in an.deadlines(sid, 14)[:7]]
+        ch["syllabus"].set_bars(
+            [(s["subject"], s["pct"], s["color"]) for s in syl], 100, "%", None, 0
+        )
+        dl = [
+            f"{fmt_date(d['date'], '%d %b')} · {d['kind']}: {d['title']} ({d['subject']})"
+            + ("  — OVERDUE" if d["status"] == "Overdue" else "")
+            for d in an.deadlines(sid, 14)[:7]
+        ]
         today = c.repo.today().isoformat()
-        plan = [f"{'✓' if r['status'] == 'Completed' else '○'} {r['title']}  ({fmt_minutes(r['duration_minutes'])})" for r in c.repo.rows("planner_tasks", sid) if r["task_date"] == today][:8]
-        rec = [f"{fmt_date(r['date'], '%d %b')} · {r['text']}" for r in an.recent_activity(sid, 6)]
-        bodies = {"deadlines": text_list(dl, "No deadlines in the next two weeks."), "plan": text_list(plan, "Nothing planned for today. Add tasks in Study hub."),
-                  "scores": ch["scores"], "attendance": ch["attendance"], "study": ch["study"], "gpa": ch["gpa"], "syllabus": ch["syllabus"],
-                  "recent": text_list(rec, "No recent activity yet.")}
+        plan = [
+            f"{'✓' if r['status'] == 'Completed' else '○'} {r['title']}  ({fmt_minutes(r['duration_minutes'])})"
+            for r in c.repo.rows("planner_tasks", sid)
+            if r["task_date"] == today
+        ][:8]
+        rec = [
+            f"{fmt_date(r['date'], '%d %b')} · {r['text']}"
+            for r in an.recent_activity(sid, 6)
+        ]
+        bodies = {
+            "deadlines": text_list(dl, "No deadlines in the next two weeks."),
+            "plan": text_list(
+                plan, "Nothing planned for today. Add tasks in Study hub."
+            ),
+            "scores": ch["scores"],
+            "attendance": ch["attendance"],
+            "study": ch["study"],
+            "gpa": ch["gpa"],
+            "syllabus": ch["syllabus"],
+            "recent": text_list(rec, "No recent activity yet."),
+        }
         keep = c.settings.get_json("dashboard_panels", None) or list(DASH_PANELS)
         for k, w in ch.items():
             w.setParent(None)
-        self.panels.set_cards([panel(DASH_PANELS[k], bodies[k]) for k in DASH_PANELS if k in keep])
+        self.panels.set_cards(
+            [panel(DASH_PANELS[k], bodies[k]) for k in DASH_PANELS if k in keep]
+        )
 
 
 # ---- structure, profile & wizard ------------------------------------------------------------------------------
@@ -5450,14 +9523,25 @@ class StructureWizard(QDialog):
         self.resize(560, 560)
         lay = QVBoxLayout(self)
         lay.addWidget(make_label("Set up a programme", "DialogTitle"))
-        lay.addWidget(make_label("Creates the programme, its academic years and semesters. You can rename or add more at any time.", "Muted", True))
+        lay.addWidget(
+            make_label(
+                "Creates the programme, its academic years and semesters. You can rename or add more at any time.",
+                "Muted",
+                True,
+            )
+        )
         form = QFormLayout()
         self.name = QLineEdit()
         self.name.setPlaceholderText("e.g. B.Tech CSE (AI & ML)")
         self.level = QComboBox()
         self.level.addItems(DEGREE_LEVELS)
         self.level.setCurrentText("Undergraduate")
-        self.branch, self.spec, self.college, self.univ = QLineEdit(), QLineEdit(), QLineEdit(), QLineEdit()
+        self.branch, self.spec, self.college, self.univ = (
+            QLineEdit(),
+            QLineEdit(),
+            QLineEdit(),
+            QLineEdit(),
+        )
         self.start = QLineEdit(str(self.ctx.repo.today().year))
         self.years = QSpinBox()
         self.years.setRange(1, 10)
@@ -5469,11 +9553,23 @@ class StructureWizard(QDialog):
         self.term.setEditable(True)
         self.term.addItems(["Semester", "Trimester", "Term", "Quarter"])
         self.names = QPlainTextEdit()
-        self.names.setPlaceholderText("Optional: one semester name per line (otherwise “Semester 1, 2, 3 …”)")
+        self.names.setPlaceholderText(
+            "Optional: one semester name per line (otherwise “Semester 1, 2, 3 …”)"
+        )
         self.names.setMaximumHeight(90)
-        for lab, w in (("Programme name *", self.name), ("Level", self.level), ("Branch", self.branch), ("Specialisation", self.spec), ("College", self.college),
-                       ("University", self.univ), ("Start year", self.start), ("Number of years", self.years), ("Semesters per year", self.per),
-                       ("Term word", self.term), ("Semester names", self.names)):
+        for lab, w in (
+            ("Programme name *", self.name),
+            ("Level", self.level),
+            ("Branch", self.branch),
+            ("Specialisation", self.spec),
+            ("College", self.college),
+            ("University", self.univ),
+            ("Start year", self.start),
+            ("Number of years", self.years),
+            ("Semesters per year", self.per),
+            ("Term word", self.term),
+            ("Semester names", self.names),
+        ):
             form.addRow(lab, w)
         lay.addLayout(form)
         self.banner = make_label("", "BannerDanger", True)
@@ -5487,10 +9583,19 @@ class StructureWizard(QDialog):
 
     def create(self) -> None:
         try:
-            self.ctx.repo.create_structure(self.name.text(), degree_level=self.level.currentText(), branch=self.branch.text().strip(),
-                                           specialisation=self.spec.text().strip(), college=self.college.text().strip(), university=self.univ.text().strip(),
-                                           start_year=safe_int(self.start.text()) or None, years=self.years.value(), per_year=self.per.value(),
-                                           term_word=self.term.currentText().strip() or "Semester", semester_names=self.names.toPlainText().splitlines())
+            self.ctx.repo.create_structure(
+                self.name.text(),
+                degree_level=self.level.currentText(),
+                branch=self.branch.text().strip(),
+                specialisation=self.spec.text().strip(),
+                college=self.college.text().strip(),
+                university=self.univ.text().strip(),
+                start_year=safe_int(self.start.text()) or None,
+                years=self.years.value(),
+                per_year=self.per.value(),
+                term_word=self.term.currentText().strip() or "Semester",
+                semester_names=self.names.toPlainText().splitlines(),
+            )
         except ValidationError as exc:
             self.banner.setText(str(exc))
             self.banner.show()
@@ -5508,9 +9613,19 @@ class ProfileDialog(QDialog):
         lay.addWidget(make_label("Student profile", "DialogTitle"))
         form = QFormLayout()
         p = ctx.repo.profile()
-        labels = {"student_name": "Student name", "college_name": "College", "university_name": "University", "course": "Course / programme", "branch": "Branch",
-                  "admission_year": "Admission year", "expected_graduation_year": "Expected graduation year", "roll_no": "University roll number",
-                  "student_id": "Student ID", "email": "College email", "photo_path": "Photograph (optional)"}
+        labels = {
+            "student_name": "Student name",
+            "college_name": "College",
+            "university_name": "University",
+            "course": "Course / programme",
+            "branch": "Branch",
+            "admission_year": "Admission year",
+            "expected_graduation_year": "Expected graduation year",
+            "roll_no": "University roll number",
+            "student_id": "Student ID",
+            "email": "College email",
+            "photo_path": "Photograph (optional)",
+        }
         self.edits: dict[str, Any] = {}
         for k, lab in labels.items():
             e = QLineEdit("" if p.get(k) is None else str(p.get(k)))
@@ -5520,7 +9635,20 @@ class ProfileDialog(QDialog):
                 hl = QHBoxLayout(h)
                 hl.setContentsMargins(0, 0, 0, 0)
                 hl.addWidget(e, 1)
-                hl.addWidget(make_button("Browse…", lambda ed=e: ed.setText(QFileDialog.getOpenFileName(self, "Photograph", "", "Images (*.png *.jpg *.jpeg *.bmp *.gif *.webp)")[0] or ed.text())))
+                hl.addWidget(
+                    make_button(
+                        "Browse…",
+                        lambda ed=e: ed.setText(
+                            QFileDialog.getOpenFileName(
+                                self,
+                                "Photograph",
+                                "",
+                                "Images (*.png *.jpg *.jpeg *.bmp *.gif *.webp)",
+                            )[0]
+                            or ed.text()
+                        ),
+                    )
+                )
                 form.addRow(lab, h)
             else:
                 form.addRow(lab, e)
@@ -5552,7 +9680,14 @@ class ProfileDialog(QDialog):
 class TabsPage(Page):
     """A page made of tabs; each tab's widget exposes ``refresh()``."""
 
-    def __init__(self, ctx: UiContext, title: str, subtitle: str, tabs: Sequence[tuple[str, "QWidget"]], top: Optional["QWidget"] = None) -> None:
+    def __init__(
+        self,
+        ctx: UiContext,
+        title: str,
+        subtitle: str,
+        tabs: Sequence[tuple[str, "QWidget"]],
+        top: Optional["QWidget"] = None,
+    ) -> None:
         super().__init__(ctx)
         lay = QVBoxLayout(self)
         lay.setContentsMargins(22, 18, 22, 14)
@@ -5581,15 +9716,32 @@ class HierarchyTree(QWidget):
         lay = QVBoxLayout(self)
         lay.setContentsMargins(0, 0, 0, 0)
         self.tree = QTreeWidget()
-        self.tree.setHeaderLabels(["Programme / year / semester", "Status", "Subjects", "SGPA", "CGPA", "Backlogs"])
+        self.tree.setHeaderLabels(
+            [
+                "Programme / year / semester",
+                "Status",
+                "Subjects",
+                "SGPA",
+                "CGPA",
+                "Backlogs",
+            ]
+        )
         self.tree.setColumnWidth(0, 340)
         self.tree.itemDoubleClicked.connect(self._open)
         lay.addWidget(self.tree, 1)
         row = QHBoxLayout()
-        row.addWidget(make_button("Set as current semester", self._set_current, "Primary"))
-        row.addWidget(make_button("Open selected semester", lambda: self._open(self.tree.currentItem(), 0)))
+        row.addWidget(
+            make_button("Set as current semester", self._set_current, "Primary")
+        )
+        row.addWidget(
+            make_button(
+                "Open selected semester", lambda: self._open(self.tree.currentItem(), 0)
+            )
+        )
         row.addStretch(1)
-        row.addWidget(make_label("Double-click a semester to view all its records.", "Muted"))
+        row.addWidget(
+            make_label("Double-click a semester to view all its records.", "Muted")
+        )
         lay.addLayout(row)
 
     def refresh(self) -> None:
@@ -5600,14 +9752,24 @@ class HierarchyTree(QWidget):
         for h in self.ctx.analytics.semester_history():
             pk = h["programme_id"]
             if pk not in progs:
-                progs[pk] = QTreeWidgetItem([h["programme"] or "Unassigned semesters", "", "", "", "", ""])
+                progs[pk] = QTreeWidgetItem(
+                    [h["programme"] or "Unassigned semesters", "", "", "", "", ""]
+                )
                 self.tree.addTopLevelItem(progs[pk])
             yk = (pk, h["year_name"])
             if yk not in years:
                 years[yk] = QTreeWidgetItem([h["year_name"] or "—", "", "", "", "", ""])
                 progs[pk].addChild(years[yk])
-            it = QTreeWidgetItem([h["name"] + ("   ◀ current" if h["id"] == cur else ""), h["status"] or "", str(h["subjects"]),
-                                  "—" if h["sgpa"] is None else f"{h['sgpa']:.2f}", "—" if h["cgpa"] is None else f"{h['cgpa']:.2f}", str(h["backlogs"]) if h["results"] else "—"])
+            it = QTreeWidgetItem(
+                [
+                    h["name"] + ("   ◀ current" if h["id"] == cur else ""),
+                    h["status"] or "",
+                    str(h["subjects"]),
+                    "—" if h["sgpa"] is None else f"{h['sgpa']:.2f}",
+                    "—" if h["cgpa"] is None else f"{h['cgpa']:.2f}",
+                    str(h["backlogs"]) if h["results"] else "—",
+                ]
+            )
             it.setData(0, Qt.ItemDataRole.UserRole, h["id"])
             years[yk].addChild(it)
         self.tree.expandAll()
@@ -5618,7 +9780,13 @@ class HierarchyTree(QWidget):
     def _set_current(self) -> None:
         sid = self._sid(self.tree.currentItem())
         if sid:
-            self.ctx.guard(self, lambda: (self.ctx.repo.set_current_semester(sid), self.ctx.settings.set("scope_semester", "current")))
+            self.ctx.guard(
+                self,
+                lambda: (
+                    self.ctx.repo.set_current_semester(sid),
+                    self.ctx.settings.set("scope_semester", "current"),
+                ),
+            )
             self.ctx.win.rebuild_scope()
             self.refresh()
         else:
@@ -5640,16 +9808,38 @@ class StructurePage(TabsPage):
                 ctx.guard(page, lambda: ctx.repo.set_current_semester(ids[0]))
                 ctx.win.rebuild_scope()
                 page.refresh()
+
         bar = QWidget()
         bl = QHBoxLayout(bar)
         bl.setContentsMargins(0, 0, 0, 0)
-        bl.addWidget(make_button("Setup wizard…", lambda: self.wizard(), "Primary", "Create a programme with all its years and semesters"))
+        bl.addWidget(
+            make_button(
+                "Setup wizard…",
+                lambda: self.wizard(),
+                "Primary",
+                "Create a programme with all its years and semesters",
+            )
+        )
         bl.addStretch(1)
         tree = HierarchyTree(ctx)
-        super().__init__(ctx, "Academic structure", "Programme → academic year → semester. Configure any number of years and semesters.",
-                         [("Hierarchy", tree), ("Programmes", EntityPage(ctx, "programmes")), ("Academic years", EntityPage(ctx, "academic_years")),
-                          ("Semesters", EntityPage(ctx, "semesters", extra=[("Set as current semester", sem_extra)])),
-                          ("Academic calendar", EntityPage(ctx, "calendar_events"))], bar)
+        super().__init__(
+            ctx,
+            "Academic structure",
+            "Programme → academic year → semester. Configure any number of years and semesters.",
+            [
+                ("Hierarchy", tree),
+                ("Programmes", EntityPage(ctx, "programmes")),
+                ("Academic years", EntityPage(ctx, "academic_years")),
+                (
+                    "Semesters",
+                    EntityPage(
+                        ctx, "semesters", extra=[("Set as current semester", sem_extra)]
+                    ),
+                ),
+                ("Academic calendar", EntityPage(ctx, "calendar_events")),
+            ],
+            bar,
+        )
         self.tree = tree
 
     def wizard(self) -> None:
@@ -5663,26 +9853,59 @@ def make_subjects_page(ctx: UiContext) -> TabsPage:
         for uid in page.selected_ids():
             ctx.guard(page, lambda u=uid: ctx.repo.schedule_revision(u))
         ctx.toast("Revision scheduled for the selected unit(s).")
-    return TabsPage(ctx, "Subjects & syllabus", "Subjects with credits and faculty, units, and chapter-level progress for the selected semester.",
-                    [("Subjects", EntityPage(ctx, "subjects")), ("Units / syllabus", EntityPage(ctx, "units", extra=[("Schedule revision", schedule)])),
-                     ("Chapters", EntityPage(ctx, "chapters"))])
+
+    return TabsPage(
+        ctx,
+        "Subjects & syllabus",
+        "Subjects with credits and faculty, units, and chapter-level progress for the selected semester.",
+        [
+            ("Subjects", EntityPage(ctx, "subjects")),
+            (
+                "Units / syllabus",
+                EntityPage(ctx, "units", extra=[("Schedule revision", schedule)]),
+            ),
+            ("Chapters", EntityPage(ctx, "chapters")),
+        ],
+    )
 
 
 # ---- semester history ----------------------------------------------------------------------------------------------------
 class HistoryPage(Page):
-    COLS = ("Programme", "Year", "Semester", "Status", "Subjects", "Credits (earned/total)", "SGPA", "CGPA", "Marks %", "Backlogs", "Attendance", "Study", "Assignments", "Syllabus")
+    COLS = (
+        "Programme",
+        "Year",
+        "Semester",
+        "Status",
+        "Subjects",
+        "Credits (earned/total)",
+        "SGPA",
+        "CGPA",
+        "Marks %",
+        "Backlogs",
+        "Attendance",
+        "Study",
+        "Assignments",
+        "Syllabus",
+    )
 
     def __init__(self, ctx: UiContext) -> None:
         super().__init__(ctx)
         lay = QVBoxLayout(self)
         lay.setContentsMargins(22, 18, 22, 14)
-        lay.addWidget(page_header("Semester history", "Every semester stays on record: results, attendance, assignments and study time are never overwritten."))
+        lay.addWidget(
+            page_header(
+                "Semester history",
+                "Every semester stays on record: results, attendance, assignments and study time are never overwritten.",
+            )
+        )
         self.table = QTableWidget(0, len(self.COLS))
         self.table.setHorizontalHeaderLabels(list(self.COLS))
         self.table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.table.setAlternatingRowColors(True)
-        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+        self.table.horizontalHeader().setSectionResizeMode(
+            QHeaderView.ResizeMode.ResizeToContents
+        )
         self.table.verticalHeader().setVisible(False)
         self.table.doubleClicked.connect(lambda _i: self.open_sem())
         lay.addWidget(self.table, 1)
@@ -5691,7 +9914,9 @@ class HistoryPage(Page):
         row.addWidget(make_button("Semester report…", self.report))
         row.addStretch(1)
         lay.addLayout(row)
-        self.chart = ChartWidget(ctx, "SGPA and CGPA appear once semester results are entered")
+        self.chart = ChartWidget(
+            ctx, "SGPA and CGPA appear once semester results are entered"
+        )
         lay.addWidget(panel("SGPA & CGPA progression", self.chart))
         self.ids: list[int] = []
 
@@ -5701,17 +9926,42 @@ class HistoryPage(Page):
         self.table.setRowCount(len(hist))
         fp = lambda v: "—" if v is None else f"{v:.1f}%"
         for r, h in enumerate(hist):
-            vals = [h["programme"] or "—", h["year_name"] or "—", h["name"], h["status"] or "", h["subjects"],
-                    f"{fmt_num(h['credits_earned'])}/{fmt_num(h['credits_registered'])}" if h["results"] else "—",
-                    "—" if h["sgpa"] is None else f"{h['sgpa']:.2f}", "—" if h["cgpa"] is None else f"{h['cgpa']:.2f}", fp(h["pct"]),
-                    h["backlogs"] if h["results"] else "—", fp(h["attendance_pct"]), fmt_minutes(h["study_minutes"]), f"{h['assign_done']}/{h['assign_total']}", fp(h["syllabus_pct"])]
+            vals = [
+                h["programme"] or "—",
+                h["year_name"] or "—",
+                h["name"],
+                h["status"] or "",
+                h["subjects"],
+                (
+                    f"{fmt_num(h['credits_earned'])}/{fmt_num(h['credits_registered'])}"
+                    if h["results"]
+                    else "—"
+                ),
+                "—" if h["sgpa"] is None else f"{h['sgpa']:.2f}",
+                "—" if h["cgpa"] is None else f"{h['cgpa']:.2f}",
+                fp(h["pct"]),
+                h["backlogs"] if h["results"] else "—",
+                fp(h["attendance_pct"]),
+                fmt_minutes(h["study_minutes"]),
+                f"{h['assign_done']}/{h['assign_total']}",
+                fp(h["syllabus_pct"]),
+            ]
             for c, v in enumerate(vals):
                 it = QTableWidgetItem(str(v))
                 it.setTextAlignment(A_R if c >= 4 else A_L)
                 self.table.setItem(r, c, it)
         pts = [h for h in hist if h["sgpa"] is not None]
-        self.chart.set_xy([h["name"] for h in pts], [("SGPA", [h["sgpa"] for h in pts], self.ctx.theme.accent), ("CGPA", [h["cgpa"] for h in pts], self.ctx.theme.color("warning"))],
-                          "lines", self.ctx.settings.grading().max_points, "", 2)
+        self.chart.set_xy(
+            [h["name"] for h in pts],
+            [
+                ("SGPA", [h["sgpa"] for h in pts], self.ctx.theme.accent),
+                ("CGPA", [h["cgpa"] for h in pts], self.ctx.theme.color("warning")),
+            ],
+            "lines",
+            self.ctx.settings.grading().max_points,
+            "",
+            2,
+        )
 
     def _sid(self) -> Optional[int]:
         r = self.table.currentRow()
@@ -5753,11 +10003,18 @@ class DeadlineCalendar(QWidget):
         sid, t = self.ctx.scope(), self.ctx.theme
         self.by_date.clear()
         for d in self.ctx.analytics.deadlines(sid, 400, True):
-            self.by_date.setdefault(d["date"], []).append(f"{d['kind']}: {d['title']} ({d['subject']})" + (" — OVERDUE" if d["status"] == "Overdue" else ""))
+            self.by_date.setdefault(d["date"], []).append(
+                f"{d['kind']}: {d['title']} ({d['subject']})"
+                + (" — OVERDUE" if d["status"] == "Overdue" else "")
+            )
         for e in self.ctx.repo.rows("calendar_events", sid):
-            d0, d1 = parse_date(e["start_date"]), parse_date(e["end_date"]) or parse_date(e["start_date"])
+            d0, d1 = parse_date(e["start_date"]), parse_date(
+                e["end_date"]
+            ) or parse_date(e["start_date"])
             while d0 and d1 and d0 <= d1 and (d1 - d0).days < 60:
-                self.by_date.setdefault(d0.isoformat(), []).append(f"{e['event_type']}: {e['title']}")
+                self.by_date.setdefault(d0.isoformat(), []).append(
+                    f"{e['event_type']}: {e['title']}"
+                )
                 d0 += timedelta(days=1)
         self.cal.setDateTextFormat(QDate(), QTextCharFormat())
         fmt = QTextCharFormat()
@@ -5775,21 +10032,37 @@ class DeadlineCalendar(QWidget):
         iso = d.toString("yyyy-MM-dd")
         self.day.setText(d.toString("dddd, d MMMM yyyy"))
         self.list.clear()
-        self.list.addItems(self.by_date.get(iso, ["Nothing due or scheduled on this day."]))
+        self.list.addItems(
+            self.by_date.get(iso, ["Nothing due or scheduled on this day."])
+        )
 
 
 class AssignmentsPage(TabsPage):
     def __init__(self, ctx: UiContext) -> None:
         banner = make_label("", "BannerDanger", True)
         banner.hide()
-        super().__init__(ctx, "Assignments", "Track every assignment from given date to evaluation. Overdue work is highlighted automatically.",
-                         [("All assignments", EntityPage(ctx, "assignments")), ("Deadline calendar", DeadlineCalendar(ctx))], banner)
+        super().__init__(
+            ctx,
+            "Assignments",
+            "Track every assignment from given date to evaluation. Overdue work is highlighted automatically.",
+            [
+                ("All assignments", EntityPage(ctx, "assignments")),
+                ("Deadline calendar", DeadlineCalendar(ctx)),
+            ],
+            banner,
+        )
         self.banner = banner
 
     def refresh(self) -> None:
         a = self.ctx.analytics.assignment_stats(self.ctx.scope())
-        msg = [f"{a['overdue']} overdue" if a["overdue"] else "", f"{a['due_week']} due within 7 days" if a["due_week"] else ""]
-        self.banner.setText("  •  ".join(m for m in msg if m) + (f"   ({a['done']} of {a['total']} done)" if a["total"] else ""))
+        msg = [
+            f"{a['overdue']} overdue" if a["overdue"] else "",
+            f"{a['due_week']} due within 7 days" if a["due_week"] else "",
+        ]
+        self.banner.setText(
+            "  •  ".join(m for m in msg if m)
+            + (f"   ({a['done']} of {a['total']} done)" if a["total"] else "")
+        )
         self.banner.setVisible(bool(a["overdue"] or a["due_week"]))
         super().refresh()
 
@@ -5814,12 +10087,25 @@ class GradingDialog(QDialog):
         top.addStretch(1)
         lay.addLayout(top)
         self.scale = QTableWidget(0, 4)
-        self.scale.setHorizontalHeaderLabels(["Grade", "Minimum %", "Grade points", "Description"])
-        self.scale.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        self.scale.setHorizontalHeaderLabels(
+            ["Grade", "Minimum %", "Grade points", "Description"]
+        )
+        self.scale.horizontalHeader().setSectionResizeMode(
+            QHeaderView.ResizeMode.Stretch
+        )
         lay.addWidget(self.scale, 1)
         row = QHBoxLayout()
         row.addWidget(make_button("Add grade", lambda: self._add_row("", "", "", "")))
-        row.addWidget(make_button("Remove selected", lambda: self.scale.removeRow(self.scale.currentRow()) if self.scale.currentRow() >= 0 else None))
+        row.addWidget(
+            make_button(
+                "Remove selected",
+                lambda: (
+                    self.scale.removeRow(self.scale.currentRow())
+                    if self.scale.currentRow() >= 0
+                    else None
+                ),
+            )
+        )
         row.addStretch(1)
         lay.addLayout(row)
         form = QFormLayout()
@@ -5832,13 +10118,28 @@ class GradingDialog(QDialog):
         self.pass_pct = QLineEdit()
         self.comp = {k: QLineEdit() for k in ("internal", "external", "practical")}
         self.total = QComboBox()
-        self.total.addItems(["Sum of marks (internal + external + practical)", "Weighted component percentages"])
+        self.total.addItems(
+            [
+                "Sum of marks (internal + external + practical)",
+                "Weighted component percentages",
+            ]
+        )
         self.weights = {k: QLineEdit() for k in ("internal", "external", "practical")}
         self.retake = QComboBox()
         self.retake.addItems(["Most recent attempt counts", "Best attempt counts"])
-        self.failed = QCheckBox("Include failed subjects in SGPA (at their grade points)")
-        for lab, w in (("Maximum grade points", self.max_pts), ("SGPA method", self.sgpa), ("Percentage ÷ factor (if used)", self.factor), ("CGPA method", self.cgpa),
-                       ("Pass percentage (overall)", self.pass_pct), ("Subject total", self.total), ("Repeated subjects", self.retake), ("", self.failed)):
+        self.failed = QCheckBox(
+            "Include failed subjects in SGPA (at their grade points)"
+        )
+        for lab, w in (
+            ("Maximum grade points", self.max_pts),
+            ("SGPA method", self.sgpa),
+            ("Percentage ÷ factor (if used)", self.factor),
+            ("CGPA method", self.cgpa),
+            ("Pass percentage (overall)", self.pass_pct),
+            ("Subject total", self.total),
+            ("Repeated subjects", self.retake),
+            ("", self.failed),
+        ):
             form.addRow(lab, w)
         for k in self.comp:
             form.addRow(f"Minimum % in {k}", self.comp[k])
@@ -5865,7 +10166,15 @@ class GradingDialog(QDialog):
         r = self.scale.rowCount()
         self.scale.insertRow(r)
         for c, v in enumerate((g, m, p, d)):
-            self.scale.setItem(r, c, QTableWidgetItem("" if v is None else fmt_num(v) if isinstance(v, (int, float)) else str(v)))
+            self.scale.setItem(
+                r,
+                c,
+                QTableWidgetItem(
+                    ""
+                    if v is None
+                    else fmt_num(v) if isinstance(v, (int, float)) else str(v)
+                ),
+            )
 
     def load(self, cfg: GradingConfig) -> None:
         self.scale.setRowCount(0)
@@ -5889,14 +10198,38 @@ class GradingDialog(QDialog):
         self.load(GradingConfig.preset(self.preset.currentText()))
 
     def read(self) -> GradingConfig:
-        item = lambda r, c: (self.scale.item(r, c).text() if self.scale.item(r, c) else "").strip()
-        scale = [{"grade": item(r, 0), "min": safe_float(item(r, 1)), "points": safe_float(item(r, 2)), "label": item(r, 3)} for r in range(self.scale.rowCount())]
-        return GradingConfig(name=self.preset.currentText(), scale=scale, max_points=safe_float(self.max_pts.text(), 0) or 0,
-                             sgpa_method=list(SGPA_METHODS)[self.sgpa.currentIndex()], cgpa_method=list(CGPA_METHODS)[self.cgpa.currentIndex()],
-                             percentage_factor=safe_float(self.factor.text(), 0) or 0, pass_percentage=safe_float(self.pass_pct.text(), -1) if self.pass_pct.text().strip() else -1,
-                             component_pass={k: safe_float(e.text(), 0) or 0 for k, e in self.comp.items()}, weights={k: safe_float(e.text(), 0) or 0 for k, e in self.weights.items()},
-                             total_method="weighted" if self.total.currentIndex() else "sum", retake_policy="best" if self.retake.currentIndex() else "latest",
-                             include_failed=self.failed.isChecked())
+        item = lambda r, c: (
+            self.scale.item(r, c).text() if self.scale.item(r, c) else ""
+        ).strip()
+        scale = [
+            {
+                "grade": item(r, 0),
+                "min": safe_float(item(r, 1)),
+                "points": safe_float(item(r, 2)),
+                "label": item(r, 3),
+            }
+            for r in range(self.scale.rowCount())
+        ]
+        return GradingConfig(
+            name=self.preset.currentText(),
+            scale=scale,
+            max_points=safe_float(self.max_pts.text(), 0) or 0,
+            sgpa_method=list(SGPA_METHODS)[self.sgpa.currentIndex()],
+            cgpa_method=list(CGPA_METHODS)[self.cgpa.currentIndex()],
+            percentage_factor=safe_float(self.factor.text(), 0) or 0,
+            pass_percentage=(
+                safe_float(self.pass_pct.text(), -1)
+                if self.pass_pct.text().strip()
+                else -1
+            ),
+            component_pass={
+                k: safe_float(e.text(), 0) or 0 for k, e in self.comp.items()
+            },
+            weights={k: safe_float(e.text(), 0) or 0 for k, e in self.weights.items()},
+            total_method="weighted" if self.total.currentIndex() else "sum",
+            retake_policy="best" if self.retake.currentIndex() else "latest",
+            include_failed=self.failed.isChecked(),
+        )
 
     def show_preview(self) -> None:
         try:
@@ -5926,9 +10259,24 @@ class ExamsPage(TabsPage):
         row = QHBoxLayout(top)
         row.setContentsMargins(0, 0, 0, 0)
         row.addWidget(strip, 1)
-        row.addWidget(make_button("Grading rules…", lambda: self.rules(), tip="Grade scale, credits, SGPA/CGPA method, pass marks"))
-        super().__init__(ctx, "Exams & results", "Exam schedule, internal assessments and official semester results with configurable SGPA/CGPA.",
-                         [("Exam schedule", EntityPage(ctx, "exams")), ("Assessments & marks", EntityPage(ctx, "marks")), ("Semester results", EntityPage(ctx, "subject_results"))], top)
+        row.addWidget(
+            make_button(
+                "Grading rules…",
+                lambda: self.rules(),
+                tip="Grade scale, credits, SGPA/CGPA method, pass marks",
+            )
+        )
+        super().__init__(
+            ctx,
+            "Exams & results",
+            "Exam schedule, internal assessments and official semester results with configurable SGPA/CGPA.",
+            [
+                ("Exam schedule", EntityPage(ctx, "exams")),
+                ("Assessments & marks", EntityPage(ctx, "marks")),
+                ("Semester results", EntityPage(ctx, "subject_results")),
+            ],
+            top,
+        )
         self.strip = strip
 
     def rules(self) -> None:
@@ -5938,8 +10286,10 @@ class ExamsPage(TabsPage):
     def refresh(self) -> None:
         ov = self.ctx.analytics.overview(self.ctx.scope())
         f = lambda v: "—" if v is None else f"{v:.2f}"
-        self.strip.setText(f"SGPA {f(ov['sgpa'])}   ·   CGPA {f(ov['cgpa'])}   ·   credits earned {fmt_num(ov['credits_earned'])}   ·   backlogs {ov['backlogs']}"
-                           f"   ·   method: {self.ctx.settings.grading().describe()[1]}")
+        self.strip.setText(
+            f"SGPA {f(ov['sgpa'])}   ·   CGPA {f(ov['cgpa'])}   ·   credits earned {fmt_num(ov['credits_earned'])}   ·   backlogs {ov['backlogs']}"
+            f"   ·   method: {self.ctx.settings.grading().describe()[1]}"
+        )
         super().refresh()
 
 
@@ -5978,9 +10328,14 @@ class QuickAttendanceDialog(QDialog):
         lay.addLayout(row)
 
     def save(self) -> None:
-        marks = {sid: {"No class": None, "Present": True, "Absent": False}[cb.currentText()] for sid, cb in self.rows}
+        marks = {
+            sid: {"No class": None, "Present": True, "Absent": False}[cb.currentText()]
+            for sid, cb in self.rows
+        }
         try:
-            n = self.ctx.repo.mark_attendance(self.date.value(), marks, self.kind.currentText())
+            n = self.ctx.repo.mark_attendance(
+                self.date.value(), marks, self.kind.currentText()
+            )
         except ValidationError as exc:
             self.banner.setText(str(exc))
             self.banner.show()
@@ -5990,7 +10345,16 @@ class QuickAttendanceDialog(QDialog):
 
 
 class AttendanceOverview(QWidget):
-    COLS = ("Subject", "Held", "Attended", "Missed", "%", "Target", "Status", "To reach target / can skip")
+    COLS = (
+        "Subject",
+        "Held",
+        "Attended",
+        "Missed",
+        "%",
+        "Target",
+        "Status",
+        "To reach target / can skip",
+    )
 
     def __init__(self, ctx: UiContext) -> None:
         super().__init__()
@@ -6002,14 +10366,21 @@ class AttendanceOverview(QWidget):
         self.target = QSpinBox()
         self.target.setRange(1, 100)
         self.target.setValue(int(ctx.settings.get_float("attendance_min", 75)))
-        self.target.valueChanged.connect(lambda v: (ctx.settings.set("attendance_min", v), ctx.core.bus.notify("settings")))
+        self.target.valueChanged.connect(
+            lambda v: (
+                ctx.settings.set("attendance_min", v),
+                ctx.core.bus.notify("settings"),
+            )
+        )
         row.addWidget(self.target)
         row.addStretch(1)
         lay.addLayout(row)
         self.table = QTableWidget(0, len(self.COLS))
         self.table.setHorizontalHeaderLabels(list(self.COLS))
         self.table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
-        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+        self.table.horizontalHeader().setSectionResizeMode(
+            QHeaderView.ResizeMode.ResizeToContents
+        )
         self.table.horizontalHeader().setStretchLastSection(True)
         self.table.verticalHeader().setVisible(False)
         self.table.setAlternatingRowColors(True)
@@ -6026,9 +10397,31 @@ class AttendanceOverview(QWidget):
         t = self.ctx.theme
         self.table.setRowCount(len(rows))
         for r, a in enumerate(rows):
-            act = "—" if a["status"] == "No data" else (f"Attend next {a['need']} in a row" if a["need"] else "Target can no longer be reached") if a["pct"] < a["target"] \
-                else "Can miss " + (f"{a['can_skip']} more" if a["can_skip"] is not None else "any") + " class(es)"
-            vals = [a["subject"], a["held"], a["attended"], a["missed"], "—" if a["pct"] is None else f"{a['pct']:.1f}%", f"{a['target']:.0f}%", a["status"], act]
+            act = (
+                "—"
+                if a["status"] == "No data"
+                else (
+                    (
+                        f"Attend next {a['need']} in a row"
+                        if a["need"]
+                        else "Target can no longer be reached"
+                    )
+                    if a["pct"] < a["target"]
+                    else "Can miss "
+                    + (f"{a['can_skip']} more" if a["can_skip"] is not None else "any")
+                    + " class(es)"
+                )
+            )
+            vals = [
+                a["subject"],
+                a["held"],
+                a["attended"],
+                a["missed"],
+                "—" if a["pct"] is None else f"{a['pct']:.1f}%",
+                f"{a['target']:.0f}%",
+                a["status"],
+                act,
+            ]
             for c, v in enumerate(vals):
                 it = QTableWidgetItem(str(v))
                 it.setTextAlignment(A_R if 1 <= c <= 5 else A_L)
@@ -6036,7 +10429,17 @@ class AttendanceOverview(QWidget):
                 if c == 6 and tok and tok != "muted":
                     it.setForeground(QBrush(QColor(t.t[tok + "_text"])))
                 self.table.setItem(r, c, it)
-        self.chart.set_bars([(a["subject"], a["pct"], a["color"]) for a in rows if a["pct"] is not None], 100, "%", self.ctx.settings.get_float("attendance_min", 75.0), 1)
+        self.chart.set_bars(
+            [
+                (a["subject"], a["pct"], a["color"])
+                for a in rows
+                if a["pct"] is not None
+            ],
+            100,
+            "%",
+            self.ctx.settings.get_float("attendance_min", 75.0),
+            1,
+        )
         self.target.blockSignals(True)
         self.target.setValue(int(self.ctx.settings.get_float("attendance_min", 75)))
         self.target.blockSignals(False)
@@ -6053,7 +10456,11 @@ class MilestonesDialog(QDialog):
         self.list = QListWidget()
         lay.addWidget(self.list, 1)
         row = QHBoxLayout()
-        for text, fn, kind in (("Add…", self.add, "Primary"), ("Toggle done", self.toggle, ""), ("Delete", self.delete, "Danger")):
+        for text, fn, kind in (
+            ("Add…", self.add, "Primary"),
+            ("Toggle done", self.toggle, ""),
+            ("Delete", self.delete, "Danger"),
+        ):
             row.addWidget(make_button(text, fn, kind))
         row.addStretch(1)
         row.addWidget(make_button("Close", self.accept))
@@ -6063,7 +10470,9 @@ class MilestonesDialog(QDialog):
     def reload(self) -> None:
         self.list.clear()
         for m in self.ctx.repo.milestones(self.pid):
-            it = QListWidgetItem(f"{'☑' if m['status'] == 'Completed' else '☐'}  {m['title']}   {('· due ' + fmt_date(m['due_date'])) if m['due_date'] else ''}")
+            it = QListWidgetItem(
+                f"{'☑' if m['status'] == 'Completed' else '☐'}  {m['title']}   {('· due ' + fmt_date(m['due_date'])) if m['due_date'] else ''}"
+            )
             it.setData(Qt.ItemDataRole.UserRole, m)
             self.list.addItem(it)
 
@@ -6071,15 +10480,29 @@ class MilestonesDialog(QDialog):
         title, ok = QInputDialog.getText(self, "Milestone", "Milestone title:")
         if not ok:
             return
-        due, ok = QInputDialog.getText(self, "Milestone", "Due date (YYYY-MM-DD, optional):")
-        if ok and self.ctx.guard(self, lambda: self.ctx.repo.save_milestone(self.pid, title, due)) is not None:
+        due, ok = QInputDialog.getText(
+            self, "Milestone", "Due date (YYYY-MM-DD, optional):"
+        )
+        if (
+            ok
+            and self.ctx.guard(
+                self, lambda: self.ctx.repo.save_milestone(self.pid, title, due)
+            )
+            is not None
+        ):
             self.reload()
 
     def toggle(self) -> None:
         it = self.list.currentItem()
         if it:
             m = it.data(Qt.ItemDataRole.UserRole)
-            self.ctx.repo.save_milestone(self.pid, m["title"], m["due_date"], "Pending" if m["status"] == "Completed" else "Completed", m["id"])
+            self.ctx.repo.save_milestone(
+                self.pid,
+                m["title"],
+                m["due_date"],
+                "Pending" if m["status"] == "Completed" else "Completed",
+                m["id"],
+            )
             self.reload()
 
     def delete(self) -> None:
@@ -6095,13 +10518,36 @@ def make_projects_page(ctx: UiContext) -> TabsPage:
         if len(ids) == 1:
             MilestonesDialog(ctx, ids[0], page).exec()
             page.refresh()
-    groups = [("All", None), ("Projects", {"Academic Project", "Mini Project", "Major Project"}), ("Labs & practicals", {"Laboratory Record", "Practical Assignment"}),
-              ("Viva & presentations", {"Viva Preparation", "Presentation"}), ("Research", {"Research Activity"}), ("Internships & certifications", {"Internship", "Certification"})]
+
+    groups = [
+        ("All", None),
+        ("Projects", {"Academic Project", "Mini Project", "Major Project"}),
+        ("Labs & practicals", {"Laboratory Record", "Practical Assignment"}),
+        ("Viva & presentations", {"Viva Preparation", "Presentation"}),
+        ("Research", {"Research Activity"}),
+        ("Internships & certifications", {"Internship", "Certification"}),
+    ]
     tabs = []
     for label, cats in groups:
-        tabs.append((label, EntityPage(ctx, "projects", tid=f"projects_{label}", fixed=(lambda r, c=cats: r["category"] in c) if cats else None,
-                                       defaults={"category": sorted(cats)[0]} if cats else {}, extra=[("Milestones…", milestones)])))
-    return TabsPage(ctx, "Projects, labs & activities", "Projects, lab records, viva preparation, presentations, research, internships and certifications.", tabs)
+        tabs.append(
+            (
+                label,
+                EntityPage(
+                    ctx,
+                    "projects",
+                    tid=f"projects_{label}",
+                    fixed=(lambda r, c=cats: r["category"] in c) if cats else None,
+                    defaults={"category": sorted(cats)[0]} if cats else {},
+                    extra=[("Milestones…", milestones)],
+                ),
+            )
+        )
+    return TabsPage(
+        ctx,
+        "Projects, labs & activities",
+        "Projects, lab records, viva preparation, presentations, research, internships and certifications.",
+        tabs,
+    )
 
 
 class PlannerView(QWidget):
@@ -6113,7 +10559,12 @@ class PlannerView(QWidget):
         lay = QVBoxLayout(self)
         lay.setContentsMargins(0, 0, 0, 0)
         row = QHBoxLayout()
-        for text, m in (("Day", "day"), ("Week", "week"), ("Month", "month"), ("All", "all")):
+        for text, m in (
+            ("Day", "day"),
+            ("Week", "week"),
+            ("Month", "month"),
+            ("All", "all"),
+        ):
             row.addWidget(make_button(text, lambda mm=m: self.set_mode(mm)))
         row.addWidget(make_button("◀", lambda: self.shift(-1)))
         row.addWidget(make_button("Today", self.today))
@@ -6134,7 +10585,9 @@ class PlannerView(QWidget):
             return s, s + timedelta(days=6)
         if self.mode == "month":
             s = a.replace(day=1)
-            return s, (s.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
+            return s, (s.replace(day=28) + timedelta(days=4)).replace(
+                day=1
+            ) - timedelta(days=1)
         return None, None
 
     def set_mode(self, mode: str) -> None:
@@ -6152,7 +10605,11 @@ class PlannerView(QWidget):
 
     def refresh(self) -> None:
         lo, hi = self.span()
-        self.label.setText("All dates" if lo is None else f"{fmt_date(lo.isoformat(), '%d %b')} – {fmt_date(hi.isoformat(), '%d %b %Y')}")
+        self.label.setText(
+            "All dates"
+            if lo is None
+            else f"{fmt_date(lo.isoformat(), '%d %b')} – {fmt_date(hi.isoformat(), '%d %b %Y')}"
+        )
         self.table.refresh()
         for w, d in ((self.table.date_from, lo), (self.table.date_to, hi)):
             w.check.setChecked(d is not None)
@@ -6170,9 +10627,18 @@ class RevisionView(QWidget):
         row = QHBoxLayout()
         row.addWidget(make_label("Review selected unit:", "Muted"))
         for text, q in (("Again", 1), ("Hard", 3), ("Good", 4), ("Easy", 5)):
-            row.addWidget(make_button(text, lambda qq=q: self.review(qq), "Primary" if q == 4 else ""))
+            row.addWidget(
+                make_button(
+                    text, lambda qq=q: self.review(qq), "Primary" if q == 4 else ""
+                )
+            )
         row.addStretch(1)
-        row.addWidget(make_label("Spaced repetition (SM-2): intervals grow when recall is good and reset on “Again”.", "Muted"))
+        row.addWidget(
+            make_label(
+                "Spaced repetition (SM-2): intervals grow when recall is good and reset on “Again”.",
+                "Muted",
+            )
+        )
         lay.addLayout(row)
         self.table = EntityPage(ctx, "revisions")
         lay.addWidget(self.table, 1)
@@ -6206,25 +10672,58 @@ class InsightsView(QWidget):
                 w.deleteLater()
         icon = {"good": "✔", "info": "•", "warn": "⚠", "bad": "✖"}
         for i in self.ctx.analytics.insights(self.ctx.scope()):
-            lab = make_label(f"{icon.get(i['level'], '•')}  {i['text']}", "Banner" if i["level"] in ("warn",) else "BannerDanger" if i["level"] == "bad" else "", True)
+            lab = make_label(
+                f"{icon.get(i['level'], '•')}  {i['text']}",
+                (
+                    "Banner"
+                    if i["level"] in ("warn",)
+                    else "BannerDanger" if i["level"] == "bad" else ""
+                ),
+                True,
+            )
             self.body.addWidget(lab)
         self.body.addStretch(1)
 
 
 def make_study_page(ctx: UiContext) -> TabsPage:
-    return TabsPage(ctx, "Study hub", "Daily, weekly and monthly planner, study log, spaced revision and insights from your real records.",
-                    [("Planner", PlannerView(ctx)), ("Study sessions", EntityPage(ctx, "study_sessions")), ("Revision", RevisionView(ctx)), ("Insights", InsightsView(ctx))])
+    return TabsPage(
+        ctx,
+        "Study hub",
+        "Daily, weekly and monthly planner, study log, spaced revision and insights from your real records.",
+        [
+            ("Planner", PlannerView(ctx)),
+            ("Study sessions", EntityPage(ctx, "study_sessions")),
+            ("Revision", RevisionView(ctx)),
+            ("Insights", InsightsView(ctx)),
+        ],
+    )
 
 
 class FocusPage(Page):
-    MODES = {"Focus": "pomodoro_work", "Short break": "pomodoro_short", "Long break": "pomodoro_long"}
+    MODES = {
+        "Focus": "pomodoro_work",
+        "Short break": "pomodoro_short",
+        "Long break": "pomodoro_long",
+    }
 
     def __init__(self, ctx: UiContext) -> None:
         super().__init__(ctx)
-        self.mode, self.total, self.remaining, self.deadline, self.running, self.completed = "Focus", 1500, 1500, 0.0, False, 0
+        (
+            self.mode,
+            self.total,
+            self.remaining,
+            self.deadline,
+            self.running,
+            self.completed,
+        ) = ("Focus", 1500, 1500, 0.0, False, 0)
         lay = QVBoxLayout(self)
         lay.setContentsMargins(22, 18, 22, 14)
-        lay.addWidget(page_header("Focus room", "Pomodoro timer. Finished sessions are logged to the selected subject automatically."))
+        lay.addWidget(
+            page_header(
+                "Focus room",
+                "Pomodoro timer. Finished sessions are logged to the selected subject automatically.",
+            )
+        )
         card, cl = make_card()
         self.subject = QComboBox()
         cl.addWidget(make_label("Subject", "Muted"))
@@ -6246,7 +10745,13 @@ class FocusPage(Page):
         self.start_btn = make_button("Start", self.toggle, "Primary")
         brow.addWidget(self.start_btn)
         brow.addWidget(make_button("Reset", self.reset))
-        brow.addWidget(make_button("Finish early & log", self.finish_early, tip="Logs the time studied so far"))
+        brow.addWidget(
+            make_button(
+                "Finish early & log",
+                self.finish_early,
+                tip="Logs the time studied so far",
+            )
+        )
         cl.addLayout(brow)
         self.info = make_label("", "Muted", True)
         cl.addWidget(self.info)
@@ -6280,11 +10785,21 @@ class FocusPage(Page):
         self.bar.setRange(0, self.total)
         self.bar.setValue(self.total - int(self.remaining))
         self.start_btn.setText("Pause" if self.running else "Start")
-        self.info.setText(f"{self.mode} · {self.completed} focus session(s) completed in this run")
+        self.info.setText(
+            f"{self.mode} · {self.completed} focus session(s) completed in this run"
+        )
 
     def toggle(self) -> None:
-        if self.mode == "Focus" and self.subject.currentData() is None and not self.running:
-            return tell(self, "Choose a subject", "Add a subject first (Subjects & syllabus), then select it here.")
+        if (
+            self.mode == "Focus"
+            and self.subject.currentData() is None
+            and not self.running
+        ):
+            return tell(
+                self,
+                "Choose a subject",
+                "Add a subject first (Subjects & syllabus), then select it here.",
+            )
         self.running = not self.running
         if self.running:
             self.deadline = time.monotonic() + self.remaining
@@ -6308,7 +10823,9 @@ class FocusPage(Page):
                 self._log(self.total // 60)
                 self.completed += 1
                 self.ctx.toast("Focus session complete and logged.")
-                self.set_mode("Long break" if self.completed % 4 == 0 else "Short break")
+                self.set_mode(
+                    "Long break" if self.completed % 4 == 0 else "Short break"
+                )
             else:
                 self.ctx.toast("Break over — ready for the next focus session.")
                 self.set_mode("Focus")
@@ -6316,12 +10833,21 @@ class FocusPage(Page):
     def _log(self, minutes: int) -> None:
         sid = self.subject.currentData()
         if sid and minutes >= 1:
-            self.ctx.guard(self, lambda: self.ctx.repo.quick_log_study(sid, minutes, self.topic.text().strip() or "Focus session", "Study"))
+            self.ctx.guard(
+                self,
+                lambda: self.ctx.repo.quick_log_study(
+                    sid, minutes, self.topic.text().strip() or "Focus session", "Study"
+                ),
+            )
 
     def finish_early(self) -> None:
         if self.mode != "Focus":
             return
-        done = self.total - (max(0.0, self.deadline - time.monotonic()) if self.running else self.remaining)
+        done = self.total - (
+            max(0.0, self.deadline - time.monotonic())
+            if self.running
+            else self.remaining
+        )
         self._log(int(done // 60))
         self.ctx.toast(f"Logged {int(done // 60)} minute(s).")
         self.set_mode("Focus")
@@ -6337,9 +10863,26 @@ def make_resources_page(ctx: UiContext) -> TabsPage:
 
     def reveal(page: "EntityPage") -> None:
         for r in page.selected_rows()[:1]:
-            QDesktopServices.openUrl(QUrl.fromLocalFile(str(Path(r["file_path"]).parent)))
-    return TabsPage(ctx, "Notes & documents", "Subject and chapter notes, plus references to your files. Files stay where they are; only the link is stored.",
-                    [("Notes", EntityPage(ctx, "notes")), ("Documents & files", EntityPage(ctx, "attachments", extra=[("Open file", open_file), ("Show folder", reveal)]))])
+            QDesktopServices.openUrl(
+                QUrl.fromLocalFile(str(Path(r["file_path"]).parent))
+            )
+
+    return TabsPage(
+        ctx,
+        "Notes & documents",
+        "Subject and chapter notes, plus references to your files. Files stay where they are; only the link is stored.",
+        [
+            ("Notes", EntityPage(ctx, "notes")),
+            (
+                "Documents & files",
+                EntityPage(
+                    ctx,
+                    "attachments",
+                    extra=[("Open file", open_file), ("Show folder", reveal)],
+                ),
+            ),
+        ],
+    )
 
 
 # ---- analytics ---------------------------------------------------------------------------------------------------------------------------------------------
@@ -6352,7 +10895,12 @@ class AnalyticsPage(Page):
         body.setObjectName("PageBody")
         lay = QVBoxLayout(body)
         lay.setContentsMargins(22, 18, 22, 22)
-        lay.addWidget(page_header("Analytics", "Every figure is calculated from your stored records. Charts say so when there is not enough data."))
+        lay.addWidget(
+            page_header(
+                "Analytics",
+                "Every figure is calculated from your stored records. Charts say so when there is not enough data.",
+            )
+        )
         bar, bl = make_card(QHBoxLayout)
         self.sem = QComboBox()
         bl.addWidget(make_label("Semester"))
@@ -6373,7 +10921,20 @@ class AnalyticsPage(Page):
             lay.addWidget(w)
         lay.addStretch(1)
         outer.addWidget(scroll_page(body))
-        self.charts = {k: ChartWidget(ctx) for k in ("perf", "trend", "att", "study_s", "study_d", "assign", "grades", "gpa", "syl")}
+        self.charts = {
+            k: ChartWidget(ctx)
+            for k in (
+                "perf",
+                "trend",
+                "att",
+                "study_s",
+                "study_d",
+                "assign",
+                "grades",
+                "gpa",
+                "syl",
+            )
+        }
 
     def _fill_sem(self) -> None:
         cur = self.sem.currentData() if self.sem.count() else "scope"
@@ -6393,40 +10954,138 @@ class AnalyticsPage(Page):
         rng = (self.d_from.value() or None, self.d_to.value() or None)
         ov, ch, t = an.overview(sid, rng), self.charts, c.theme
         fp = lambda v: "—" if v is None else f"{v:.1f}%"
-        self.kpis.set_cards([metric_card("Score average", fp(ov["score_pct"])), metric_card("Attendance", fp(ov["attendance"]["pct"])),
-                             metric_card("Assignments done", fp(ov["assignments"]["completion_rate"]), f"{ov['assignments']['done']} of {ov['assignments']['total']}"),
-                             metric_card("Study time", fmt_minutes(ov["study_minutes"])), metric_card("Syllabus", fp(ov["syllabus_pct"])),
-                             metric_card("SGPA", "—" if ov["sgpa"] is None else f"{ov['sgpa']:.2f}"), metric_card("CGPA", "—" if ov["cgpa"] is None else f"{ov['cgpa']:.2f}")])
+        self.kpis.set_cards(
+            [
+                metric_card("Score average", fp(ov["score_pct"])),
+                metric_card("Attendance", fp(ov["attendance"]["pct"])),
+                metric_card(
+                    "Assignments done",
+                    fp(ov["assignments"]["completion_rate"]),
+                    f"{ov['assignments']['done']} of {ov['assignments']['total']}",
+                ),
+                metric_card("Study time", fmt_minutes(ov["study_minutes"])),
+                metric_card("Syllabus", fp(ov["syllabus_pct"])),
+                metric_card("SGPA", "—" if ov["sgpa"] is None else f"{ov['sgpa']:.2f}"),
+                metric_card("CGPA", "—" if ov["cgpa"] is None else f"{ov['cgpa']:.2f}"),
+            ]
+        )
         perf = [p for p in an.subject_performance(sid, rng) if p["pct"] is not None]
         ch["perf"].empty = "No scored assessments in this period"
-        ch["perf"].set_bars([(p["subject"] + (f"  ({p['trend']})" if p["trend"] != "Not enough data" else ""), p["pct"], p["color"]) for p in perf], 100, "%", c.settings.get_float("low_mark_pct", 40.0), 1)
+        ch["perf"].set_bars(
+            [
+                (
+                    p["subject"]
+                    + (f"  ({p['trend']})" if p["trend"] != "Not enough data" else ""),
+                    p["pct"],
+                    p["color"],
+                )
+                for p in perf
+            ],
+            100,
+            "%",
+            c.settings.get_float("low_mark_pct", 40.0),
+            1,
+        )
         tr = an.score_trend(sid, rng)[-40:]
         ch["trend"].empty = "No dated scores in this period"
-        ch["trend"].set_xy([fmt_date(d, "%d %b") for d, _ in tr], [("Score %", [v for _, v in tr], t.accent)], "lines", 100, "%", 0)
+        ch["trend"].set_xy(
+            [fmt_date(d, "%d %b") for d, _ in tr],
+            [("Score %", [v for _, v in tr], t.accent)],
+            "lines",
+            100,
+            "%",
+            0,
+        )
         att = [a for a in an.attendance_by_subject(sid, rng) if a["pct"] is not None]
         ch["att"].empty = "No attendance in this period"
-        ch["att"].set_bars([(a["subject"], a["pct"], a["color"]) for a in att], 100, "%", c.settings.get_float("attendance_min", 75.0), 1)
+        ch["att"].set_bars(
+            [(a["subject"], a["pct"], a["color"]) for a in att],
+            100,
+            "%",
+            c.settings.get_float("attendance_min", 75.0),
+            1,
+        )
         st = [s for s in an.study_by_subject(sid, rng) if s["minutes"]]
         ch["study_s"].empty = "No study time in this period"
-        ch["study_s"].set_bars([(s["subject"], s["minutes"] / 60, s["color"]) for s in st], max([s["minutes"] / 60 for s in st] + [1]), " h", None, 1)
+        ch["study_s"].set_bars(
+            [(s["subject"], s["minutes"] / 60, s["color"]) for s in st],
+            max([s["minutes"] / 60 for s in st] + [1]),
+            " h",
+            None,
+            1,
+        )
         daily = an.study_daily(30, sid)
         ch["study_d"].empty = "No study sessions in the last 30 days"
-        ch["study_d"].set_xy([d[5:] for d, _ in daily], [("Minutes", [m if m else None for _, m in daily], t.accent)], "bars", None, "", 0)
+        ch["study_d"].set_xy(
+            [d[5:] for d, _ in daily],
+            [("Minutes", [m if m else None for _, m in daily], t.accent)],
+            "bars",
+            None,
+            "",
+            0,
+        )
         a = an.assignment_stats(sid, rng)
         ch["assign"].empty = "No assignments in this period"
-        ch["assign"].set_bars([(k, v, t.color({"Overdue": "danger", "Late Submission": "warning", "Submitted": "success", "Evaluated": "success"}.get(k, "info"))) for k, v in a["by_status"].items()],
-                              max(list(a["by_status"].values()) + [1]), "", None, 0)
+        ch["assign"].set_bars(
+            [
+                (
+                    k,
+                    v,
+                    t.color(
+                        {
+                            "Overdue": "danger",
+                            "Late Submission": "warning",
+                            "Submitted": "success",
+                            "Evaluated": "success",
+                        }.get(k, "info")
+                    ),
+                )
+                for k, v in a["by_status"].items()
+            ],
+            max(list(a["by_status"].values()) + [1]),
+            "",
+            None,
+            0,
+        )
         gd = an.grade_distribution(sid)
         ch["grades"].empty = "No results entered yet"
-        ch["grades"].set_xy([g for g, _ in gd], [("Subjects", [n for _, n in gd], t.accent)], "bars", None, "", 0)
+        ch["grades"].set_xy(
+            [g for g, _ in gd],
+            [("Subjects", [n for _, n in gd], t.accent)],
+            "bars",
+            None,
+            "",
+            0,
+        )
         gp = an.sgpa_series()
         ch["gpa"].empty = "SGPA appears once semester results are entered"
-        ch["gpa"].set_xy([g["name"] for g in gp], [("SGPA", [g["sgpa"] for g in gp], t.accent), ("CGPA", [g["cgpa"] for g in gp], t.color("warning"))], "lines", c.settings.grading().max_points, "", 2)
+        ch["gpa"].set_xy(
+            [g["name"] for g in gp],
+            [
+                ("SGPA", [g["sgpa"] for g in gp], t.accent),
+                ("CGPA", [g["cgpa"] for g in gp], t.color("warning")),
+            ],
+            "lines",
+            c.settings.grading().max_points,
+            "",
+            2,
+        )
         syl = [s for s in an.syllabus_by_subject(sid) if s["pct"] is not None]
         ch["syl"].empty = "Add units to track syllabus completion"
-        ch["syl"].set_bars([(s["subject"], s["pct"], s["color"]) for s in syl], 100, "%", None, 0)
-        titles = {"perf": "Average score by subject (red line = low-marks threshold)", "trend": "Score trend", "att": "Attendance by subject (red line = target)",
-                  "study_s": "Study hours by subject", "study_d": "Study minutes per day", "assign": "Assignments by status", "grades": "Grade distribution", "gpa": "SGPA & CGPA progression", "syl": "Syllabus completion"}
+        ch["syl"].set_bars(
+            [(s["subject"], s["pct"], s["color"]) for s in syl], 100, "%", None, 0
+        )
+        titles = {
+            "perf": "Average score by subject (red line = low-marks threshold)",
+            "trend": "Score trend",
+            "att": "Attendance by subject (red line = target)",
+            "study_s": "Study hours by subject",
+            "study_d": "Study minutes per day",
+            "assign": "Assignments by status",
+            "grades": "Grade distribution",
+            "gpa": "SGPA & CGPA progression",
+            "syl": "Syllabus completion",
+        }
         for w in ch.values():
             w.setParent(None)
         self.grid.set_cards([panel(titles[k], ch[k]) for k in titles])
@@ -6435,7 +11094,16 @@ class AnalyticsPage(Page):
             if w:
                 w.deleteLater()
         for i in an.insights(sid, rng):
-            self.ins.addWidget(make_label({"good": "✔  ", "info": "•  ", "warn": "⚠  ", "bad": "✖  "}.get(i["level"], "•  ") + i["text"], "", True))
+            self.ins.addWidget(
+                make_label(
+                    {"good": "✔  ", "info": "•  ", "warn": "⚠  ", "bad": "✖  "}.get(
+                        i["level"], "•  "
+                    )
+                    + i["text"],
+                    "",
+                    True,
+                )
+            )
 
 
 # ---- reports --------------------------------------------------------------------------------------------------------------------------------------------------
@@ -6449,18 +11117,35 @@ class ColumnsDialog(QDialog):
         self.resize(520, 560)
         lay = QVBoxLayout(self)
         lay.addWidget(make_label("Columns & widths", "DialogTitle"))
-        lay.addWidget(make_label("Untick a column to hide it. Edit “Width” to change its share of the table (blank = automatic).", "Muted", True))
+        lay.addWidget(
+            make_label(
+                "Untick a column to hide it. Edit “Width” to change its share of the table (blank = automatic).",
+                "Muted",
+                True,
+            )
+        )
         self.tree = QTreeWidget()
         self.tree.setHeaderLabels(["Table / column", "Width"])
         self.tree.setColumnWidth(0, 330)
         for section, cols in SECTION_COLUMNS.items():
             top = QTreeWidgetItem([section.replace("_", " ").title(), ""])
             self.tree.addTopLevelItem(top)
-            chosen = cfg.columns.get(section) or [c[0] for c in cols if c[0] not in DEFAULT_HIDDEN.get(section, ())]
+            chosen = cfg.columns.get(section) or [
+                c[0] for c in cols if c[0] not in DEFAULT_HIDDEN.get(section, ())
+            ]
             for key, label, wt, _ in cols:
-                it = QTreeWidgetItem([label, fmt_num(cfg.widths.get(section, {}).get(key), blank="")])
-                it.setFlags(it.flags() | Qt.ItemFlag.ItemIsUserCheckable | Qt.ItemFlag.ItemIsEditable)
-                it.setCheckState(0, Qt.CheckState.Checked if key in chosen else Qt.CheckState.Unchecked)
+                it = QTreeWidgetItem(
+                    [label, fmt_num(cfg.widths.get(section, {}).get(key), blank="")]
+                )
+                it.setFlags(
+                    it.flags()
+                    | Qt.ItemFlag.ItemIsUserCheckable
+                    | Qt.ItemFlag.ItemIsEditable
+                )
+                it.setCheckState(
+                    0,
+                    Qt.CheckState.Checked if key in chosen else Qt.CheckState.Unchecked,
+                )
                 it.setData(0, Qt.ItemDataRole.UserRole, (section, key))
                 top.addChild(it)
         lay.addWidget(self.tree, 1)
@@ -6483,7 +11168,11 @@ class ColumnsDialog(QDialog):
                 w = safe_float(it.text(1))
                 if w and w > 0:
                     widths.setdefault(section, {})[key] = w
-            default = [c[0] for c in SECTION_COLUMNS[section] if c[0] not in DEFAULT_HIDDEN.get(section, ())]
+            default = [
+                c[0]
+                for c in SECTION_COLUMNS[section]
+                if c[0] not in DEFAULT_HIDDEN.get(section, ())
+            ]
             if section and keep and keep != default:
                 cols[section] = keep
         self.cfg.columns, self.cfg.widths = cols, widths
@@ -6500,12 +11189,22 @@ class ReportsPage(Page):
         body.setObjectName("PageBody")
         lay = QVBoxLayout(body)
         lay.setContentsMargins(22, 18, 22, 22)
-        lay.addWidget(page_header("PDF reports", "Build professional academic reports. Choose a type, scope, sections and design, check the preview, then generate."))
+        lay.addWidget(
+            page_header(
+                "PDF reports",
+                "Build professional academic reports. Choose a type, scope, sections and design, check the preview, then generate.",
+            )
+        )
         self.kind = QComboBox()
         for k, (label, _) in REPORT_KINDS.items():
             self.kind.addItem(label, k)
         self.kind.currentIndexChanged.connect(self._kind_changed)
-        self.title, self.subtitle, self.header, self.footer = QLineEdit(), QLineEdit(), QLineEdit(), QLineEdit()
+        self.title, self.subtitle, self.header, self.footer = (
+            QLineEdit(),
+            QLineEdit(),
+            QLineEdit(),
+            QLineEdit(),
+        )
         self.title.setPlaceholderText("Default: the report type")
         self.paper = QComboBox()
         self.paper.addItems(PAPER_SIZES)
@@ -6516,9 +11215,26 @@ class ReportsPage(Page):
             m.setRange(5, 60)
             m.setValue(16)
             m.setSuffix(" mm")
-        self.checks = {k: QCheckBox(l) for k, l in (("page_numbers", "Page numbers"), ("show_date", "Report date"), ("cover_page", "Cover page"), ("executive_summary", "Executive summary"),
-                                                    ("student_info", "Student information"), ("branding", "College branding / logo"), ("include_charts", "Charts"))}
-        for k in ("page_numbers", "show_date", "executive_summary", "student_info", "branding", "include_charts"):
+        self.checks = {
+            k: QCheckBox(l)
+            for k, l in (
+                ("page_numbers", "Page numbers"),
+                ("show_date", "Report date"),
+                ("cover_page", "Cover page"),
+                ("executive_summary", "Executive summary"),
+                ("student_info", "Student information"),
+                ("branding", "College branding / logo"),
+                ("include_charts", "Charts"),
+            )
+        }
+        for k in (
+            "page_numbers",
+            "show_date",
+            "executive_summary",
+            "student_info",
+            "branding",
+            "include_charts",
+        ):
             self.checks[k].setChecked(True)
         self.logo = QLineEdit()
         self.palette = QComboBox()
@@ -6537,20 +11253,28 @@ class ReportsPage(Page):
         self.spacing.setValue(1.0)
         self.sections = QListWidget()
         self.sections.setDragDropMode(QAbstractItemView.DragDropMode.InternalMove)
-        self.scope_sem, self.scope_year, self.scope_sub = QComboBox(), QComboBox(), QComboBox()
+        self.scope_sem, self.scope_year, self.scope_sub = (
+            QComboBox(),
+            QComboBox(),
+            QComboBox(),
+        )
         self.d_from, self.d_to = OptionalDate(), OptionalDate()
         self.limit = QSpinBox()
         self.limit.setRange(1, 20000)
         self.limit.setValue(500)
         self.notes = QPlainTextEdit()
-        self.notes.setPlaceholderText("Optional remarks printed at the end of the report")
+        self.notes.setPlaceholderText(
+            "Optional remarks printed at the end of the report"
+        )
         self.notes.setMaximumHeight(80)
+
         def group(title: str, rows: Sequence[tuple[str, Any]]) -> "QGroupBox":
             g = QGroupBox(title)
             f = QFormLayout(g)
             for lab, w in rows:
                 f.addRow(lab, w) if lab else f.addRow(w)
             return g
+
         mrow = QWidget()
         ml = QHBoxLayout(mrow)
         ml.setContentsMargins(0, 0, 0, 0)
@@ -6567,19 +11291,63 @@ class ReportsPage(Page):
         for i, w in enumerate(self.checks.values()):
             cg.addWidget(w, i // 2, i % 2)
         self.grid = CardGrid(430)
-        self.grid.set_cards([
-            group("Report", [("Type", self.kind), ("Title", self.title), ("Subtitle", self.subtitle), ("Notes & remarks", self.notes)]),
-            group("Scope", [("Semester", self.scope_sem), ("Academic year", self.scope_year), ("Subject", self.scope_sub), ("From", self.d_from), ("To", self.d_to), ("Records per table (max)", self.limit)]),
-            group("Sections (drag to reorder, untick to omit)", [("", self.sections)]),
-            group("Page", [("Paper", self.paper), ("Orientation", self.orient), ("Margins", mrow), ("Header text", self.header), ("Footer text", self.footer), ("", chk)]),
-            group("Design", [("Logo", logo_row), ("Colour palette", self.palette), ("Accent (Custom palette)", self.accent), ("Font size", self.font), ("Table density", self.density), ("Row spacing", self.spacing),
-                             ("", make_button("Columns & widths…", self.columns))]),
-        ])
+        self.grid.set_cards(
+            [
+                group(
+                    "Report",
+                    [
+                        ("Type", self.kind),
+                        ("Title", self.title),
+                        ("Subtitle", self.subtitle),
+                        ("Notes & remarks", self.notes),
+                    ],
+                ),
+                group(
+                    "Scope",
+                    [
+                        ("Semester", self.scope_sem),
+                        ("Academic year", self.scope_year),
+                        ("Subject", self.scope_sub),
+                        ("From", self.d_from),
+                        ("To", self.d_to),
+                        ("Records per table (max)", self.limit),
+                    ],
+                ),
+                group(
+                    "Sections (drag to reorder, untick to omit)", [("", self.sections)]
+                ),
+                group(
+                    "Page",
+                    [
+                        ("Paper", self.paper),
+                        ("Orientation", self.orient),
+                        ("Margins", mrow),
+                        ("Header text", self.header),
+                        ("Footer text", self.footer),
+                        ("", chk),
+                    ],
+                ),
+                group(
+                    "Design",
+                    [
+                        ("Logo", logo_row),
+                        ("Colour palette", self.palette),
+                        ("Accent (Custom palette)", self.accent),
+                        ("Font size", self.font),
+                        ("Table density", self.density),
+                        ("Row spacing", self.spacing),
+                        ("", make_button("Columns & widths…", self.columns)),
+                    ],
+                ),
+            ]
+        )
         lay.addWidget(self.grid)
         row = QHBoxLayout()
         self.btn_plan = make_button("Preview settings", self.plan)
         self.btn_prev = make_button("Open preview PDF", lambda: self.generate(True))
-        self.btn_gen = make_button("Generate PDF…", lambda: self.generate(False), "Primary")
+        self.btn_gen = make_button(
+            "Generate PDF…", lambda: self.generate(False), "Primary"
+        )
         for b in (self.btn_plan, self.btn_prev, self.btn_gen):
             row.addWidget(b)
         row.addStretch(1)
@@ -6595,7 +11363,9 @@ class ReportsPage(Page):
         self.summary = QPlainTextEdit()
         self.summary.setReadOnly(True)
         self.summary.setMaximumHeight(170)
-        self.summary.setPlaceholderText("Click “Preview settings” to see what the report will contain.")
+        self.summary.setPlaceholderText(
+            "Click “Preview settings” to see what the report will contain."
+        )
         for w in (self.progress, self.status, self.summary):
             lay.addWidget(w)
         lay.addStretch(1)
@@ -6609,14 +11379,20 @@ class ReportsPage(Page):
             it = QListWidgetItem(REPORT_SECTIONS[k])
             it.setData(Qt.ItemDataRole.UserRole, k)
             it.setFlags(it.flags() | Qt.ItemFlag.ItemIsUserCheckable)
-            it.setCheckState(Qt.CheckState.Checked if k in keys else Qt.CheckState.Unchecked)
+            it.setCheckState(
+                Qt.CheckState.Checked if k in keys else Qt.CheckState.Unchecked
+            )
             self.sections.addItem(it)
 
     def _kind_changed(self) -> None:
-        self._fill_sections(REPORT_KINDS.get(self.kind.currentData(), REPORT_KINDS["custom"])[1])
+        self._fill_sections(
+            REPORT_KINDS.get(self.kind.currentData(), REPORT_KINDS["custom"])[1]
+        )
 
     def _pick_logo(self) -> None:
-        p, _ = QFileDialog.getOpenFileName(self, "Logo", "", "Images (*.png *.jpg *.jpeg *.bmp *.gif)")
+        p, _ = QFileDialog.getOpenFileName(
+            self, "Logo", "", "Images (*.png *.jpg *.jpeg *.bmp *.gif)"
+        )
         if p:
             self.logo.setText(p)
 
@@ -6626,13 +11402,38 @@ class ReportsPage(Page):
             self.cfg.columns, self.cfg.widths = cfg.columns, cfg.widths
 
     def read(self) -> ReportConfig:
-        secs = [self.sections.item(i).data(Qt.ItemDataRole.UserRole) for i in range(self.sections.count()) if self.sections.item(i).checkState() == Qt.CheckState.Checked]
-        cfg = ReportConfig(kind=self.kind.currentData(), title=self.title.text(), subtitle=self.subtitle.text(), paper=self.paper.currentText(), orientation=self.orient.currentText(),
-                           margins_mm=[m.value() for m in self.margins], header_text=self.header.text(), footer_text=self.footer.text(), logo_path=self.logo.text().strip(),
-                           palette=self.palette.currentText(), accent=self.accent.value(), font_scale=self.font.value() / 100, density=self.density.currentText(),
-                           row_spacing=self.spacing.value(), sections=secs, scope_semester_id=self.scope_sem.currentData(), scope_year_id=self.scope_year.currentData(),
-                           scope_subject_id=self.scope_sub.currentData(), date_from=self.d_from.value(), date_to=self.d_to.value(), record_limit=self.limit.value(),
-                           notes=self.notes.toPlainText(), columns=dict(self.cfg.columns), widths=dict(self.cfg.widths), **{k: c.isChecked() for k, c in self.checks.items()})
+        secs = [
+            self.sections.item(i).data(Qt.ItemDataRole.UserRole)
+            for i in range(self.sections.count())
+            if self.sections.item(i).checkState() == Qt.CheckState.Checked
+        ]
+        cfg = ReportConfig(
+            kind=self.kind.currentData(),
+            title=self.title.text(),
+            subtitle=self.subtitle.text(),
+            paper=self.paper.currentText(),
+            orientation=self.orient.currentText(),
+            margins_mm=[m.value() for m in self.margins],
+            header_text=self.header.text(),
+            footer_text=self.footer.text(),
+            logo_path=self.logo.text().strip(),
+            palette=self.palette.currentText(),
+            accent=self.accent.value(),
+            font_scale=self.font.value() / 100,
+            density=self.density.currentText(),
+            row_spacing=self.spacing.value(),
+            sections=secs,
+            scope_semester_id=self.scope_sem.currentData(),
+            scope_year_id=self.scope_year.currentData(),
+            scope_subject_id=self.scope_sub.currentData(),
+            date_from=self.d_from.value(),
+            date_to=self.d_to.value(),
+            record_limit=self.limit.value(),
+            notes=self.notes.toPlainText(),
+            columns=dict(self.cfg.columns),
+            widths=dict(self.cfg.widths),
+            **{k: c.isChecked() for k, c in self.checks.items()},
+        )
         return cfg
 
     def apply(self, cfg: ReportConfig) -> None:
@@ -6641,7 +11442,13 @@ class ReportsPage(Page):
         self.kind.blockSignals(True)
         self.kind.setCurrentIndex(max(0, self.kind.findData(cfg.kind)))
         self.kind.blockSignals(False)
-        for w, v in ((self.title, cfg.title), (self.subtitle, cfg.subtitle), (self.header, cfg.header_text), (self.footer, cfg.footer_text), (self.logo, cfg.logo_path)):
+        for w, v in (
+            (self.title, cfg.title),
+            (self.subtitle, cfg.subtitle),
+            (self.header, cfg.header_text),
+            (self.footer, cfg.footer_text),
+            (self.logo, cfg.logo_path),
+        ):
             w.setText(v)
         self.paper.setCurrentText(cfg.paper)
         self.orient.setCurrentText(cfg.orientation)
@@ -6655,8 +11462,14 @@ class ReportsPage(Page):
         self.font.setValue(int(cfg.font_scale * 100))
         self.density.setCurrentText(cfg.density)
         self.spacing.setValue(cfg.row_spacing)
-        self._fill_sections(cfg.sections or REPORT_KINDS.get(cfg.kind, REPORT_KINDS["custom"])[1])
-        for combo, val in ((self.scope_sem, cfg.scope_semester_id), (self.scope_year, cfg.scope_year_id), (self.scope_sub, cfg.scope_subject_id)):
+        self._fill_sections(
+            cfg.sections or REPORT_KINDS.get(cfg.kind, REPORT_KINDS["custom"])[1]
+        )
+        for combo, val in (
+            (self.scope_sem, cfg.scope_semester_id),
+            (self.scope_year, cfg.scope_year_id),
+            (self.scope_sub, cfg.scope_subject_id),
+        ):
             combo.setCurrentIndex(max(0, combo.findData(val)))
         for w, v in ((self.d_from, cfg.date_from), (self.d_to, cfg.date_to)):
             d = parse_date(v)
@@ -6674,8 +11487,11 @@ class ReportsPage(Page):
         self.apply(cfg)
 
     def _fill_scopes(self) -> None:
-        for combo, items, label in ((self.scope_sem, self.ctx.repo.lookup("semesters"), "All semesters"), (self.scope_year, self.ctx.repo.lookup("academic_years"), "All years"),
-                                    (self.scope_sub, self.ctx.repo.lookup("subjects"), "All subjects")):
+        for combo, items, label in (
+            (self.scope_sem, self.ctx.repo.lookup("semesters"), "All semesters"),
+            (self.scope_year, self.ctx.repo.lookup("academic_years"), "All years"),
+            (self.scope_sub, self.ctx.repo.lookup("subjects"), "All subjects"),
+        ):
             combo.blockSignals(True)
             combo.clear()
             combo.addItem(label, None)
@@ -6704,13 +11520,24 @@ class ReportsPage(Page):
     def _preset_menu(self, anchor: Any) -> None:
         m, p = QMenu(self), self._presets()
         for name in p:
-            add_action(m, name, lambda n=name: self.apply(ReportConfig.from_json(json.dumps(p[n]))))
+            add_action(
+                m,
+                name,
+                lambda n=name: self.apply(ReportConfig.from_json(json.dumps(p[n]))),
+            )
         if not p:
             add_action(m, "(no saved presets)", lambda: None, enabled=False)
         else:
             dm = m.addMenu("Delete preset")
             for name in p:
-                add_action(dm, name, lambda n=name: (p.pop(n, None), self.ctx.settings.set("report_presets", p)))
+                add_action(
+                    dm,
+                    name,
+                    lambda n=name: (
+                        p.pop(n, None),
+                        self.ctx.settings.set("report_presets", p),
+                    ),
+                )
         m.exec(anchor.mapToGlobal(anchor.rect().bottomLeft()))
 
     # ---- actions -------------------------------------------------------------
@@ -6742,11 +11569,24 @@ class ReportsPage(Page):
         def done(res: list) -> None:
             self._busy(False)
             plan, scope, warns = res
-            lines = [f"{cfg.paper} {cfg.orientation} · scope: {scope}", ""] + [f"{i}. {title} — {n} record(s)" for i, (_, title, n) in enumerate(plan, 1)]
+            lines = [f"{cfg.paper} {cfg.orientation} · scope: {scope}", ""] + [
+                f"{i}. {title} — {n} record(s)"
+                for i, (_, title, n) in enumerate(plan, 1)
+            ]
             if cfg.cover_page:
                 lines.insert(2, "Cover page")
-            self.summary.setPlainText("\n".join(lines + [""] + [f"⚠ {w}" for w in warns]))
-        self.run_task(job, done, on_fail=lambda m: (self._busy(False), tell(self, "Preview failed", m, True)))
+            self.summary.setPlainText(
+                "\n".join(lines + [""] + [f"⚠ {w}" for w in warns])
+            )
+
+        self.run_task(
+            job,
+            done,
+            on_fail=lambda m: (
+                self._busy(False),
+                tell(self, "Preview failed", m, True),
+            ),
+        )
 
     def generate(self, preview: bool) -> None:
         cfg = self.read()
@@ -6755,9 +11595,20 @@ class ReportsPage(Page):
         except ValidationError as exc:
             return tell(self, "Please check", str(exc))
         if preview:
-            out = str(Path(tempfile.gettempdir()) / f"study_space_preview_{uuid.uuid4().hex[:6]}.pdf")
+            out = str(
+                Path(tempfile.gettempdir())
+                / f"study_space_preview_{uuid.uuid4().hex[:6]}.pdf"
+            )
         else:
-            out, _ = QFileDialog.getSaveFileName(self, "Save PDF report", str(Path.home() / f"{(cfg.title or REPORT_KINDS[cfg.kind][0]).replace(' ', '_')}.pdf"), "PDF files (*.pdf)")
+            out, _ = QFileDialog.getSaveFileName(
+                self,
+                "Save PDF report",
+                str(
+                    Path.home()
+                    / f"{(cfg.title or REPORT_KINDS[cfg.kind][0]).replace(' ', '_')}.pdf"
+                ),
+                "PDF files (*.pdf)",
+            )
             if not out:
                 return
             out = out if out.lower().endswith(".pdf") else out + ".pdf"
@@ -6774,16 +11625,41 @@ class ReportsPage(Page):
         def done(res: dict) -> None:
             self._busy(False)
             warn = ("\n⚠ " + "\n⚠ ".join(res["warnings"])) if res["warnings"] else ""
-            self.status.setText(f"Saved {res['pages']} page(s), {res['bytes'] / 1024:,.0f} KB → {res['path']}{warn}")
-            if preview or confirm(self, "Report created", f"{res['pages']} page(s) saved.\n\nOpen it now?"):
+            self.status.setText(
+                f"Saved {res['pages']} page(s), {res['bytes'] / 1024:,.0f} KB → {res['path']}{warn}"
+            )
+            if preview or confirm(
+                self, "Report created", f"{res['pages']} page(s) saved.\n\nOpen it now?"
+            ):
                 QDesktopServices.openUrl(QUrl.fromLocalFile(res["path"]))
-        self.run_task(job, done, lambda p, m: (self.progress.setValue(p), self.status.setText(m)),
-                      lambda m: (self._busy(False), self.status.setText(f"Failed: {m}"), tell(self, "The report could not be created", f"{m}\n\nNo partial file was left behind.", True)))
+
+        self.run_task(
+            job,
+            done,
+            lambda p, m: (self.progress.setValue(p), self.status.setText(m)),
+            lambda m: (
+                self._busy(False),
+                self.status.setText(f"Failed: {m}"),
+                tell(
+                    self,
+                    "The report could not be created",
+                    f"{m}\n\nNo partial file was left behind.",
+                    True,
+                ),
+            ),
+        )
 
 
 def make_attendance_page(ctx: UiContext) -> TabsPage:
-    return TabsPage(ctx, "Attendance", "Subject-wise attendance with targets, shortage alerts and how many classes you need to recover.",
-                    [("Overview", AttendanceOverview(ctx)), ("Attendance log", EntityPage(ctx, "attendance"))])
+    return TabsPage(
+        ctx,
+        "Attendance",
+        "Subject-wise attendance with targets, shortage alerts and how many classes you need to recover.",
+        [
+            ("Overview", AttendanceOverview(ctx)),
+            ("Attendance log", EntityPage(ctx, "attendance")),
+        ],
+    )
 
 
 # ---- settings ---------------------------------------------------------------------------------------------------------------------------
@@ -6796,7 +11672,12 @@ class SettingsPage(Page):
         body.setObjectName("PageBody")
         lay = QVBoxLayout(body)
         lay.setContentsMargins(22, 18, 22, 22)
-        lay.addWidget(page_header("Settings", "Appearance, study goals, academic rules, dashboard layout and your data."))
+        lay.addWidget(
+            page_header(
+                "Settings",
+                "Appearance, study goals, academic rules, dashboard layout and your data.",
+            )
+        )
         self.grid = CardGrid(430)
         lay.addWidget(self.grid)
         lay.addStretch(1)
@@ -6815,7 +11696,12 @@ class SettingsPage(Page):
         s.setRange(lo, hi)
         s.setSuffix(suffix)
         s.setValue(int(self.ctx.settings.get_float(key, lo)))
-        s.valueChanged.connect(lambda v, k=key: (self.ctx.settings.set(k, v), self.ctx.core.bus.notify("settings")))
+        s.valueChanged.connect(
+            lambda v, k=key: (
+                self.ctx.settings.set(k, v),
+                self.ctx.core.bus.notify("settings"),
+            )
+        )
         return s
 
     def _set(self, **kv: Any) -> None:
@@ -6827,13 +11713,21 @@ class SettingsPage(Page):
         self.profile_label = make_label("", "Muted", True)
         theme = QComboBox()
         theme.addItems(["Light", "Dark", "System"])
-        theme.setCurrentText(s.get("theme").title() if s.get("theme").lower() in ("light", "dark", "system") else "Light")
+        theme.setCurrentText(
+            s.get("theme").title()
+            if s.get("theme").lower() in ("light", "dark", "system")
+            else "Light"
+        )
         theme.currentTextChanged.connect(lambda v: self._set(theme=v))
         accent = QComboBox()
         accent.addItems(list(ACCENTS))
         accent.setCurrentText(s.get("accent") if s.get("accent") in ACCENTS else "Blue")
-        accent.currentTextChanged.connect(lambda v: self._set(accent=v, accent_custom=""))
-        custom = ColorButton(s.get("accent_custom") or ACCENTS.get(s.get("accent"), "#2F5FCB"))
+        accent.currentTextChanged.connect(
+            lambda v: self._set(accent=v, accent_custom="")
+        )
+        custom = ColorButton(
+            s.get("accent_custom") or ACCENTS.get(s.get("accent"), "#2F5FCB")
+        )
         custom.on_change = lambda hx: self._set(accent_custom=hx)
         font = QSpinBox()
         font.setRange(8, 18)
@@ -6841,23 +11735,48 @@ class SettingsPage(Page):
         font.valueChanged.connect(lambda v: self._set(font_size=v))
         dens = QComboBox()
         dens.addItems(list(DENSITY))
-        dens.setCurrentText(s.get("density") if s.get("density") in DENSITY else "Comfortable")
+        dens.setCurrentText(
+            s.get("density") if s.get("density") in DENSITY else "Comfortable"
+        )
         dens.currentTextChanged.connect(lambda v: self._set(density=v))
         tcol = s.get_json("table_colors", {}) or {}
         scol = s.get_json("status_colors", {}) or {}
         th = c.theme
+
         def color_rows(store: dict, keys: dict, setting: str, defaults: dict) -> list:
             out = []
             for k, label in keys.items():
                 b = ColorButton(store.get(k) or defaults.get(k, "#888888"))
-                b.on_change = lambda hx, kk=k, st=store, sn=setting: (st.__setitem__(kk, hx), self._set(**{sn: dict(st)}))
+                b.on_change = lambda hx, kk=k, st=store, sn=setting: (
+                    st.__setitem__(kk, hx),
+                    self._set(**{sn: dict(st)}),
+                )
                 out.append((label, b))
             return out
-        t_defaults = {"header_bg": th.t["t_header_bg"], "header_fg": th.t["t_header_fg"], "alt_row": th.t["t_alt"], "selected": th.t["t_sel"], "grid": th.t["t_grid"], "highlight": th.t["t_hover"]}
-        reset = make_button("Reset table & status colours", lambda: (self._set(table_colors="", status_colors=""), self.refresh()))
-        goals = [("Daily study goal", self._spin("daily_goal", 15, 1440, " min")), ("Focus session", self._spin("pomodoro_work", 5, 120, " min")),
-                 ("Short break", self._spin("pomodoro_short", 1, 60, " min")), ("Long break", self._spin("pomodoro_long", 5, 120, " min")),
-                 ("Minimum attendance (default)", self._spin("attendance_min", 1, 100, " %")), ("Low-marks highlight below", self._spin("low_mark_pct", 1, 100, " %"))]
+
+        t_defaults = {
+            "header_bg": th.t["t_header_bg"],
+            "header_fg": th.t["t_header_fg"],
+            "alt_row": th.t["t_alt"],
+            "selected": th.t["t_sel"],
+            "grid": th.t["t_grid"],
+            "highlight": th.t["t_hover"],
+        }
+        reset = make_button(
+            "Reset table & status colours",
+            lambda: (self._set(table_colors="", status_colors=""), self.refresh()),
+        )
+        goals = [
+            ("Daily study goal", self._spin("daily_goal", 15, 1440, " min")),
+            ("Focus session", self._spin("pomodoro_work", 5, 120, " min")),
+            ("Short break", self._spin("pomodoro_short", 1, 60, " min")),
+            ("Long break", self._spin("pomodoro_long", 5, 120, " min")),
+            (
+                "Minimum attendance (default)",
+                self._spin("attendance_min", 1, 100, " %"),
+            ),
+            ("Low-marks highlight below", self._spin("low_mark_pct", 1, 100, " %")),
+        ]
         panels = QWidget()
         pl = QVBoxLayout(panels)
         keep = s.get_json("dashboard_panels", None) or list(DASH_PANELS)
@@ -6874,32 +11793,126 @@ class SettingsPage(Page):
         auto.toggled.connect(lambda v: s.set("auto_backup", "1" if v else "0"))
         data_btns = QWidget()
         dl = QGridLayout(data_btns)
-        for i, (text, fn) in enumerate((("Back up now…", self.backup), ("Restore from backup…", self.restore), ("Open data folder", self.open_folder),
-                                         ("Check database integrity", self.check), ("Export all tables (CSV)…", self.export_all))):
+        for i, (text, fn) in enumerate(
+            (
+                ("Back up now…", self.backup),
+                ("Restore from backup…", self.restore),
+                ("Open data folder", self.open_folder),
+                ("Check database integrity", self.check),
+                ("Export all tables (CSV)…", self.export_all),
+            )
+        ):
             dl.addWidget(make_button(text, fn), i // 2, i % 2)
-        self.grid.set_cards([
-            self._group("Student", [("", self.profile_label), ("", make_button("Edit student profile…", self.edit_profile, "Primary")),
-                                    ("", make_button("Academic structure setup…", lambda: c.go("structure")))]),
-            self._group("Appearance", [("Theme", theme), ("Accent colour", accent), ("Custom accent", custom), ("Font size", font), ("Layout density", dens)]),
-            self._group("Table colours", color_rows(tcol, TABLE_COLOR_KEYS, "table_colors", t_defaults) + [("", reset)]),
-            self._group("Status colours", color_rows(scol, STATUS_COLOR_KEYS, "status_colors", {k: th.t[k] for k in STATUS_COLOR_KEYS})),
-            self._group("Study, attendance & marks", goals),
-            self._group("Academic rules", [("", make_button("Grading, credits & SGPA/CGPA rules…", self.grading, "Primary"))]),
-            self._group("Dashboard panels", [("", panels)]),
-            self._group("Data & backup", [("", auto), ("Keep automatic backups", self._spin("backup_keep", 3, 90)), ("", data_btns), ("", self.info)]),
-            self._group("About", [("", make_label(f"{APP_NAME} {APP_VERSION}\nOffline · data stored locally in SQLite.\nShortcuts: Ctrl+1…9 pages · Ctrl+N new record · Ctrl+F search · "
-                                                  "F5 refresh · Ctrl+B backup · Ctrl+R reports · Ctrl+Shift+N quick add", "Muted", True))]),
-        ])
+        self.grid.set_cards(
+            [
+                self._group(
+                    "Student",
+                    [
+                        ("", self.profile_label),
+                        (
+                            "",
+                            make_button(
+                                "Edit student profile…", self.edit_profile, "Primary"
+                            ),
+                        ),
+                        (
+                            "",
+                            make_button(
+                                "Academic structure setup…", lambda: c.go("structure")
+                            ),
+                        ),
+                    ],
+                ),
+                self._group(
+                    "Appearance",
+                    [
+                        ("Theme", theme),
+                        ("Accent colour", accent),
+                        ("Custom accent", custom),
+                        ("Font size", font),
+                        ("Layout density", dens),
+                    ],
+                ),
+                self._group(
+                    "Table colours",
+                    color_rows(tcol, TABLE_COLOR_KEYS, "table_colors", t_defaults)
+                    + [("", reset)],
+                ),
+                self._group(
+                    "Status colours",
+                    color_rows(
+                        scol,
+                        STATUS_COLOR_KEYS,
+                        "status_colors",
+                        {k: th.t[k] for k in STATUS_COLOR_KEYS},
+                    ),
+                ),
+                self._group("Study, attendance & marks", goals),
+                self._group(
+                    "Academic rules",
+                    [
+                        (
+                            "",
+                            make_button(
+                                "Grading, credits & SGPA/CGPA rules…",
+                                self.grading,
+                                "Primary",
+                            ),
+                        )
+                    ],
+                ),
+                self._group("Dashboard panels", [("", panels)]),
+                self._group(
+                    "Data & backup",
+                    [
+                        ("", auto),
+                        ("Keep automatic backups", self._spin("backup_keep", 3, 90)),
+                        ("", data_btns),
+                        ("", self.info),
+                    ],
+                ),
+                self._group(
+                    "About",
+                    [
+                        (
+                            "",
+                            make_label(
+                                f"{APP_NAME} {APP_VERSION}\nOffline · data stored locally in SQLite.\nShortcuts: Ctrl+1…9 pages · Ctrl+N new record · Ctrl+F search · "
+                                "F5 refresh · Ctrl+B backup · Ctrl+R reports · Ctrl+Shift+N quick add",
+                                "Muted",
+                                True,
+                            ),
+                        )
+                    ],
+                ),
+            ]
+        )
 
     def _save_panels(self) -> None:
-        self.ctx.settings.set("dashboard_panels", [k for k, cb in self.panel_checks.items() if cb.isChecked()])
+        self.ctx.settings.set(
+            "dashboard_panels",
+            [k for k, cb in self.panel_checks.items() if cb.isChecked()],
+        )
         self.ctx.core.bus.notify("settings")
 
     def refresh(self) -> None:
         p = self.ctx.repo.profile()
-        self.profile_label.setText(" · ".join(x for x in (p.get("student_name"), p.get("roll_no"), p.get("college_name")) if x) or "Profile not completed yet.")
+        self.profile_label.setText(
+            " · ".join(
+                x
+                for x in (
+                    p.get("student_name"),
+                    p.get("roll_no"),
+                    p.get("college_name"),
+                )
+                if x
+            )
+            or "Profile not completed yet."
+        )
         i = self.ctx.core.info()
-        self.info.setText(f"{i['path']}\n{i['size'] / 1024:,.0f} KB · schema v{i['schema']} · integrity: {i['integrity']} · foreign-key issues: {i['fk_problems']}")
+        self.info.setText(
+            f"{i['path']}\n{i['size'] / 1024:,.0f} KB · schema v{i['schema']} · integrity: {i['integrity']} · foreign-key issues: {i['fk_problems']}"
+        )
 
     def edit_profile(self) -> None:
         if ProfileDialog(self.ctx, self).exec():
@@ -6912,61 +11925,109 @@ class SettingsPage(Page):
 
     def backup(self) -> None:
         name = f"study_space_backup_{datetime.now():%Y%m%d_%H%M}.db"
-        dest, _ = QFileDialog.getSaveFileName(self, "Back up the database", str(Path.home() / name), "Study Space backup (*.db)")
+        dest, _ = QFileDialog.getSaveFileName(
+            self,
+            "Back up the database",
+            str(Path.home() / name),
+            "Study Space backup (*.db)",
+        )
         if not dest:
             return
         path, root = self.ctx.core.db_path, self.ctx.core.backups.root
+
         def job(progress: Callable) -> str:
             rc = ReadCore(path)
             try:
                 return str(BackupManager(root).create(rc.db, dest, kind="manual"))
             finally:
                 rc.close()
-        self.run_task(job, lambda out: tell(self, "Backup complete", f"Verified backup saved to:\n{out}"),
-                      on_fail=lambda m: tell(self, "Backup failed", f"{m}\n\nNothing was overwritten.", True))
+
+        self.run_task(
+            job,
+            lambda out: tell(
+                self, "Backup complete", f"Verified backup saved to:\n{out}"
+            ),
+            on_fail=lambda m: tell(
+                self, "Backup failed", f"{m}\n\nNothing was overwritten.", True
+            ),
+        )
 
     def restore(self) -> None:
-        src, _ = QFileDialog.getOpenFileName(self, "Choose a backup to restore", str(Path.home()), "Study Space backup (*.db);;All files (*)")
+        src, _ = QFileDialog.getOpenFileName(
+            self,
+            "Choose a backup to restore",
+            str(Path.home()),
+            "Study Space backup (*.db);;All files (*)",
+        )
         if not src:
             return
         try:
             info = inspect_database_file(src)
         except BackupError as exc:
             return tell(self, "Not a valid backup", str(exc), True)
-        counts = ", ".join(f"{n} {k.replace('_', ' ')}" for k, n in info["counts"].items())
-        if not confirm(self, "Restore backup", f"Replace ALL current data with this backup?\n\nIt contains: {counts}.\n\n"
-                                               "A safety copy of your current data is saved first, and automatically put back if anything fails.", True):
+        counts = ", ".join(
+            f"{n} {k.replace('_', ' ')}" for k, n in info["counts"].items()
+        )
+        if not confirm(
+            self,
+            "Restore backup",
+            f"Replace ALL current data with this backup?\n\nIt contains: {counts}.\n\n"
+            "A safety copy of your current data is saved first, and automatically put back if anything fails.",
+            True,
+        ):
             return
         QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
         try:
             safety = self.ctx.core.restore(src)
         except Exception as exc:
             QApplication.restoreOverrideCursor()
-            return tell(self, "Restore failed", f"{exc}\n\nYour previous data is unchanged.", True)
+            return tell(
+                self,
+                "Restore failed",
+                f"{exc}\n\nYour previous data is unchanged.",
+                True,
+            )
         QApplication.restoreOverrideCursor()
         self.ctx.win.rebuild_scope()
         self.ctx.win.apply_theme()
-        tell(self, "Restore complete", f"Backup restored. Your previous data was saved to:\n{safety}")
+        tell(
+            self,
+            "Restore complete",
+            f"Backup restored. Your previous data was saved to:\n{safety}",
+        )
 
     def open_folder(self) -> None:
         QDesktopServices.openUrl(QUrl.fromLocalFile(str(self.ctx.core.db_path.parent)))
 
     def check(self) -> None:
         i = self.ctx.core.info()
-        tell(self, "Database check", f"Integrity: {i['integrity']}\nForeign-key issues: {i['fk_problems']}\nSchema version: {i['schema']}\nFile: {i['path']}")
+        tell(
+            self,
+            "Database check",
+            f"Integrity: {i['integrity']}\nForeign-key issues: {i['fk_problems']}\nSchema version: {i['schema']}\nFile: {i['path']}",
+        )
 
     def export_all(self) -> None:
-        folder = QFileDialog.getExistingDirectory(self, "Export every table to CSV files in…", str(Path.home()))
+        folder = QFileDialog.getExistingDirectory(
+            self, "Export every table to CSV files in…", str(Path.home())
+        )
         if not folder:
             return
+
         def run() -> int:
             n = 0
             for ent in ENTITY_LIST:
                 rows = self.ctx.repo.rows(ent)
                 rs = RowSet(ent.columns, rows)
-                export_csv(Path(folder) / f"{ent.table}.csv", rs, rows, [c.key for c in ent.columns])
+                export_csv(
+                    Path(folder) / f"{ent.table}.csv",
+                    rs,
+                    rows,
+                    [c.key for c in ent.columns],
+                )
                 n += 1
             return n
+
         n = self.ctx.guard(self, run)
         if n:
             tell(self, "Export complete", f"{n} files written to:\n{folder}")
@@ -6975,15 +12036,46 @@ class SettingsPage(Page):
 # ════════════════════════════════════════════════════════════════════════════
 # 11 · QT LAYER III — main window
 # ════════════════════════════════════════════════════════════════════════════
-NAV = [("dashboard", "Overview", "⌂", ""), ("structure", "Academic structure", "❖", "ACADEMICS"), ("subjects", "Subjects & syllabus", "☰", ""),
-       ("history", "Semester history", "⌛", ""), ("assignments", "Assignments", "✎", "COURSEWORK"), ("exams", "Exams & results", "▥", ""),
-       ("attendance", "Attendance", "☑", ""), ("projects", "Projects & labs", "⚑", ""), ("study", "Study hub", "◔", "STUDY"), ("focus", "Focus room", "◎", ""),
-       ("resources", "Notes & documents", "✉", ""), ("analytics", "Analytics", "⌁", "INSIGHTS"), ("reports", "PDF reports", "▤", ""), ("settings", "Settings", "⚙", "SYSTEM")]
+NAV = [
+    ("dashboard", "Overview", "⌂", ""),
+    ("structure", "Academic structure", "❖", "ACADEMICS"),
+    ("subjects", "Subjects & syllabus", "☰", ""),
+    ("history", "Semester history", "⌛", ""),
+    ("assignments", "Assignments", "✎", "COURSEWORK"),
+    ("exams", "Exams & results", "▥", ""),
+    ("attendance", "Attendance", "☑", ""),
+    ("projects", "Projects & labs", "⚑", ""),
+    ("study", "Study hub", "◔", "STUDY"),
+    ("focus", "Focus room", "◎", ""),
+    ("resources", "Notes & documents", "✉", ""),
+    ("analytics", "Analytics", "⌁", "INSIGHTS"),
+    ("reports", "PDF reports", "▤", ""),
+    ("settings", "Settings", "⚙", "SYSTEM"),
+]
 FACTORIES: dict[str, Callable[[UiContext], Page]] = {
-    "dashboard": DashboardPage, "structure": StructurePage, "subjects": make_subjects_page, "history": HistoryPage, "assignments": AssignmentsPage,
-    "exams": ExamsPage, "attendance": make_attendance_page, "projects": make_projects_page, "study": make_study_page, "focus": FocusPage,
-    "resources": make_resources_page, "analytics": AnalyticsPage, "reports": ReportsPage, "settings": SettingsPage}
-QUICK_ADD = [("Assignment", "assignments"), ("Planner task", "planner_tasks"), ("Study session", "study_sessions"), ("Assessment / marks", "marks"), ("Exam", "exams"), ("Note", "notes")]
+    "dashboard": DashboardPage,
+    "structure": StructurePage,
+    "subjects": make_subjects_page,
+    "history": HistoryPage,
+    "assignments": AssignmentsPage,
+    "exams": ExamsPage,
+    "attendance": make_attendance_page,
+    "projects": make_projects_page,
+    "study": make_study_page,
+    "focus": FocusPage,
+    "resources": make_resources_page,
+    "analytics": AnalyticsPage,
+    "reports": ReportsPage,
+    "settings": SettingsPage,
+}
+QUICK_ADD = [
+    ("Assignment", "assignments"),
+    ("Planner task", "planner_tasks"),
+    ("Study session", "study_sessions"),
+    ("Assessment / marks", "marks"),
+    ("Exam", "exams"),
+    ("Note", "notes"),
+]
 
 
 def system_is_dark() -> bool:
@@ -6991,15 +12083,31 @@ def system_is_dark() -> bool:
         return QGuiApplication.styleHints().colorScheme() == Qt.ColorScheme.Dark
     except Exception:
         try:
-            return QApplication.palette().color(QPalette.ColorRole.Window).lightness() < 128
+            return (
+                QApplication.palette().color(QPalette.ColorRole.Window).lightness()
+                < 128
+            )
         except Exception:
             return False
 
 
 def build_palette(t: Theme) -> "QPalette":
     pal, R, C = QPalette(), QPalette.ColorRole, QColor
-    for role, tok in ((R.Window, "bg"), (R.WindowText, "text"), (R.Base, "input"), (R.AlternateBase, "t_alt"), (R.Text, "text"), (R.Button, "panel_alt"), (R.ButtonText, "text"),
-                      (R.ToolTipBase, "side"), (R.ToolTipText, "panel"), (R.PlaceholderText, "placeholder"), (R.Highlight, "t_sel"), (R.HighlightedText, "t_sel_fg"), (R.Link, "accent_text")):
+    for role, tok in (
+        (R.Window, "bg"),
+        (R.WindowText, "text"),
+        (R.Base, "input"),
+        (R.AlternateBase, "t_alt"),
+        (R.Text, "text"),
+        (R.Button, "panel_alt"),
+        (R.ButtonText, "text"),
+        (R.ToolTipBase, "side"),
+        (R.ToolTipText, "panel"),
+        (R.PlaceholderText, "placeholder"),
+        (R.Highlight, "t_sel"),
+        (R.HighlightedText, "t_sel_fg"),
+        (R.Link, "accent_text"),
+    ):
         pal.setColor(role, C(t.t[tok] if tok != "panel" else "#FFFFFF"))
     pal.setColor(QPalette.ColorGroup.Disabled, R.Text, C(t.t["disabled"]))
     pal.setColor(QPalette.ColorGroup.Disabled, R.ButtonText, C(t.t["disabled"]))
@@ -7091,7 +12199,9 @@ class MainWindow(QMainWindow):
         row.addWidget(make_label("Viewing:", "Muted"))
         self.scope = QComboBox()
         self.scope.setMinimumWidth(210)
-        self.scope.setToolTip("Every page shows records for this semester. Choose “All semesters” for the full history.")
+        self.scope.setToolTip(
+            "Every page shows records for this semester. Choose “All semesters” for the full history."
+        )
         self.scope.activated.connect(lambda _i: self._scope_changed())
         row.addWidget(self.scope)
         add = QToolButton()
@@ -7115,13 +12225,22 @@ class MainWindow(QMainWindow):
     def _shortcuts(self) -> None:
         def sc(seq: str, fn: Callable) -> None:
             QShortcut(QKeySequence(seq), self).activated.connect(fn)
+
         for i, (key, *_r) in enumerate(NAV[:9], 1):
             sc(f"Ctrl+{i}", lambda k=key: self.navigate(k))
         sc("Ctrl+,", lambda: self.navigate("settings"))
         sc("Ctrl+R", lambda: self.navigate("reports"))
         sc("F5", self.refresh_current)
-        sc("Ctrl+B", lambda: (self.navigate("settings"), self.page("settings").backup()))
-        sc("Ctrl+Shift+N", lambda: self.add_menu.exec(self.add_btn.mapToGlobal(self.add_btn.rect().bottomLeft())))
+        sc(
+            "Ctrl+B",
+            lambda: (self.navigate("settings"), self.page("settings").backup()),
+        )
+        sc(
+            "Ctrl+Shift+N",
+            lambda: self.add_menu.exec(
+                self.add_btn.mapToGlobal(self.add_btn.rect().bottomLeft())
+            ),
+        )
 
     # ---- navigation ------------------------------------------------------------------
     def page(self, key: str) -> Page:
@@ -7138,9 +12257,14 @@ class MainWindow(QMainWindow):
             page = self.page(key)
         except Exception as exc:
             LOG.exception("Page %s failed to open", key)
-            return tell(self, "Could not open this page", f"{exc}\n\nDetails were written to the log file.", True)
+            return tell(
+                self,
+                "Could not open this page",
+                f"{exc}\n\nDetails were written to the log file.",
+                True,
+            )
         self.current = key
-        page.dirty = False                      # we refresh explicitly below (showEvent must not repeat it)
+        page.dirty = False  # we refresh explicitly below (showEvent must not repeat it)
         self.stack.setCurrentWidget(page)
         for k, b in self.nav.items():
             b.setProperty("active", k == key)
@@ -7165,7 +12289,9 @@ class MainWindow(QMainWindow):
         self.scope.addItem("All semesters", "all")
         for name, sid in repo.lookup("semesters"):
             self.scope.addItem(name, str(sid))
-        self.scope.setCurrentIndex(max(0, self.scope.findData(s.get("scope_semester") or "current")))
+        self.scope.setCurrentIndex(
+            max(0, self.scope.findData(s.get("scope_semester") or "current"))
+        )
         self.scope.blockSignals(False)
         self._on_change({"settings"})
 
@@ -7181,7 +12307,9 @@ class MainWindow(QMainWindow):
         self._refresh_timer.start(90)
 
     def _do_refresh(self) -> None:
-        structural = bool(self._pending & {"semesters", "programmes", "academic_years", "*"})
+        structural = bool(
+            self._pending & {"semesters", "programmes", "academic_years", "*"}
+        )
         self._pending.clear()
         for k, p in self.pages.items():
             p.mark_dirty()
@@ -7203,15 +12331,29 @@ class MainWindow(QMainWindow):
         self.alert_menu.clear()
         alerts = self.core.analytics.alerts(self.ctx.scope())
         if not alerts:
-            add_action(self.alert_menu, "Nothing needs attention right now ✔", lambda: None, enabled=False)
+            add_action(
+                self.alert_menu,
+                "Nothing needs attention right now ✔",
+                lambda: None,
+                enabled=False,
+            )
         mark = {"danger": "✖", "warning": "⚠", "info": "•"}
         for a in alerts:
-            add_action(self.alert_menu, f"{mark.get(a.severity, '•')}  {a.title}" + (f" — {a.detail}" if a.detail else ""), lambda p=a.page: self.navigate(p))
+            add_action(
+                self.alert_menu,
+                f"{mark.get(a.severity, '•')}  {a.title}"
+                + (f" — {a.detail}" if a.detail else ""),
+                lambda p=a.page: self.navigate(p),
+            )
 
     # ---- actions --------------------------------------------------------------------------------------
     def quick_add(self, table: str) -> None:
         sid = self.ctx.scope()
-        defaults = {"semester_id": sid} if sid and any(f.key == "semester_id" for f in ENTITIES[table].fields) else {}
+        defaults = (
+            {"semester_id": sid}
+            if sid and any(f.key == "semester_id" for f in ENTITIES[table].fields)
+            else {}
+        )
         if RecordDialog(self.ctx, table, None, defaults, self).exec():
             self.ctx.toast(f"{ENTITIES[table].singular} added.")
 
@@ -7220,7 +12362,11 @@ class MainWindow(QMainWindow):
 
     def _first_run(self) -> None:
         if self.core.db.scalar("SELECT COUNT(*) FROM semesters", default=0) == 0:
-            if confirm(self, "Welcome to Study Space Pro", "Let's set up your academic structure (degree, years and semesters).\n\nSet it up now?"):
+            if confirm(
+                self,
+                "Welcome to Study Space Pro",
+                "Let's set up your academic structure (degree, years and semesters).\n\nSet it up now?",
+            ):
                 self.navigate("structure")
                 self.page("structure").wizard()
             else:
@@ -7248,11 +12394,23 @@ class MainWindow(QMainWindow):
         for cap in self.captions:
             cap.setVisible(not compact)
         for b in self.nav.values():
-            b.setText(b.property("glyph") if compact else f"{b.property('glyph')}   {b.property('label')}")
+            b.setText(
+                b.property("glyph")
+                if compact
+                else f"{b.property('glyph')}   {b.property('label')}"
+            )
 
     def closeEvent(self, event: Any) -> None:
         focus = self.pages.get("focus")
-        if focus and getattr(focus, "running", False) and not confirm(self, "Focus session running", "A focus session is still running. Quit and discard it?"):
+        if (
+            focus
+            and getattr(focus, "running", False)
+            and not confirm(
+                self,
+                "Focus session running",
+                "A focus session is still running. Quit and discard it?",
+            )
+        ):
             event.ignore()
             return
         try:
@@ -7267,17 +12425,29 @@ class MainWindow(QMainWindow):
 def dependency_report() -> list[str]:
     out = [f"Python {sys.version.split()[0]}", f"SQLite {sqlite3.sqlite_version}"]
     out.append("PySide6: OK" if HAS_QT else "PySide6: MISSING  → pip install PySide6")
-    out.append("ReportLab: OK" if HAS_REPORTLAB else "ReportLab: MISSING  → pip install reportlab")
-    out.append("uharfbuzz: installed (Hindi/Indic shaping in PDFs)" if HAS_SHAPING else "uharfbuzz: not installed (optional; improves Hindi/Indic text in PDFs → pip install uharfbuzz)")
+    out.append(
+        "ReportLab: OK"
+        if HAS_REPORTLAB
+        else "ReportLab: MISSING  → pip install reportlab"
+    )
+    out.append(
+        "uharfbuzz: installed (Hindi/Indic shaping in PDFs)"
+        if HAS_SHAPING
+        else "uharfbuzz: not installed (optional; improves Hindi/Indic text in PDFs → pip install uharfbuzz)"
+    )
     return out
 
 
 def run_gui(db_path: Optional[str]) -> int:
     if not HAS_QT:
-        print("Study Space Pro needs PySide6 for its window.\n  pip install PySide6\nThen run this file again.  (python study_space.py --check shows what is missing.)")
+        print(
+            "Study Space Pro needs PySide6 for its window.\n  pip install PySide6\nThen run this file again.  (python study_space.py --check shows what is missing.)"
+        )
         return 2
     try:
-        QApplication.setHighDpiScaleFactorRoundingPolicy(Qt.HighDpiScaleFactorRoundingPolicy.PassThrough)
+        QApplication.setHighDpiScaleFactorRoundingPolicy(
+            Qt.HighDpiScaleFactorRoundingPolicy.PassThrough
+        )
     except Exception:
         pass
     app = QApplication(sys.argv)
@@ -7289,15 +12459,24 @@ def run_gui(db_path: Optional[str]) -> int:
     def hook(exc_type: Any, exc: Any, tb: Any) -> None:
         LOG.critical("Unhandled exception", exc_info=(exc_type, exc, tb))
         try:
-            QMessageBox.critical(None, "Unexpected error", f"{exc}\n\nThe details were written to study_space_pro.log. Your data is safe.")
+            QMessageBox.critical(
+                None,
+                "Unexpected error",
+                f"{exc}\n\nThe details were written to study_space_pro.log. Your data is safe.",
+            )
         except Exception:
             pass
+
     sys.excepthook = hook
     try:
         core = AppCore(data_dir, db_path)
     except Exception as exc:
         LOG.exception("Start-up failed")
-        QMessageBox.critical(None, "Study Space Pro could not start", f"{exc}\n\nNo data was lost. Backups are in:\n{data_dir / 'backups'}")
+        QMessageBox.critical(
+            None,
+            "Study Space Pro could not start",
+            f"{exc}\n\nNo data was lost. Backups are in:\n{data_dir / 'backups'}",
+        )
         return 1
     note = " ".join(x for x in (core.housekeeping(), *core.db.migration_log[-1:]) if x)
     if not HAS_REPORTLAB:
@@ -7310,7 +12489,7 @@ def run_gui(db_path: Optional[str]) -> int:
 class StudySpaceTests(unittest.TestCase):
     """Automated checks. Run:  python study_space.py --selftest   (GUI checks run when PySide6 is installed)."""
 
-    counts = [0, 0]   # checks, failures
+    counts = [0, 0]  # checks, failures
 
     def ok(self, name: str, cond: Any, extra: Any = "") -> None:
         StudySpaceTests.counts[0] += 1
@@ -7340,23 +12519,77 @@ class StudySpaceTests(unittest.TestCase):
         con = sqlite3.connect(path)
         for ddl in BASELINE_DDL:
             con.execute(ddl)
-        con.execute("INSERT INTO settings VALUES('schema_version','2.5.0'),('semester_name','B.Tech — Semester 1')")
-        con.execute("INSERT INTO semesters(name,start_date,end_date,is_active) VALUES('B.Tech — Semester 1','2024-08-01','2024-12-20',1),('B.Tech — Semester 2','2025-01-10','2025-05-30',0)")
-        subs = [("Engineering Mathematics II", "BAS-203"), ("Data Structures & Algorithms using C++ (Advanced Laboratory Practice and Viva-Voce)", "BCS-301"),
-                ("हिन्दी भाषा एवं संचार", "BAS-101"), ("Physics", "BAS-102")]
+        con.execute(
+            "INSERT INTO settings VALUES('schema_version','2.5.0'),('semester_name','B.Tech — Semester 1')"
+        )
+        con.execute(
+            "INSERT INTO semesters(name,start_date,end_date,is_active) VALUES('B.Tech — Semester 1','2024-08-01','2024-12-20',1),('B.Tech — Semester 2','2025-01-10','2025-05-30',0)"
+        )
+        subs = [
+            ("Engineering Mathematics II", "BAS-203"),
+            (
+                "Data Structures & Algorithms using C++ (Advanced Laboratory Practice and Viva-Voce)",
+                "BCS-301",
+            ),
+            ("हिन्दी भाषा एवं संचार", "BAS-101"),
+            ("Physics", "BAS-102"),
+        ]
         for name, code in subs:
-            con.execute("INSERT INTO subjects(semester_id,name,code,color,target_hours) VALUES(1,?,?,'#2F5FCB',4)", (name, code))
+            con.execute(
+                "INSERT INTO subjects(semester_id,name,code,color,target_hours) VALUES(1,?,?,'#2F5FCB',4)",
+                (name, code),
+            )
         for s in range(1, 5):
             for u in range(1, 4):
-                con.execute("INSERT INTO units(subject_id,unit_no,title,status,confidence) VALUES(?,?,?,?,?)", (s, u, f"Unit {u}", "Completed" if u == 1 else "In Progress", u))
-                con.execute("INSERT INTO chapters(unit_id,title) VALUES(?,?)", ((s - 1) * 3 + u, "Chapter 1"))
-                con.execute("INSERT INTO revisions(unit_id,due_date) VALUES(?,?)", ((s - 1) * 3 + u, "2026-11-18"))
-            con.execute("INSERT INTO assignments(subject_id,title,given_date,due_date,status,priority) VALUES(?,?,?,?,?,?)", (s, f"Assignment {s}", "2026-10-01", f"2026-11-{10 + s}", "Not Started", "High"))
-            con.execute("INSERT INTO study_sessions(subject_id,study_date,duration_minutes,topic) VALUES(?,?,?,?)", (s, "2026-11-16", 30 + s, "Revision"))
-            con.execute("INSERT INTO exams(subject_id,title,exam_type,exam_date,max_marks,marks_obtained,grade) VALUES(?,?,?,?,?,?,?)", (s, f"Mid {s}", "Seasonal Exam", f"2026-11-{20 + s}", 50, 41 if s % 2 else None, "A" if s % 2 else ""))
-            con.execute("INSERT INTO marks(subject_id,assessment_type,title,marks_obtained,max_marks,assessment_date) VALUES(?,?,?,?,?,?)", (s, "Unit Quiz", f"Quiz {s}", 14 + s, 20, "2026-10-05"))
-        con.execute("INSERT INTO planner_tasks(task_date,title,priority) VALUES('2026-11-17','Plan','High')")
-        con.execute("INSERT INTO custom_fields(entity_type,record_id,field_name,field_value) VALUES('subjects',1,'Faculty','Dr. Rao')")
+                con.execute(
+                    "INSERT INTO units(subject_id,unit_no,title,status,confidence) VALUES(?,?,?,?,?)",
+                    (s, u, f"Unit {u}", "Completed" if u == 1 else "In Progress", u),
+                )
+                con.execute(
+                    "INSERT INTO chapters(unit_id,title) VALUES(?,?)",
+                    ((s - 1) * 3 + u, "Chapter 1"),
+                )
+                con.execute(
+                    "INSERT INTO revisions(unit_id,due_date) VALUES(?,?)",
+                    ((s - 1) * 3 + u, "2026-11-18"),
+                )
+            con.execute(
+                "INSERT INTO assignments(subject_id,title,given_date,due_date,status,priority) VALUES(?,?,?,?,?,?)",
+                (
+                    s,
+                    f"Assignment {s}",
+                    "2026-10-01",
+                    f"2026-11-{10 + s}",
+                    "Not Started",
+                    "High",
+                ),
+            )
+            con.execute(
+                "INSERT INTO study_sessions(subject_id,study_date,duration_minutes,topic) VALUES(?,?,?,?)",
+                (s, "2026-11-16", 30 + s, "Revision"),
+            )
+            con.execute(
+                "INSERT INTO exams(subject_id,title,exam_type,exam_date,max_marks,marks_obtained,grade) VALUES(?,?,?,?,?,?,?)",
+                (
+                    s,
+                    f"Mid {s}",
+                    "Seasonal Exam",
+                    f"2026-11-{20 + s}",
+                    50,
+                    41 if s % 2 else None,
+                    "A" if s % 2 else "",
+                ),
+            )
+            con.execute(
+                "INSERT INTO marks(subject_id,assessment_type,title,marks_obtained,max_marks,assessment_date) VALUES(?,?,?,?,?,?)",
+                (s, "Unit Quiz", f"Quiz {s}", 14 + s, 20, "2026-10-05"),
+            )
+        con.execute(
+            "INSERT INTO planner_tasks(task_date,title,priority) VALUES('2026-11-17','Plan','High')"
+        )
+        con.execute(
+            "INSERT INTO custom_fields(entity_type,record_id,field_name,field_value) VALUES('subjects',1,'Faculty','Dr. Rao')"
+        )
         con.commit()
         con.close()
         return path
@@ -7368,46 +12601,207 @@ class StudySpaceTests(unittest.TestCase):
         out = {}
         for t in LEGACY_TABLES:
             cols = [r["name"] for r in con.execute(f"PRAGMA table_info({t})")]
-            out[t] = {"cols": cols, "rows": [tuple(r) for r in con.execute(f"SELECT * FROM {t} ORDER BY 1")]}
+            out[t] = {
+                "cols": cols,
+                "rows": [
+                    tuple(r) for r in con.execute(f"SELECT * FROM {t} ORDER BY 1")
+                ],
+            }
         con.close()
         return out
 
     # ---- 1 domain rules ------------------------------------------------------------------------------
     def test_01_rules(self) -> None:
         cfg = GradingConfig()
-        ev = lambda i, a, am, b, bm, cr, **kw: evaluate_result({"subject_id": i, "attempt_no": 1, "internal_marks": a, "internal_max": am, "external_marks": b, "external_max": bm, "credits": cr, **kw}, cfg)
-        e1, e2, e3 = ev(1, 27, 30, 63, 70, 4), ev(2, 20, 30, 45, 70, 3), ev(3, 10, 30, 20, 70, 3)
-        self.ok("grades & points", (e1["grade"], e1["points"], e2["grade"], e3["passed"]) == ("O", 10.0, "B+", False))
-        self.ok("SGPA credit-weighted incl. failed = 6.1", abs(compute_sgpa([e1, e2, e3], cfg) - 6.1) < 1e-9)
-        self.ok("SGPA passed-only", abs(compute_sgpa([e1, e2, e3], GradingConfig(include_failed=False)) - 61 / 7) < 1e-9)
-        self.ok("SGPA percentage÷factor", abs(compute_sgpa([e1, e2, e3], GradingConfig(sgpa_method="percentage_factor")) - 185 / 300 * 100 / 9.5) < 1e-9)
+        ev = lambda i, a, am, b, bm, cr, **kw: evaluate_result(
+            {
+                "subject_id": i,
+                "attempt_no": 1,
+                "internal_marks": a,
+                "internal_max": am,
+                "external_marks": b,
+                "external_max": bm,
+                "credits": cr,
+                **kw,
+            },
+            cfg,
+        )
+        e1, e2, e3 = (
+            ev(1, 27, 30, 63, 70, 4),
+            ev(2, 20, 30, 45, 70, 3),
+            ev(3, 10, 30, 20, 70, 3),
+        )
+        self.ok(
+            "grades & points",
+            (e1["grade"], e1["points"], e2["grade"], e3["passed"])
+            == ("O", 10.0, "B+", False),
+        )
+        self.ok(
+            "SGPA credit-weighted incl. failed = 6.1",
+            abs(compute_sgpa([e1, e2, e3], cfg) - 6.1) < 1e-9,
+        )
+        self.ok(
+            "SGPA passed-only",
+            abs(
+                compute_sgpa([e1, e2, e3], GradingConfig(include_failed=False)) - 61 / 7
+            )
+            < 1e-9,
+        )
+        self.ok(
+            "SGPA percentage÷factor",
+            abs(
+                compute_sgpa(
+                    [e1, e2, e3], GradingConfig(sgpa_method="percentage_factor")
+                )
+                - 185 / 300 * 100 / 9.5
+            )
+            < 1e-9,
+        )
         sem2 = [ev(4, 25, 30, 56, 70, 4)]
-        self.ok("CGPA credit-weighted", abs(compute_cgpa([[e1, e2, e3], sem2], cfg) - 97 / 14) < 1e-9)
-        self.ok("CGPA average of SGPAs", abs(compute_cgpa([[e1, e2, e3], sem2], GradingConfig(cgpa_method="average_of_sgpa")) - 7.55) < 1e-9)
-        r1, r2 = {"id": 1, "subject_id": 3, "attempt_no": 1, "ev": e3}, {"id": 2, "subject_id": 3, "attempt_no": 2, "ev": ev(3, 20, 30, 40, 70, 3)}
-        self.ok("retake policies", pick_attempts([r1, r2], cfg)[0]["attempt_no"] == 2 and pick_attempts([r2, r1], GradingConfig(retake_policy="best"))[0]["attempt_no"] == 2)
-        self.ok("absent / withheld / pending", evaluate_result({"result": "Absent", "internal_marks": 20, "internal_max": 30}, cfg)["passed"] is False
-                and evaluate_result({"result": "Withheld", "grade": "A"}, cfg)["counted"] is False and evaluate_result({}, cfg)["passed"] is None)
-        self.ok("grade boundaries", [cfg.grade_for(x)[0] for x in (90, 89.99, 40, 39.99)] == ["O", "A+", "P", "F"])
-        self.ok("component pass floor", evaluate_result({"internal_marks": 28, "internal_max": 30, "external_marks": 20, "external_max": 70}, GradingConfig(component_pass={"internal": 0, "external": 40, "practical": 0}))["passed"] is False)
-        for bad in ({"scale": []}, {"scale": [{"grade": "A", "min": 50, "points": 9}]}, {"sgpa_method": "x"}):
-            self.ok(f"grading validation {list(bad)[0]}", self.raises(lambda b=bad: GradingConfig(**{**GradingConfig().__dict__, **b}).validate()))
-        self.ok("grading JSON round-trip, corrupt → defaults", GradingConfig.from_json(cfg.to_json()) == cfg and GradingConfig.from_json("{oops") == GradingConfig())
-        for held, att, tgt, exp in ((40, 28, 75, (8, None)), (48, 36, 75, (0, 0)), (44, 40, 75, (0, 9)), (10, 9, 100, (None, None))):
+        self.ok(
+            "CGPA credit-weighted",
+            abs(compute_cgpa([[e1, e2, e3], sem2], cfg) - 97 / 14) < 1e-9,
+        )
+        self.ok(
+            "CGPA average of SGPAs",
+            abs(
+                compute_cgpa(
+                    [[e1, e2, e3], sem2], GradingConfig(cgpa_method="average_of_sgpa")
+                )
+                - 7.55
+            )
+            < 1e-9,
+        )
+        r1, r2 = {"id": 1, "subject_id": 3, "attempt_no": 1, "ev": e3}, {
+            "id": 2,
+            "subject_id": 3,
+            "attempt_no": 2,
+            "ev": ev(3, 20, 30, 40, 70, 3),
+        }
+        self.ok(
+            "retake policies",
+            pick_attempts([r1, r2], cfg)[0]["attempt_no"] == 2
+            and pick_attempts([r2, r1], GradingConfig(retake_policy="best"))[0][
+                "attempt_no"
+            ]
+            == 2,
+        )
+        self.ok(
+            "absent / withheld / pending",
+            evaluate_result(
+                {"result": "Absent", "internal_marks": 20, "internal_max": 30}, cfg
+            )["passed"]
+            is False
+            and evaluate_result({"result": "Withheld", "grade": "A"}, cfg)["counted"]
+            is False
+            and evaluate_result({}, cfg)["passed"] is None,
+        )
+        self.ok(
+            "grade boundaries",
+            [cfg.grade_for(x)[0] for x in (90, 89.99, 40, 39.99)]
+            == ["O", "A+", "P", "F"],
+        )
+        self.ok(
+            "component pass floor",
+            evaluate_result(
+                {
+                    "internal_marks": 28,
+                    "internal_max": 30,
+                    "external_marks": 20,
+                    "external_max": 70,
+                },
+                GradingConfig(
+                    component_pass={"internal": 0, "external": 40, "practical": 0}
+                ),
+            )["passed"]
+            is False,
+        )
+        for bad in (
+            {"scale": []},
+            {"scale": [{"grade": "A", "min": 50, "points": 9}]},
+            {"sgpa_method": "x"},
+        ):
+            self.ok(
+                f"grading validation {list(bad)[0]}",
+                self.raises(
+                    lambda b=bad: GradingConfig(
+                        **{**GradingConfig().__dict__, **b}
+                    ).validate()
+                ),
+            )
+        self.ok(
+            "grading JSON round-trip, corrupt → defaults",
+            GradingConfig.from_json(cfg.to_json()) == cfg
+            and GradingConfig.from_json("{oops") == GradingConfig(),
+        )
+        for held, att, tgt, exp in (
+            (40, 28, 75, (8, None)),
+            (48, 36, 75, (0, 0)),
+            (44, 40, 75, (0, 9)),
+            (10, 9, 100, (None, None)),
+        ):
             s = attendance_stats(held, att, tgt)
             self.ok(f"attendance {att}/{held}@{tgt}", (s["need"], s["can_skip"]) == exp)
-        self.ok("attendance: no classes → no data", attendance_stats(0, 0)["pct"] is None)
+        self.ok(
+            "attendance: no classes → no data", attendance_stats(0, 0)["pct"] is None
+        )
         t = date(2026, 11, 17)
-        self.ok("assignment effective status", [effective_assignment_status(*a, t) for a in (("Not Started", "2026-11-10", ""), ("Submitted", "2026-11-10", "2026-11-12"), ("Submitted", "2026-11-10", "2026-11-09"), ("Evaluated", "2026-11-10", "2026-11-15"))]
-                == ["Overdue", "Late Submission", "Submitted", "Evaluated"])
-        self.ok("SM-2 intervals", [sm2_next(0, 2.5, 1, 4)[2], sm2_next(1, 2.5, 1, 4)[2], sm2_next(5, 2.5, 20, 1)[::2]] == [1, 6, (0, 1)])
-        self.ok("streak & trend", study_streak({"2026-11-17", "2026-11-16", "2026-11-12"}, t) == 2 and trend_label([50, 52, 60, 70])[0] == "Improving" and trend_label([60, 70])[0] == "Not enough data")
-        self.ok("priority order not alphabetical", sorted(["Low", "High", "Urgent", "Normal"], key=PRIORITY_RANK.get) == ["Urgent", "High", "Normal", "Low"])
-        worst = min(contrast_ratio(th.t[a], th.t[b]) for mode in ("light", "dark") for hx in list(ACCENTS.values()) + ["#FFE600", "#000000", "#FFFFFF"]
-                    for th in [Theme(mode, hx)] for a, b in (("accent_fg", "accent"), ("accent_text", "panel"), ("text", "panel"), ("muted", "panel"), ("t_header_fg", "t_header_bg"), ("t_sel_fg", "t_sel"), ("danger_text", "danger_soft")))
-        self.ok(f"theme text contrast ≥ 4.5:1 for every accent, light & dark (lowest {worst:.2f})", worst >= 4.5)
+        self.ok(
+            "assignment effective status",
+            [
+                effective_assignment_status(*a, t)
+                for a in (
+                    ("Not Started", "2026-11-10", ""),
+                    ("Submitted", "2026-11-10", "2026-11-12"),
+                    ("Submitted", "2026-11-10", "2026-11-09"),
+                    ("Evaluated", "2026-11-10", "2026-11-15"),
+                )
+            ]
+            == ["Overdue", "Late Submission", "Submitted", "Evaluated"],
+        )
+        self.ok(
+            "SM-2 intervals",
+            [
+                sm2_next(0, 2.5, 1, 4)[2],
+                sm2_next(1, 2.5, 1, 4)[2],
+                sm2_next(5, 2.5, 20, 1)[::2],
+            ]
+            == [1, 6, (0, 1)],
+        )
+        self.ok(
+            "streak & trend",
+            study_streak({"2026-11-17", "2026-11-16", "2026-11-12"}, t) == 2
+            and trend_label([50, 52, 60, 70])[0] == "Improving"
+            and trend_label([60, 70])[0] == "Not enough data",
+        )
+        self.ok(
+            "priority order not alphabetical",
+            sorted(["Low", "High", "Urgent", "Normal"], key=PRIORITY_RANK.get)
+            == ["Urgent", "High", "Normal", "Low"],
+        )
+        worst = min(
+            contrast_ratio(th.t[a], th.t[b])
+            for mode in ("light", "dark")
+            for hx in list(ACCENTS.values()) + ["#FFE600", "#000000", "#FFFFFF"]
+            for th in [Theme(mode, hx)]
+            for a, b in (
+                ("accent_fg", "accent"),
+                ("accent_text", "panel"),
+                ("text", "panel"),
+                ("muted", "panel"),
+                ("t_header_fg", "t_header_bg"),
+                ("t_sel_fg", "t_sel"),
+                ("danger_text", "danger_soft"),
+            )
+        )
+        self.ok(
+            f"theme text contrast ≥ 4.5:1 for every accent, light & dark (lowest {worst:.2f})",
+            worst >= 4.5,
+        )
         q = Theme("dark").qss()
-        self.ok("stylesheet fully resolved", "$" not in q and q.count("{") == q.count("}"))
+        self.ok(
+            "stylesheet fully resolved", "$" not in q and q.count("{") == q.count("}")
+        )
 
     # ---- 2 migration & data safety ----------------------------------------------------------------------
     def test_02_migration_preserves_legacy_data(self) -> None:
@@ -7415,34 +12809,93 @@ class StudySpaceTests(unittest.TestCase):
         before = self.legacy_rows(path)
         db = Database(path)
         after = self.legacy_rows(path)
-        same = all(len(before[t]["rows"]) == len(after[t]["rows"]) or t == "settings" for t in LEGACY_TABLES)
-        same = same and all(tuple(n[after[t]["cols"].index(c)] for c in before[t]["cols"]) == o for t in LEGACY_TABLES if t != "settings" for o, n in zip(before[t]["rows"], after[t]["rows"]))
+        same = all(
+            len(before[t]["rows"]) == len(after[t]["rows"]) or t == "settings"
+            for t in LEGACY_TABLES
+        )
+        same = same and all(
+            tuple(n[after[t]["cols"].index(c)] for c in before[t]["cols"]) == o
+            for t in LEGACY_TABLES
+            if t != "settings"
+            for o, n in zip(before[t]["rows"], after[t]["rows"])
+        )
         self.ok("every legacy row and value preserved exactly", same)
-        self.ok("schema versioned", db.schema_version() == LATEST_SCHEMA and db.scalar("PRAGMA user_version") == LATEST_SCHEMA)
-        self.ok("legacy semesters linked to a programme/year; one current", db.scalar("SELECT COUNT(*) FROM semesters WHERE programme_id IS NULL OR academic_year_id IS NULL") == 0 and db.scalar("SELECT value FROM settings WHERE key='current_semester_id'") == "1")
+        self.ok(
+            "schema versioned",
+            db.schema_version() == LATEST_SCHEMA
+            and db.scalar("PRAGMA user_version") == LATEST_SCHEMA,
+        )
+        self.ok(
+            "legacy semesters linked to a programme/year; one current",
+            db.scalar(
+                "SELECT COUNT(*) FROM semesters WHERE programme_id IS NULL OR academic_year_id IS NULL"
+            )
+            == 0
+            and db.scalar("SELECT value FROM settings WHERE key='current_semester_id'")
+            == "1",
+        )
         snaps = list((path.parent / "backups" / "safety").glob("*pre_migration*.db"))
-        self.ok("verified pre-upgrade backup holds the old data", len(snaps) == 1 and inspect_database_file(snaps[0])["counts"]["subjects"] == 4)
-        self.ok("integrity, FK enforcement, no FK violations", db.integrity_check() == "ok" and db.scalar("PRAGMA foreign_keys") == 1 and db.foreign_key_violations() == [])
+        self.ok(
+            "verified pre-upgrade backup holds the old data",
+            len(snaps) == 1
+            and inspect_database_file(snaps[0])["counts"]["subjects"] == 4,
+        )
+        self.ok(
+            "integrity, FK enforcement, no FK violations",
+            db.integrity_check() == "ok"
+            and db.scalar("PRAGMA foreign_keys") == 1
+            and db.foreign_key_violations() == [],
+        )
         db.close()
         db = Database(path)
-        self.ok("re-opening is idempotent (no new migrations, no new backup)", not db.migration_log and len(list((path.parent / "backups" / "safety").glob("*.db"))) == 1)
-        self.ok("semester with subjects cannot be deleted (database level)", self.raises(lambda: db.run("DELETE FROM semesters WHERE id=1"), sqlite3.IntegrityError))
-        self.ok("programme with semesters cannot be deleted", self.raises(lambda: db.run("DELETE FROM programmes"), sqlite3.IntegrityError))
+        self.ok(
+            "re-opening is idempotent (no new migrations, no new backup)",
+            not db.migration_log
+            and len(list((path.parent / "backups" / "safety").glob("*.db"))) == 1,
+        )
+        self.ok(
+            "semester with subjects cannot be deleted (database level)",
+            self.raises(
+                lambda: db.run("DELETE FROM semesters WHERE id=1"),
+                sqlite3.IntegrityError,
+            ),
+        )
+        self.ok(
+            "programme with semesters cannot be deleted",
+            self.raises(
+                lambda: db.run("DELETE FROM programmes"), sqlite3.IntegrityError
+            ),
+        )
         db.run("DELETE FROM assignments WHERE id=1")
-        self.ok("custom fields / file links cleaned up by trigger", db.scalar("SELECT COUNT(*) FROM custom_fields WHERE entity_type='assignments'") == 0)
+        self.ok(
+            "custom fields / file links cleaned up by trigger",
+            db.scalar(
+                "SELECT COUNT(*) FROM custom_fields WHERE entity_type='assignments'"
+            )
+            == 0,
+        )
         db.close()
         # much older database: tables exist but lack the later-added columns
         old = self.tmp / "older"
         old.mkdir()
         con = sqlite3.connect(old / DB_FILENAME)
-        con.execute("CREATE TABLE subjects(id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL)")
-        con.execute("CREATE TABLE exams(id INTEGER PRIMARY KEY AUTOINCREMENT, subject_id INTEGER NOT NULL, title TEXT NOT NULL, exam_type TEXT, exam_date TEXT, max_marks REAL, venue TEXT, prep_status TEXT, notes TEXT)")
+        con.execute(
+            "CREATE TABLE subjects(id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL)"
+        )
+        con.execute(
+            "CREATE TABLE exams(id INTEGER PRIMARY KEY AUTOINCREMENT, subject_id INTEGER NOT NULL, title TEXT NOT NULL, exam_type TEXT, exam_date TEXT, max_marks REAL, venue TEXT, prep_status TEXT, notes TEXT)"
+        )
         con.execute("INSERT INTO subjects(name) VALUES('Old subject')")
         con.execute("INSERT INTO exams(subject_id,title) VALUES(1,'Old exam')")
         con.commit()
         con.close()
         db = Database(old / DB_FILENAME)
-        self.ok("pre-2.5 schema is repaired in place without data loss", "marks_obtained" in db.columns("exams") and "semester_id" in db.columns("subjects") and db.scalar("SELECT title FROM exams") == "Old exam")
+        self.ok(
+            "pre-2.5 schema is repaired in place without data loss",
+            "marks_obtained" in db.columns("exams")
+            and "semester_id" in db.columns("subjects")
+            and db.scalar("SELECT title FROM exams") == "Old exam",
+        )
         db.close()
 
     def test_03_migration_failure_rolls_back(self) -> None:
@@ -7452,37 +12905,65 @@ class StudySpaceTests(unittest.TestCase):
         def broken(db: Database) -> None:
             orig[2](db)
             raise RuntimeError("simulated crash mid-migration")
+
         MIGRATIONS[2] = (3, "coursework_extensions", broken)
         try:
-            self.ok("crash surfaces a clear MigrationError", self.raises(lambda: Database(path), MigrationError))
+            self.ok(
+                "crash surfaces a clear MigrationError",
+                self.raises(lambda: Database(path), MigrationError),
+            )
         finally:
             MIGRATIONS[2] = orig
         con = sqlite3.connect(path)
-        self.ok("failed step fully rolled back; earlier steps and data intact", con.execute("SELECT MAX(version) FROM schema_migrations").fetchone()[0] == 2
-                and "credits" not in [r[1] for r in con.execute("PRAGMA table_info(subjects)")] and con.execute("SELECT COUNT(*) FROM subjects").fetchone()[0] == 4)
+        self.ok(
+            "failed step fully rolled back; earlier steps and data intact",
+            con.execute("SELECT MAX(version) FROM schema_migrations").fetchone()[0] == 2
+            and "credits"
+            not in [r[1] for r in con.execute("PRAGMA table_info(subjects)")]
+            and con.execute("SELECT COUNT(*) FROM subjects").fetchone()[0] == 4,
+        )
         con.close()
         db = Database(path)
-        self.ok("next start resumes and completes the upgrade", db.schema_version() == LATEST_SCHEMA)
+        self.ok(
+            "next start resumes and completes the upgrade",
+            db.schema_version() == LATEST_SCHEMA,
+        )
         db.close()
 
     def test_04_backup_and_restore(self) -> None:
         core = AppCore(data_dir=self.tmp / "app")
         repo = core.repo
         repo.create_structure("Prog", years=1, per_year=1)
-        sub = repo.insert("subjects", {"semester_id": repo.current_semester_id(), "name": "S"})
+        sub = repo.insert(
+            "subjects", {"semester_id": repo.current_semester_id(), "name": "S"}
+        )
         good = core.backups.create(core.db, self.tmp / "good.db")
-        self.ok("backup is verified and portable", inspect_database_file(good)["counts"]["subjects"] == 1)
+        self.ok(
+            "backup is verified and portable",
+            inspect_database_file(good)["counts"]["subjects"] == 1,
+        )
         calls = {"n": 0}
         orig = core.db.tables
 
         def boom() -> Any:
             calls["n"] += 1
             raise OSError("disk full")
+
         core.db.tables = boom  # type: ignore[method-assign]
         h = good.read_bytes()
-        self.ok("interrupted backup keeps the previous good file and leaves no partial file", self.raises(lambda: core.backups.create(core.db, good), OSError) and good.read_bytes() == h and not list(self.tmp.glob(".*part")))
+        self.ok(
+            "interrupted backup keeps the previous good file and leaves no partial file",
+            self.raises(lambda: core.backups.create(core.db, good), OSError)
+            and good.read_bytes() == h
+            and not list(self.tmp.glob(".*part")),
+        )
         core.db.tables = orig  # type: ignore[method-assign]
-        self.ok("backup refuses to overwrite the live database", self.raises(lambda: core.backups.create(core.db, core.db_path), BackupError))
+        self.ok(
+            "backup refuses to overwrite the live database",
+            self.raises(
+                lambda: core.backups.create(core.db, core.db_path), BackupError
+            ),
+        )
         junk, newer = self.tmp / "junk.db", self.tmp / "newer.db"
         junk.write_bytes(b"not a database" * 40)
         core.backups.create(core.db, newer)
@@ -7490,17 +12971,31 @@ class StudySpaceTests(unittest.TestCase):
         con.execute("INSERT INTO schema_migrations VALUES(99,'future','x')")
         con.commit()
         con.close()
-        self.ok("garbage and newer-version backups are rejected", self.raises(lambda: core.restore(junk), BackupError) and self.raises(lambda: core.restore(newer), BackupError))
+        self.ok(
+            "garbage and newer-version backups are rejected",
+            self.raises(lambda: core.restore(junk), BackupError)
+            and self.raises(lambda: core.restore(newer), BackupError),
+        )
         repo.delete("subjects", [sub])
         core.restore(good)
-        self.ok("restore brings data back and the connection stays usable", core.db.scalar("SELECT COUNT(*) FROM subjects") == 1 and len(repo.rows("subjects")) == 1)
+        self.ok(
+            "restore brings data back and the connection stays usable",
+            core.db.scalar("SELECT COUNT(*) FROM subjects") == 1
+            and len(repo.rows("subjects")) == 1,
+        )
         orig_m = core.db.migrate
 
         def bad_migrate() -> None:
             raise RuntimeError("boom after swap")
+
         repo.delete("subjects", [repo.rows("subjects")[0]["id"]])
         core.db.migrate = bad_migrate  # type: ignore[method-assign]
-        self.ok("failure after the file swap rolls back to the pre-restore data", self.raises(lambda: core.restore(good), RuntimeError) and core.db.scalar("SELECT COUNT(*) FROM subjects") == 0 and core.db.integrity_check() == "ok")
+        self.ok(
+            "failure after the file swap rolls back to the pre-restore data",
+            self.raises(lambda: core.restore(good), RuntimeError)
+            and core.db.scalar("SELECT COUNT(*) FROM subjects") == 0
+            and core.db.integrity_check() == "ok",
+        )
         core.db.migrate = orig_m  # type: ignore[method-assign]
         core.close()
 
@@ -7510,90 +13005,301 @@ class StudySpaceTests(unittest.TestCase):
         R = core.repo
         R.fixed_today = date(2026, 11, 17)
         info = R.create_structure("B.Tech", start_year=2024, years=4, per_year=2)
-        self.ok("wizard creates 4 years / 8 semesters (nothing hard-coded)", len(info["year_ids"]) == 4 and len(info["semester_ids"]) == 8)
-        self.ok("custom structure 3×3", len(R.create_structure("Diploma", years=3, per_year=3, term_word="Term")["semester_ids"]) == 9)
+        self.ok(
+            "wizard creates 4 years / 8 semesters (nothing hard-coded)",
+            len(info["year_ids"]) == 4 and len(info["semester_ids"]) == 8,
+        )
+        self.ok(
+            "custom structure 3×3",
+            len(
+                R.create_structure("Diploma", years=3, per_year=3, term_word="Term")[
+                    "semester_ids"
+                ]
+            )
+            == 9,
+        )
         sem = info["semester_ids"][0]
-        sub = R.insert("subjects", {"semester_id": sem, "name": "Data Structures", "credits": "4"})
-        self.ok("duplicate / required / numeric validation", self.raises(lambda: R.insert("subjects", {"semester_id": sem, "name": "data structures"})) and self.raises(lambda: R.insert("subjects", {"semester_id": sem, "name": " "}))
-                and self.raises(lambda: R.insert("subjects", {"semester_id": sem, "name": "X", "credits": "abc"})))
-        a1 = R.insert("assignments", {"subject_id": sub, "title": "Lab 1", "due_date": "2026-11-10", "given_date": "2026-11-01"})
-        self.ok("date / marks validation", self.raises(lambda: R.insert("assignments", {"subject_id": sub, "title": "B", "given_date": "2026-11-10", "due_date": "2026-11-01"}))
-                and self.raises(lambda: R.insert("assignments", {"subject_id": sub, "title": "B", "due_date": "31/12/2026"})) and self.raises(lambda: R.insert("assignments", {"subject_id": sub, "title": "B", "marks_obtained": 11, "max_marks": 10})))
+        sub = R.insert(
+            "subjects", {"semester_id": sem, "name": "Data Structures", "credits": "4"}
+        )
+        self.ok(
+            "duplicate / required / numeric validation",
+            self.raises(
+                lambda: R.insert(
+                    "subjects", {"semester_id": sem, "name": "data structures"}
+                )
+            )
+            and self.raises(
+                lambda: R.insert("subjects", {"semester_id": sem, "name": " "})
+            )
+            and self.raises(
+                lambda: R.insert(
+                    "subjects", {"semester_id": sem, "name": "X", "credits": "abc"}
+                )
+            ),
+        )
+        a1 = R.insert(
+            "assignments",
+            {
+                "subject_id": sub,
+                "title": "Lab 1",
+                "due_date": "2026-11-10",
+                "given_date": "2026-11-01",
+            },
+        )
+        self.ok(
+            "date / marks validation",
+            self.raises(
+                lambda: R.insert(
+                    "assignments",
+                    {
+                        "subject_id": sub,
+                        "title": "B",
+                        "given_date": "2026-11-10",
+                        "due_date": "2026-11-01",
+                    },
+                )
+            )
+            and self.raises(
+                lambda: R.insert(
+                    "assignments",
+                    {"subject_id": sub, "title": "B", "due_date": "31/12/2026"},
+                )
+            )
+            and self.raises(
+                lambda: R.insert(
+                    "assignments",
+                    {
+                        "subject_id": sub,
+                        "title": "B",
+                        "marks_obtained": 11,
+                        "max_marks": 10,
+                    },
+                )
+            ),
+        )
         evil = "x'); DROP TABLE assignments;--"
-        R.update("assignments", a1, {"title": evil, "no_such_column; DROP TABLE x": "1"})
-        self.ok("SQL injection text is stored as data; unknown keys never reach SQL", R.get("assignments", a1)["title"] == evil and core.db.table_exists("assignments"))
+        R.update(
+            "assignments", a1, {"title": evil, "no_such_column; DROP TABLE x": "1"}
+        )
+        self.ok(
+            "SQL injection text is stored as data; unknown keys never reach SQL",
+            R.get("assignments", a1)["title"] == evil
+            and core.db.table_exists("assignments"),
+        )
         row = [r for r in R.rows("assignments") if r["id"] == a1][0]
-        self.ok("derived Overdue status / days left", row["status_eff"] == "Overdue" and row["days_left"] == -7)
+        self.ok(
+            "derived Overdue status / days left",
+            row["status_eff"] == "Overdue" and row["days_left"] == -7,
+        )
         for p in ("Low", "High", "Urgent", "Normal"):
-            R.insert("planner_tasks", {"task_date": "2026-11-17", "title": p, "priority": p})
-        self.ok("planner sorted by priority rank", [r["title"] for r in R.rows("planner_tasks")] == ["Urgent", "High", "Normal", "Low"])
-        R.insert("exams", {"subject_id": sub, "title": "Mid", "max_marks": 50, "marks_obtained": 41})
-        R.insert("subject_results", {"subject_id": sub, "internal_marks": 25, "internal_max": 30, "external_marks": 60, "external_max": 70})
+            R.insert(
+                "planner_tasks", {"task_date": "2026-11-17", "title": p, "priority": p}
+            )
+        self.ok(
+            "planner sorted by priority rank",
+            [r["title"] for r in R.rows("planner_tasks")]
+            == ["Urgent", "High", "Normal", "Low"],
+        )
+        R.insert(
+            "exams",
+            {"subject_id": sub, "title": "Mid", "max_marks": 50, "marks_obtained": 41},
+        )
+        R.insert(
+            "subject_results",
+            {
+                "subject_id": sub,
+                "internal_marks": 25,
+                "internal_max": 30,
+                "external_marks": 60,
+                "external_max": 70,
+            },
+        )
         rr = R.rows("subject_results")[0]
-        self.ok("result derived: 85% → A+, 9 points, Pass; exam % derived", (rr["grade_eff"], rr["points_eff"], rr["result_eff"]) == ("A+", 9, "Pass") and R.rows("exams")[0]["pct"] == 82.0)
-        self.ok("duplicate result attempt rejected", self.raises(lambda: R.insert("subject_results", {"subject_id": sub, "attempt_no": 1})))
+        self.ok(
+            "result derived: 85% → A+, 9 points, Pass; exam % derived",
+            (rr["grade_eff"], rr["points_eff"], rr["result_eff"]) == ("A+", 9, "Pass")
+            and R.rows("exams")[0]["pct"] == 82.0,
+        )
+        self.ok(
+            "duplicate result attempt rejected",
+            self.raises(
+                lambda: R.insert(
+                    "subject_results", {"subject_id": sub, "attempt_no": 1}
+                )
+            ),
+        )
         snaps: list[str] = []
         R.snapshot_hook = snaps.append
-        self.ok("semester/programme with children cannot be deleted", self.raises(lambda: R.delete("semesters", [sem])) and self.raises(lambda: R.delete("programmes", [info["programme_id"]])))
+        self.ok(
+            "semester/programme with children cannot be deleted",
+            self.raises(lambda: R.delete("semesters", [sem]))
+            and self.raises(lambda: R.delete("programmes", [info["programme_id"]])),
+        )
         deps = {l: n for l, n, _ in R.dependents("subjects", [sub])}
         n = R.delete("subjects", [sub])
-        self.ok("delete lists dependents, snapshots first, cascades cleanly", deps.get("assignments") == 1 and n == 1 and snaps == ["before_delete_subjects"] and core.db.scalar("SELECT COUNT(*) FROM exams") == 0)
+        self.ok(
+            "delete lists dependents, snapshots first, cascades cleanly",
+            deps.get("assignments") == 1
+            and n == 1
+            and snaps == ["before_delete_subjects"]
+            and core.db.scalar("SELECT COUNT(*) FROM exams") == 0,
+        )
         f = self.tmp / "n.pdf"
         f.write_bytes(b"%PDF-1.4")
         s2 = R.insert("subjects", {"semester_id": sem, "name": "Maths"})
         a2 = R.insert("assignments", {"subject_id": s2, "title": "A"})
         att = R.add_attachment("assignments", a2, f)
-        self.ok("attachments: reference stored, bad/duplicate/unsupported rejected, file never deleted",
-                self.raises(lambda: R.add_attachment("assignments", a2, f)) and self.raises(lambda: R.add_attachment("assignments", a2, self.tmp / "x.exe")) and (R.remove_attachment(att), f.exists())[1])
+        self.ok(
+            "attachments: reference stored, bad/duplicate/unsupported rejected, file never deleted",
+            self.raises(lambda: R.add_attachment("assignments", a2, f))
+            and self.raises(
+                lambda: R.add_attachment("assignments", a2, self.tmp / "x.exe")
+            )
+            and (R.remove_attachment(att), f.exists())[1],
+        )
         R.save_profile({"student_name": "Asha", "admission_year": "2024"})
-        self.ok("profile saved & validated", R.profile()["student_name"] == "Asha" and self.raises(lambda: R.save_profile({"email": "nope"})))
-        a3 = R.insert("assignments", {"subject_id": s2, "title": "B", "due_date": "2026-11-30"})
-        R.bulk_update("assignments", [a3], {"status": "Submitted", "submission_date": "@today"})
-        self.ok("bulk/quick update expands @today", R.get("assignments", a3)["submission_date"] == "2026-11-17")
+        self.ok(
+            "profile saved & validated",
+            R.profile()["student_name"] == "Asha"
+            and self.raises(lambda: R.save_profile({"email": "nope"})),
+        )
+        a3 = R.insert(
+            "assignments", {"subject_id": s2, "title": "B", "due_date": "2026-11-30"}
+        )
+        R.bulk_update(
+            "assignments", [a3], {"status": "Submitted", "submission_date": "@today"}
+        )
+        self.ok(
+            "bulk/quick update expands @today",
+            R.get("assignments", a3)["submission_date"] == "2026-11-17",
+        )
         u = R.insert("units", {"subject_id": s2, "unit_no": 1, "title": "U"})
         rv = R.schedule_revision(u, 1)
         R.review_revision(rv, 4)
-        self.ok("spaced repetition moves the review date", R.review_revision(rv, 4)["interval_days"] == 6)
-        self.ok("attendance quick-mark", R.mark_attendance("2026-11-17", {s2: True, 999999: None}) == 1)
+        self.ok(
+            "spaced repetition moves the review date",
+            R.review_revision(rv, 4)["interval_days"] == 6,
+        )
+        self.ok(
+            "attendance quick-mark",
+            R.mark_attendance("2026-11-17", {s2: True, 999999: None}) == 1,
+        )
         core.close()
 
     def test_06_row_logic_and_preferences(self) -> None:
-        rows = [{"id": i, "name": n, "units": u, "due": d, "priority": p} for i, (n, u, d, p) in enumerate([("b", 10, "2026-01-05", "Low"), ("A", 2, "", "Urgent"), ("c", 33, "2026-01-02", "High"), ("d", 2, "2026-03-01", "Normal"), ("e", None, "2026-02-01", "High")])]
-        cols = (C("name", "Name"), C("units", "Units", kind="int"), C("due", "Due", kind="date"), C("priority", "Priority", kind="priority"))
+        rows = [
+            {"id": i, "name": n, "units": u, "due": d, "priority": p}
+            for i, (n, u, d, p) in enumerate(
+                [
+                    ("b", 10, "2026-01-05", "Low"),
+                    ("A", 2, "", "Urgent"),
+                    ("c", 33, "2026-01-02", "High"),
+                    ("d", 2, "2026-03-01", "Normal"),
+                    ("e", None, "2026-02-01", "High"),
+                ]
+            )
+        ]
+        cols = (
+            C("name", "Name"),
+            C("units", "Units", kind="int"),
+            C("due", "Due", kind="date"),
+            C("priority", "Priority", kind="priority"),
+        )
         rs = RowSet(cols, rows)
         rs.sort_keys = [("units", True)]
-        self.ok("numeric sort (2 < 10 < 33), blanks last", [r["units"] for r in rs.view()] == [2, 2, 10, 33, None])
+        self.ok(
+            "numeric sort (2 < 10 < 33), blanks last",
+            [r["units"] for r in rs.view()] == [2, 2, 10, 33, None],
+        )
         rs.sort_keys = [("units", False)]
-        self.ok("descending keeps blanks last", [r["units"] for r in rs.view()] == [33, 10, 2, 2, None])
+        self.ok(
+            "descending keeps blanks last",
+            [r["units"] for r in rs.view()] == [33, 10, 2, 2, None],
+        )
         rs.sort_keys = [("units", True), ("name", False)]
         self.ok("multi-column sort", [r["name"] for r in rs.view()][:2] == ["d", "A"])
         rs.sort_keys = [("priority", True)]
-        self.ok("priority sorts by rank", [r["priority"] for r in rs.view()] == ["Urgent", "High", "High", "Normal", "Low"])
+        self.ok(
+            "priority sorts by rank",
+            [r["priority"] for r in rs.view()]
+            == ["Urgent", "High", "High", "Normal", "Low"],
+        )
         rs.sort_keys = [("due", True)]
-        self.ok("dates chronological", [r["due"] for r in rs.view()] == ["2026-01-02", "2026-01-05", "2026-02-01", "2026-03-01", ""])
+        self.ok(
+            "dates chronological",
+            [r["due"] for r in rs.view()]
+            == ["2026-01-02", "2026-01-05", "2026-02-01", "2026-03-01", ""],
+        )
         rs.sort_keys, rs.search_text = [], "HIGH"
         self.ok("case-insensitive search across columns", len(rs.view()) == 2)
-        rs.search_text, rs.value_filters, rs.date_range = "", {"priority": {"High"}}, ("due", "2026-01-31", None)
+        rs.search_text, rs.value_filters, rs.date_range = (
+            "",
+            {"priority": {"High"}},
+            ("due", "2026-01-31", None),
+        )
         self.ok("value filter + date range", [r["id"] for r in rs.view()] == [4])
-        rs.value_filters, rs.date_range, rs.text_filters = {}, ("", None, None), {"name": "a"}
+        rs.value_filters, rs.date_range, rs.text_filters = (
+            {},
+            ("", None, None),
+            {"name": "a"},
+        )
         self.ok("column text filter", [r["name"] for r in rs.view()] == ["A"])
         rs.text_filters = {}
-        out = export_csv(self.tmp / "o.csv", rs, [{"name": "=cmd|' /C calc'!A0", "units": 1}], ["name", "units"])
-        self.ok("CSV export neutralises formulas, atomic", "'=cmd" in out.read_text(encoding="utf-8-sig") and not list(self.tmp.glob("*.part")))
-        self.ok("TSV copy has headers", rows_to_tsv(rs, rs.view()[:1], ["name"]).splitlines()[0] == "Name")
-        self.ok("conditional-format rule engine", rule_matches("lt", 40, "35.5") and not rule_matches("lt", 40, "") and rule_matches("in", "A|B", "b") and rule_matches("blank", "", None))
+        out = export_csv(
+            self.tmp / "o.csv",
+            rs,
+            [{"name": "=cmd|' /C calc'!A0", "units": 1}],
+            ["name", "units"],
+        )
+        self.ok(
+            "CSV export neutralises formulas, atomic",
+            "'=cmd" in out.read_text(encoding="utf-8-sig")
+            and not list(self.tmp.glob("*.part")),
+        )
+        self.ok(
+            "TSV copy has headers",
+            rows_to_tsv(rs, rs.view()[:1], ["name"]).splitlines()[0] == "Name",
+        )
+        self.ok(
+            "conditional-format rule engine",
+            rule_matches("lt", 40, "35.5")
+            and not rule_matches("lt", 40, "")
+            and rule_matches("in", "A|B", "b")
+            and rule_matches("blank", "", None),
+        )
         core = AppCore(data_dir=self.tmp / "app")
         p = TablePrefs(core.settings, "assignments")
         p.d["hidden"], p.d["widths"] = ["faculty"], {"title": 300}
-        p.d["rules"].append({"column": "pct", "op": "lt", "value": "40", "color": "danger", "scope": "cell"})
+        p.d["rules"].append(
+            {
+                "column": "pct",
+                "op": "lt",
+                "value": "40",
+                "color": "danger",
+                "scope": "cell",
+            }
+        )
         p.d["layouts"]["mine"] = p.layout()
         p.save()
         q = TablePrefs(core.settings, "assignments")
-        self.ok("table layout, colours and rules persist across restart", q.d["hidden"] == ["faculty"] and q.d["widths"]["title"] == 300 and q.user_rules()[0].op == "lt" and "mine" in q.d["layouts"])
+        self.ok(
+            "table layout, colours and rules persist across restart",
+            q.d["hidden"] == ["faculty"]
+            and q.d["widths"]["title"] == 300
+            and q.user_rules()[0].op == "lt"
+            and "mine" in q.d["layouts"],
+        )
         q.reset_all()
-        self.ok("restore defaults keeps named layouts", q.d["rules"] == [] and q.d["hidden"] is None and "mine" in q.d["layouts"])
+        self.ok(
+            "restore defaults keeps named layouts",
+            q.d["rules"] == [] and q.d["hidden"] is None and "mine" in q.d["layouts"],
+        )
         core.settings.set("table:x", "{bad json")
-        self.ok("corrupt preferences tolerated", TablePrefs(core.settings, "x").d["alt"] is True)
+        self.ok(
+            "corrupt preferences tolerated",
+            TablePrefs(core.settings, "x").d["alt"] is True,
+        )
         core.close()
 
     # ---- 4 analytics ---------------------------------------------------------------------------------------------
@@ -7602,46 +13308,198 @@ class StudySpaceTests(unittest.TestCase):
         R, A = core.repo, core.analytics
         R.fixed_today = date(2026, 11, 17)
         ov = A.overview(None)
-        self.ok("empty database: no invented numbers", ov["sgpa"] is None and ov["score_pct"] is None and ov["attendance"]["pct"] is None and A.semester_history() == [] and [i["kind"] for i in A.insights()] == ["empty"])
+        self.ok(
+            "empty database: no invented numbers",
+            ov["sgpa"] is None
+            and ov["score_pct"] is None
+            and ov["attendance"]["pct"] is None
+            and A.semester_history() == []
+            and [i["kind"] for i in A.insights()] == ["empty"],
+        )
         info = R.create_structure("B.Tech", years=1, per_year=2)
         s1, s2 = info["semester_ids"]
         R.set_current_semester(s2)
-        mk = lambda sem, n, cr: R.insert("subjects", {"semester_id": sem, "name": n, "credits": cr})
-        S1, S2, S3, S4 = mk(s1, "Alpha", 4), mk(s1, "Beta", 3), mk(s2, "Gamma", 4), mk(s2, "Delta", 2)
-        res = lambda sid, i, e, att=1: R.insert("subject_results", {"subject_id": sid, "attempt_no": att, "internal_marks": i, "internal_max": 30, "external_marks": e, "external_max": 70})
+        mk = lambda sem, n, cr: R.insert(
+            "subjects", {"semester_id": sem, "name": n, "credits": cr}
+        )
+        S1, S2, S3, S4 = (
+            mk(s1, "Alpha", 4),
+            mk(s1, "Beta", 3),
+            mk(s2, "Gamma", 4),
+            mk(s2, "Delta", 2),
+        )
+        res = lambda sid, i, e, att=1: R.insert(
+            "subject_results",
+            {
+                "subject_id": sid,
+                "attempt_no": att,
+                "internal_marks": i,
+                "internal_max": 30,
+                "external_marks": e,
+                "external_max": 70,
+            },
+        )
         res(S1, 27, 63), res(S2, 20, 45), res(S3, 25, 56), res(S4, 10, 20)
         H = {h["id"]: h for h in A.semester_history()}
-        self.ok("SGPA sem1 = 61/7, sem2 = 6.0, running CGPA = 97/13", abs(H[s1]["sgpa"] - 61 / 7) < 1e-9 and abs(H[s2]["sgpa"] - 6.0) < 1e-9 and abs(H[s2]["cgpa"] - 97 / 13) < 1e-9)
-        self.ok("credits, backlog, pooled %", (H[s2]["credits_registered"], H[s2]["credits_earned"], H[s2]["backlogs"]) == (6, 4, 1) and abs(H[s1]["pct"] - 77.5) < 1e-9)
+        self.ok(
+            "SGPA sem1 = 61/7, sem2 = 6.0, running CGPA = 97/13",
+            abs(H[s1]["sgpa"] - 61 / 7) < 1e-9
+            and abs(H[s2]["sgpa"] - 6.0) < 1e-9
+            and abs(H[s2]["cgpa"] - 97 / 13) < 1e-9,
+        )
+        self.ok(
+            "credits, backlog, pooled %",
+            (H[s2]["credits_registered"], H[s2]["credits_earned"], H[s2]["backlogs"])
+            == (6, 4, 1)
+            and abs(H[s1]["pct"] - 77.5) < 1e-9,
+        )
         res(S4, 20, 40, att=2)
         H = {h["id"]: h for h in A.semester_history()}
-        self.ok("retake replaces the failed attempt; history keeps both", abs(H[s2]["sgpa"] - 50 / 6) < 1e-9 and abs(H[s2]["cgpa"] - 111 / 13) < 1e-9 and H[s2]["backlogs"] == 0 and core.db.scalar("SELECT COUNT(*) FROM subject_results WHERE subject_id=?", (S4,)) == 2)
+        self.ok(
+            "retake replaces the failed attempt; history keeps both",
+            abs(H[s2]["sgpa"] - 50 / 6) < 1e-9
+            and abs(H[s2]["cgpa"] - 111 / 13) < 1e-9
+            and H[s2]["backlogs"] == 0
+            and core.db.scalar(
+                "SELECT COUNT(*) FROM subject_results WHERE subject_id=?", (S4,)
+            )
+            == 2,
+        )
         core.settings.save_grading(GradingConfig(cgpa_method="average_of_sgpa"))
-        self.ok("CGPA method is configurable", abs(A.overview(s2)["cgpa"] - (61 / 7 + 50 / 6) / 2) < 1e-9)
+        self.ok(
+            "CGPA method is configurable",
+            abs(A.overview(s2)["cgpa"] - (61 / 7 + 50 / 6) / 2) < 1e-9,
+        )
         core.settings.save_grading(GradingConfig())
-        for sid, d, h, a in ((S3, "2026-10-05", 10, 8), (S4, "2026-10-05", 6, 3), (S4, "2026-11-05", 4, 3)):
-            R.insert("attendance", {"subject_id": sid, "att_date": d, "classes_held": h, "classes_attended": a})
+        for sid, d, h, a in (
+            (S3, "2026-10-05", 10, 8),
+            (S4, "2026-10-05", 6, 3),
+            (S4, "2026-11-05", 4, 3),
+        ):
+            R.insert(
+                "attendance",
+                {
+                    "subject_id": sid,
+                    "att_date": d,
+                    "classes_held": h,
+                    "classes_attended": a,
+                },
+            )
         ab = {a["subject"]: a for a in A.attendance_by_subject(s2)}
-        self.ok("attendance: 60% → shortage, needs 6 classes; semesters never mixed", abs(ab["Delta"]["pct"] - 60) < 1e-9 and ab["Delta"]["need"] == 6 and all(a["held"] == 0 for a in A.attendance_by_subject(s1)))
-        R.insert("marks", {"subject_id": S1, "assessment_type": "Quiz", "marks_obtained": 14, "max_marks": 20, "assessment_date": "2026-10-01"})
-        R.insert("exams", {"subject_id": S1, "title": "Mid", "max_marks": 50, "marks_obtained": 41, "exam_date": "2026-10-20"})
-        for d, g in (("2026-09-10", 8), ("2026-09-20", 9), ("2026-10-01", 7), ("2026-10-10", 6)):
-            R.insert("marks", {"subject_id": S2, "assessment_type": "Quiz", "marks_obtained": g, "max_marks": 20, "assessment_date": d})
+        self.ok(
+            "attendance: 60% → shortage, needs 6 classes; semesters never mixed",
+            abs(ab["Delta"]["pct"] - 60) < 1e-9
+            and ab["Delta"]["need"] == 6
+            and all(a["held"] == 0 for a in A.attendance_by_subject(s1)),
+        )
+        R.insert(
+            "marks",
+            {
+                "subject_id": S1,
+                "assessment_type": "Quiz",
+                "marks_obtained": 14,
+                "max_marks": 20,
+                "assessment_date": "2026-10-01",
+            },
+        )
+        R.insert(
+            "exams",
+            {
+                "subject_id": S1,
+                "title": "Mid",
+                "max_marks": 50,
+                "marks_obtained": 41,
+                "exam_date": "2026-10-20",
+            },
+        )
+        for d, g in (
+            ("2026-09-10", 8),
+            ("2026-09-20", 9),
+            ("2026-10-01", 7),
+            ("2026-10-10", 6),
+        ):
+            R.insert(
+                "marks",
+                {
+                    "subject_id": S2,
+                    "assessment_type": "Quiz",
+                    "marks_obtained": g,
+                    "max_marks": 20,
+                    "assessment_date": d,
+                },
+            )
         P = {p["subject"]: p for p in A.subject_performance(s1)}
-        self.ok("exam scores now count; Beta declining by 10 pts", abs(P["Alpha"]["pct"] - 55 / 70 * 100) < 1e-9 and P["Beta"]["trend"] == "Declining" and abs(P["Beta"]["delta"] + 10) < 1e-9)
-        for sid, d, m in ((S1, "2026-11-17", 60), (S1, "2026-11-16", 120), (S3, "2026-11-17", 30)):
-            R.insert("study_sessions", {"subject_id": sid, "study_date": d, "duration_minutes": m})
+        self.ok(
+            "exam scores now count; Beta declining by 10 pts",
+            abs(P["Alpha"]["pct"] - 55 / 70 * 100) < 1e-9
+            and P["Beta"]["trend"] == "Declining"
+            and abs(P["Beta"]["delta"] + 10) < 1e-9,
+        )
+        for sid, d, m in (
+            (S1, "2026-11-17", 60),
+            (S1, "2026-11-16", 120),
+            (S3, "2026-11-17", 30),
+        ):
+            R.insert(
+                "study_sessions",
+                {"subject_id": sid, "study_date": d, "duration_minutes": m},
+            )
         hb = A.study_habits(14)
-        self.ok("study streak/consistency from real sessions", hb["streak"] == 2 and hb["studied_days"] == 2 and hb["today_minutes"] == 90)
-        mka = lambda sid, t, st, due, sub="": R.insert("assignments", {"subject_id": sid, "title": t, "status": st, "due_date": due, "submission_date": sub})
-        mka(S3, "A1", "Not Started", "2026-11-10"), mka(S3, "A2", "Submitted", "2026-11-12", "2026-11-14"), mka(S3, "A3", "In Progress", "2026-11-20"), mka(S4, "A4", "Evaluated", "2026-11-01", "2026-10-30")
+        self.ok(
+            "study streak/consistency from real sessions",
+            hb["streak"] == 2 and hb["studied_days"] == 2 and hb["today_minutes"] == 90,
+        )
+        mka = lambda sid, t, st, due, sub="": R.insert(
+            "assignments",
+            {
+                "subject_id": sid,
+                "title": t,
+                "status": st,
+                "due_date": due,
+                "submission_date": sub,
+            },
+        )
+        mka(S3, "A1", "Not Started", "2026-11-10"), mka(
+            S3, "A2", "Submitted", "2026-11-12", "2026-11-14"
+        ), mka(S3, "A3", "In Progress", "2026-11-20"), mka(
+            S4, "A4", "Evaluated", "2026-11-01", "2026-10-30"
+        )
         a = A.assignment_stats(s2)
-        self.ok("assignment statistics", (a["total"], a["pending"], a["overdue"], a["due_week"], a["submitted"], a["late"]) == (4, 2, 1, 1, 2, 1) and abs(a["completion_rate"] - 50) < 1e-9)
-        R.insert("exams", {"subject_id": S3, "title": "Final", "exam_date": "2026-11-20", "prep_status": "Not Started"})
+        self.ok(
+            "assignment statistics",
+            (
+                a["total"],
+                a["pending"],
+                a["overdue"],
+                a["due_week"],
+                a["submitted"],
+                a["late"],
+            )
+            == (4, 2, 1, 1, 2, 1)
+            and abs(a["completion_rate"] - 50) < 1e-9,
+        )
+        R.insert(
+            "exams",
+            {
+                "subject_id": S3,
+                "title": "Final",
+                "exam_date": "2026-11-20",
+                "prep_status": "Not Started",
+            },
+        )
         titles = " | ".join(x.title for x in A.alerts(s2))
         ins = " ".join(i["text"] for i in A.insights(None))
-        self.ok("alerts and insights cite real records", "overdue" in titles and "Exam in 3" in titles and "Beta 37.5%" in ins and "Declining" in ins)
-        self.ok("date-range filter", A.study_by_subject(s2, ("2026-11-15", None))[0]["minutes"] == 30)
+        self.ok(
+            "alerts and insights cite real records",
+            "overdue" in titles
+            and "Exam in 3" in titles
+            and "Beta 37.5%" in ins
+            and "Declining" in ins,
+        )
+        self.ok(
+            "date-range filter",
+            A.study_by_subject(s2, ("2026-11-15", None))[0]["minutes"] == 30,
+        )
         core.close()
 
     # ---- 5 PDF ------------------------------------------------------------------------------------------------------
@@ -7651,15 +13509,31 @@ class StudySpaceTests(unittest.TestCase):
         path = self.make_legacy()
         core = AppCore(data_dir=path.parent)
         core.repo.fixed_today = date(2026, 11, 17)
-        core.repo.save_profile({"student_name": "Asha Verma", "roll_no": "2401234", "college_name": "Example Institute"})
+        core.repo.save_profile(
+            {
+                "student_name": "Asha Verma",
+                "roll_no": "2401234",
+                "college_name": "Example Institute",
+            }
+        )
         out = self.tmp / "pdf"
         out.mkdir()
         bad = []
         for kind in REPORT_KINDS:
             try:
-                r = generate_report(core, ReportConfig(kind=kind, scope_subject_id=1 if kind == "subject" else None), out / f"{kind}.pdf")
+                r = generate_report(
+                    core,
+                    ReportConfig(
+                        kind=kind, scope_subject_id=1 if kind == "subject" else None
+                    ),
+                    out / f"{kind}.pdf",
+                )
                 raw = (out / f"{kind}.pdf").read_bytes()
-                if not (raw.startswith(b"%PDF") and b"%%EOF" in raw[-2048:] and r["pages"] >= 1):
+                if not (
+                    raw.startswith(b"%PDF")
+                    and b"%%EOF" in raw[-2048:]
+                    and r["pages"] >= 1
+                ):
                     bad.append(kind)
             except Exception as exc:
                 bad.append((kind, repr(exc)[:80]))
@@ -7667,46 +13541,153 @@ class StudySpaceTests(unittest.TestCase):
         sizes = []
         for paper in PAPER_SIZES:
             for orient in ("Portrait", "Landscape"):
-                sizes.append(generate_report(core, ReportConfig(kind="semester", paper=paper, orientation=orient, margins_mm=[10, 12, 14, 18], palette="Burgundy", density="Compact"), out / "p.pdf")["pages"] >= 1)
+                sizes.append(
+                    generate_report(
+                        core,
+                        ReportConfig(
+                            kind="semester",
+                            paper=paper,
+                            orientation=orient,
+                            margins_mm=[10, 12, 14, 18],
+                            palette="Burgundy",
+                            density="Compact",
+                        ),
+                        out / "p.pdf",
+                    )["pages"]
+                    >= 1
+                )
         self.ok("A4 / A3 / Letter × portrait / landscape", all(sizes))
-        r = generate_report(core, ReportConfig(kind="custom", sections=["grading", "profile", "history"], executive_summary=False, cover_page=True, notes="Remark one"), out / "c.pdf")
-        self.ok("custom section order, cover page and notes", r["sections"] == ["grading", "profile", "history", "notes"] and r["pages"] >= 2)
-        r = generate_report(core, ReportConfig(kind="assignments", columns={"assignments": ["title", "deadline"]}, widths={"assignments": {"title": 4}}, font_scale=1.2), out / "cols.pdf")
+        r = generate_report(
+            core,
+            ReportConfig(
+                kind="custom",
+                sections=["grading", "profile", "history"],
+                executive_summary=False,
+                cover_page=True,
+                notes="Remark one",
+            ),
+            out / "c.pdf",
+        )
+        self.ok(
+            "custom section order, cover page and notes",
+            r["sections"] == ["grading", "profile", "history", "notes"]
+            and r["pages"] >= 2,
+        )
+        r = generate_report(
+            core,
+            ReportConfig(
+                kind="assignments",
+                columns={"assignments": ["title", "deadline"]},
+                widths={"assignments": {"title": 4}},
+                font_scale=1.2,
+            ),
+            out / "cols.pdf",
+        )
         self.ok("column selection and widths accepted", r["pages"] >= 1)
-        self.ok("config validation rejects bad input", all(self.raises(lambda k=k: ReportConfig(**k).validate()) for k in ({"paper": "B5"}, {"margins_mm": [1, 1, 1, 1]}, {"font_scale": 3}, {"record_limit": 0}, {"date_from": "x"}, {"sections": ["zzz"]}, {"kind": "nope"})))
-        r = generate_report(core, ReportConfig(kind="profile", logo_path=str(self.tmp / "missing.png")), out / "l.pdf")
-        self.ok("missing logo → report still produced, with a warning", bool(r["warnings"]) and (out / "l.pdf").exists())
+        self.ok(
+            "config validation rejects bad input",
+            all(
+                self.raises(lambda k=k: ReportConfig(**k).validate())
+                for k in (
+                    {"paper": "B5"},
+                    {"margins_mm": [1, 1, 1, 1]},
+                    {"font_scale": 3},
+                    {"record_limit": 0},
+                    {"date_from": "x"},
+                    {"sections": ["zzz"]},
+                    {"kind": "nope"},
+                )
+            ),
+        )
+        r = generate_report(
+            core,
+            ReportConfig(kind="profile", logo_path=str(self.tmp / "missing.png")),
+            out / "l.pdf",
+        )
+        self.ok(
+            "missing logo → report still produced, with a warning",
+            bool(r["warnings"]) and (out / "l.pdf").exists(),
+        )
         keep = out / "keep.pdf"
         generate_report(core, ReportConfig(kind="profile"), keep)
         before = keep.read_bytes()
         orig = ReportEngine.build_story
         ReportEngine.build_story = lambda self, progress=None: (_ for _ in ()).throw(RuntimeError("crash"))  # type: ignore[method-assign]
         try:
-            failed = self.raises(lambda: generate_report(core, ReportConfig(kind="profile"), keep), RuntimeError)
+            failed = self.raises(
+                lambda: generate_report(core, ReportConfig(kind="profile"), keep),
+                RuntimeError,
+            )
         finally:
             ReportEngine.build_story = orig  # type: ignore[method-assign]
-        self.ok("failed export leaves the previous PDF untouched and no partial files", failed and keep.read_bytes() == before and not [p for p in out.iterdir() if p.name.startswith(".") or p.suffix == ".part"])
+        self.ok(
+            "failed export leaves the previous PDF untouched and no partial files",
+            failed
+            and keep.read_bytes() == before
+            and not [
+                p
+                for p in out.iterdir()
+                if p.name.startswith(".") or p.suffix == ".part"
+            ],
+        )
         fonts = PdfFonts.get()
-        self.ok("XML-special and Unicode text is escaped / mapped safely", fonts.markup("<b>&</b>") == "&lt;b&gt;&amp;&lt;/b&gt;" and "<br/>" in fonts.markup("a\nb") and "\x00" not in fonts.markup("a\x00b"))
-        Fake = type("Fake", (PdfFonts,), {"__init__": lambda s: (setattr(s, "chain", [("P", "PB", {ord(c) for c in "abc "}), ("F", "FB", {ord(c) for c in "xyz"})]), setattr(s, "primary", "P"), setattr(s, "primary_bold", "PB"), setattr(s, "limited", False))[0]})
+        self.ok(
+            "XML-special and Unicode text is escaped / mapped safely",
+            fonts.markup("<b>&</b>") == "&lt;b&gt;&amp;&lt;/b&gt;"
+            and "<br/>" in fonts.markup("a\nb")
+            and "\x00" not in fonts.markup("a\x00b"),
+        )
+        Fake = type(
+            "Fake",
+            (PdfFonts,),
+            {
+                "__init__": lambda s: (
+                    setattr(
+                        s,
+                        "chain",
+                        [
+                            ("P", "PB", {ord(c) for c in "abc "}),
+                            ("F", "FB", {ord(c) for c in "xyz"}),
+                        ],
+                    ),
+                    setattr(s, "primary", "P"),
+                    setattr(s, "primary_bold", "PB"),
+                    setattr(s, "limited", False),
+                )[0]
+            },
+        )
         fk = Fake()
-        self.ok("per-character font fallback builds correct runs", fk.runs("abxyc") == [("P", "ab"), ("F", "xy"), ("P", "c")] and fk.runs("a✗") == [("P", "a?")])
+        self.ok(
+            "per-character font fallback builds correct runs",
+            fk.runs("abxyc") == [("P", "ab"), ("F", "xy"), ("P", "c")]
+            and fk.runs("a✗") == [("P", "a?")],
+        )
         # a worker thread with its own connection renders while the UI thread keeps writing
         result: dict = {}
 
         def work() -> None:
             rc = ReadCore(core.db_path)
             try:
-                result["r"] = generate_report(rc, ReportConfig(kind="complete"), out / "thread.pdf")
+                result["r"] = generate_report(
+                    rc, ReportConfig(kind="complete"), out / "thread.pdf"
+                )
             except Exception as exc:
                 result["e"] = exc
             finally:
                 rc.close()
+
         t = threading.Thread(target=work)
         t.start()
-        core.repo.insert("study_sessions", {"subject_id": 1, "study_date": "2026-11-17", "duration_minutes": 20})
+        core.repo.insert(
+            "study_sessions",
+            {"subject_id": 1, "study_date": "2026-11-17", "duration_minutes": 20},
+        )
         t.join()
-        self.ok("thread-safe background export while data is being edited", "r" in result and result["r"]["pages"] >= 1, result.get("e"))
+        self.ok(
+            "thread-safe background export while data is being edited",
+            "r" in result and result["r"]["pages"] >= 1,
+            result.get("e"),
+        )
         # large dataset
         big = AppCore(data_dir=self.tmp / "big")
         rnd = random.Random(7)
@@ -7714,28 +13695,67 @@ class StudySpaceTests(unittest.TestCase):
         with big.db.transaction():
             for sem in info["semester_ids"]:
                 for k in range(8):
-                    sid = big.repo.insert("subjects", {"semester_id": sem, "name": f"Subject {k} — Advanced Laboratory Practice and Viva-Voce {sem}", "code": f"S{k}"})
+                    sid = big.repo.insert(
+                        "subjects",
+                        {
+                            "semester_id": sem,
+                            "name": f"Subject {k} — Advanced Laboratory Practice and Viva-Voce {sem}",
+                            "code": f"S{k}",
+                        },
+                    )
                     for i in range(60):
-                        big.repo.insert("assignments", {"subject_id": sid, "title": f"Assignment {i} on algorithms and data structures", "due_date": f"2026-{rnd.randint(1, 12):02d}-{rnd.randint(1, 28):02d}"})
-                        big.repo.insert("marks", {"subject_id": sid, "assessment_type": "Quiz", "marks_obtained": rnd.randint(4, 20), "max_marks": 20, "assessment_date": f"2026-{rnd.randint(1, 12):02d}-{rnd.randint(1, 28):02d}"})
+                        big.repo.insert(
+                            "assignments",
+                            {
+                                "subject_id": sid,
+                                "title": f"Assignment {i} on algorithms and data structures",
+                                "due_date": f"2026-{rnd.randint(1, 12):02d}-{rnd.randint(1, 28):02d}",
+                            },
+                        )
+                        big.repo.insert(
+                            "marks",
+                            {
+                                "subject_id": sid,
+                                "assessment_type": "Quiz",
+                                "marks_obtained": rnd.randint(4, 20),
+                                "max_marks": 20,
+                                "assessment_date": f"2026-{rnd.randint(1, 12):02d}-{rnd.randint(1, 28):02d}",
+                            },
+                        )
         t0 = time.time()
-        r = generate_report(big, ReportConfig(kind="complete", record_limit=20000, cover_page=True), out / "big.pdf")
-        self.ok(f"large report ({r['pages']} pages) generated in {time.time() - t0:.1f}s without layout errors", r["pages"] > 20 and not any("did not fit" in w for w in r["warnings"]))
+        r = generate_report(
+            big,
+            ReportConfig(kind="complete", record_limit=20000, cover_page=True),
+            out / "big.pdf",
+        )
+        self.ok(
+            f"large report ({r['pages']} pages) generated in {time.time() - t0:.1f}s without layout errors",
+            r["pages"] > 20 and not any("did not fit" in w for w in r["warnings"]),
+        )
         big.close()
         core.close()
 
     # ---- 6 reliability -------------------------------------------------------------------------------------------------
     def test_09_reliability(self) -> None:
         d = Database(self.tmp / "new" / "deep" / DB_FILENAME)
-        self.ok("missing database / folders are created", d.schema_version() == LATEST_SCHEMA and d.was_fresh)
+        self.ok(
+            "missing database / folders are created",
+            d.schema_version() == LATEST_SCHEMA and d.was_fresh,
+        )
         d.close()
         core = AppCore(data_dir=self.tmp / "r")
         R = core.repo
         R.create_structure("P", years=1, per_year=1)
         sem = R.current_semester_id()
         sub = R.insert("subjects", {"semester_id": sem, "name": "S"})
-        core.db.run("INSERT INTO assignments(subject_id,title,due_date,given_date,status) VALUES(?,?,?,?,?)", (sub, "legacy junk", "not-a-date", "", ""))
-        core.db.run("INSERT INTO marks(subject_id,assessment_type,marks_obtained,max_marks,assessment_date) VALUES(?,?,?,?,?)", (sub, "Quiz", 5, 10, "garbage"))
+        core.db.run(
+            "INSERT INTO assignments(subject_id,title,due_date,given_date,status) VALUES(?,?,?,?,?)",
+            (sub, "legacy junk", "not-a-date", "", ""),
+        )
+        core.db.run(
+            "INSERT INTO marks(subject_id,assessment_type,marks_obtained,max_marks,assessment_date) VALUES(?,?,?,?,?)",
+            (sub, "Quiz", 5, 10, "garbage"),
+        )
         try:
             R.rows("assignments")
             core.analytics.overview(sem)
@@ -7745,14 +13765,34 @@ class StudySpaceTests(unittest.TestCase):
             ok = True
         except Exception:
             ok = False
-        self.ok("invalid dates in old records never crash lists, analytics or alerts", ok)
-        self.ok("empty fields: blank strings accepted where optional", R.insert("notes", {"title": "t", "body": "", "tags": ""}) > 0)
-        self.ok("settings tolerate junk values", (core.settings.set("daily_goal", "abc"), core.analytics.study_habits(7)["goal"])[1] == 0 or True)
+        self.ok(
+            "invalid dates in old records never crash lists, analytics or alerts", ok
+        )
+        self.ok(
+            "empty fields: blank strings accepted where optional",
+            R.insert("notes", {"title": "t", "body": "", "tags": ""}) > 0,
+        )
+        self.ok(
+            "settings tolerate junk values",
+            (
+                core.settings.set("daily_goal", "abc"),
+                core.analytics.study_habits(7)["goal"],
+            )[1]
+            == 0
+            or True,
+        )
         core.settings.set("grading", "{not json")
         core.settings.invalidate()
-        self.ok("corrupt grading config falls back to defaults", core.settings.grading() == GradingConfig())
+        self.ok(
+            "corrupt grading config falls back to defaults",
+            core.settings.grading() == GradingConfig(),
+        )
         core.close()
-        self.ok("data folder resolution honours override", resolve_data_dir({"STUDY_SPACE_HOME": str(self.tmp / "h")}) == self.tmp / "h")
+        self.ok(
+            "data folder resolution honours override",
+            resolve_data_dir({"STUDY_SPACE_HOME": str(self.tmp / "h")})
+            == self.tmp / "h",
+        )
 
     # ---- 7 GUI (needs PySide6) -----------------------------------------------------------------------------------------
     def test_10_gui_smoke(self) -> None:
@@ -7764,10 +13804,20 @@ class StudySpaceTests(unittest.TestCase):
         R = core.repo
         info = R.create_structure("B.Tech", years=1, per_year=2, start_year=2025)
         sem = info["semester_ids"][0]
-        sub = R.insert("subjects", {"semester_id": sem, "name": "Physics", "credits": 4})
-        R.insert("assignments", {"subject_id": sub, "title": "Lab", "due_date": "2026-11-10"})
-        R.insert("exams", {"subject_id": sub, "title": "Mid", "max_marks": 50, "marks_obtained": 30})
-        R.insert("study_sessions", {"subject_id": sub, "study_date": today_iso(), "duration_minutes": 45})
+        sub = R.insert(
+            "subjects", {"semester_id": sem, "name": "Physics", "credits": 4}
+        )
+        R.insert(
+            "assignments", {"subject_id": sub, "title": "Lab", "due_date": "2026-11-10"}
+        )
+        R.insert(
+            "exams",
+            {"subject_id": sub, "title": "Mid", "max_marks": 50, "marks_obtained": 30},
+        )
+        R.insert(
+            "study_sessions",
+            {"subject_id": sub, "study_date": today_iso(), "duration_minutes": 45},
+        )
         win = MainWindow(core)
         win.show()
         failures = []
@@ -7788,19 +13838,31 @@ class StudySpaceTests(unittest.TestCase):
                 bad.append((table, repr(exc)[:80]))
         self.ok("every record form builds", not bad, bad)
         dlg = RecordDialog(win.ctx, "assignments", None, {}, win)
-        dlg.widgets["subject_id"].setCurrentIndex(dlg.widgets["subject_id"].findData(sub))
+        dlg.widgets["subject_id"].setCurrentIndex(
+            dlg.widgets["subject_id"].findData(sub)
+        )
         dlg.widgets["title"].setText("From the GUI")
         dlg._save(False)
-        self.ok("saving through a form writes the record", dlg.saved_id and R.get("assignments", dlg.saved_id)["title"] == "From the GUI")
+        self.ok(
+            "saving through a form writes the record",
+            dlg.saved_id
+            and R.get("assignments", dlg.saved_id)["title"] == "From the GUI",
+        )
         dlg = RecordDialog(win.ctx, "assignments", None, {}, win)
         dlg._save(False)
-        self.ok("invalid form keeps the dialog open with a message", dlg.banner.text() != "")
+        self.ok(
+            "invalid form keeps the dialog open with a message", dlg.banner.text() != ""
+        )
         for mode in ("Dark", "System", "Light"):
             core.settings.set("theme", mode)
             win.apply_theme()
         core.settings.set_many({"accent_custom": "#FFE600", "theme": "Dark"})
         win.apply_theme()
-        self.ok("theme switching keeps text readable", contrast_ratio(win.theme.t["accent_fg"], win.theme.t["accent"]) >= 4.5 and win.theme.dark)
+        self.ok(
+            "theme switching keeps text readable",
+            contrast_ratio(win.theme.t["accent_fg"], win.theme.t["accent"]) >= 4.5
+            and win.theme.dark,
+        )
         win.resize(900, 600)
         app.processEvents()
         narrow = win.sidebar.width()
@@ -7814,29 +13876,60 @@ class StudySpaceTests(unittest.TestCase):
         page._header_clicked(1)
         page._save_layout()
         again = EntityPage(win.ctx, "assignments", tid="gui_test")
-        self.ok("table customisation persists", again.view.horizontalHeader().isSectionHidden(2) and bool(again.prefs.d["sort"]))
+        self.ok(
+            "table customisation persists",
+            again.view.horizontalHeader().isSectionHidden(2)
+            and bool(again.prefs.d["sort"]),
+        )
         rep = win.page("reports")
         cfg = rep.read()
         cfg.validate()
-        self.ok("report form reads a valid configuration", cfg.kind == "complete" and bool(cfg.sections))
+        self.ok(
+            "report form reads a valid configuration",
+            cfg.kind == "complete" and bool(cfg.sections),
+        )
         win.close()
 
 
 def run_selftests() -> int:
     logging.disable(logging.CRITICAL)
-    print(f"{APP_NAME} {APP_VERSION} self-test\n" + "\n".join("  " + line for line in dependency_report()) + "\n")
-    result = unittest.TextTestRunner(verbosity=2).run(unittest.defaultTestLoader.loadTestsFromTestCase(StudySpaceTests))
+    print(
+        f"{APP_NAME} {APP_VERSION} self-test\n"
+        + "\n".join("  " + line for line in dependency_report())
+        + "\n"
+    )
+    result = unittest.TextTestRunner(verbosity=2).run(
+        unittest.defaultTestLoader.loadTestsFromTestCase(StudySpaceTests)
+    )
     checks, failed = StudySpaceTests.counts
-    print(f"\n{checks} checks, {failed} failed, {len(result.skipped)} suite(s) skipped.")
+    print(
+        f"\n{checks} checks, {failed} failed, {len(result.skipped)} suite(s) skipped."
+    )
     return 0 if result.wasSuccessful() else 1
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
-    ap = argparse.ArgumentParser(prog="study_space.py", description=f"{APP_NAME} — academic management for college students")
-    ap.add_argument("--db", help=f"path of the database file (default: {DB_FILENAME} next to this script)")
-    ap.add_argument("--selftest", action="store_true", help="run the automated test-suite and exit")
-    ap.add_argument("--check", action="store_true", help="show dependency status and verify the database, then exit")
-    ap.add_argument("--write-requirements", action="store_true", help="write requirements.txt next to this script")
+    ap = argparse.ArgumentParser(
+        prog="study_space.py",
+        description=f"{APP_NAME} — academic management for college students",
+    )
+    ap.add_argument(
+        "--db",
+        help=f"path of the database file (default: {DB_FILENAME} next to this script)",
+    )
+    ap.add_argument(
+        "--selftest", action="store_true", help="run the automated test-suite and exit"
+    )
+    ap.add_argument(
+        "--check",
+        action="store_true",
+        help="show dependency status and verify the database, then exit",
+    )
+    ap.add_argument(
+        "--write-requirements",
+        action="store_true",
+        help="write requirements.txt next to this script",
+    )
     ap.add_argument("--version", action="store_true")
     args = ap.parse_args(argv)
     if args.version:
@@ -7860,7 +13953,9 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         except Exception as exc:
             print(f"Database problem: {exc}")
             return 1
-        print(f"Database: {info['path']}  ({info['size'] / 1024:,.0f} KB, schema v{info['schema']}, integrity {info['integrity']}, FK issues {info['fk_problems']})")
+        print(
+            f"Database: {info['path']}  ({info['size'] / 1024:,.0f} KB, schema v{info['schema']}, integrity {info['integrity']}, FK issues {info['fk_problems']})"
+        )
         return 0 if info["integrity"] == "ok" else 1
     return run_gui(args.db)
 
