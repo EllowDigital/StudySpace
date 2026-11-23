@@ -134,3 +134,84 @@ Traceback (most recent call last):
   File "C:\Users\sarwa\AppData\Local\Programs\Python\Python315\Lib\site-packages\reportlab\lib\colors.py", line 391, in HexColor
     val = int(val,b)
 ValueError: invalid literal for int() with base 10: '2563EB'
+2026-11-21 20:38:19,994 INFO studyspace: Applied migration 5: weekly_timetable
+2026-11-21 20:39:22,384 ERROR studyspace: Background task failed
+Traceback (most recent call last):
+  File "C:\Github\StudySpace\study_space.py", line 5672, in run
+    self.done.emit(self.fn(lambda p, m: self.progress.emit(int(p), str(m))))
+                   ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Github\StudySpace\study_space.py", line 7466, in job
+    return generate_report(rc, cfg, out, progress, preview)
+  File "C:\Github\StudySpace\study_space.py", line 4432, in generate_report
+    return ReportEngine(core.repo, core.analytics, cfg, preview).generate(out_path, progress)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "C:\Github\StudySpace\study_space.py", line 4416, in generate
+    atomic_write(out_path, write)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Github\StudySpace\study_space.py", line 167, in atomic_write
+    writer(tmp)
+    ~~~~~~^^^^^
+  File "C:\Github\StudySpace\study_space.py", line 4408, in write
+    doc.build(holder["story"], canvasmaker=self._canvas_maker())
+    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sarwa\AppData\Local\Programs\Python\Python315\Lib\site-packages\reportlab\platypus\doctemplate.py", line 1083, in build
+    self.handle_flowable(flowables)
+    ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+  File "C:\Users\sarwa\AppData\Local\Programs\Python\Python315\Lib\site-packages\reportlab\platypus\doctemplate.py", line 932, in handle_flowable
+    if frame.add(f, canv, trySplit=self.allowSplitting):
+       ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sarwa\AppData\Local\Programs\Python\Python315\Lib\site-packages\reportlab\platypus\frames.py", line 201, in _add
+    flowable.drawOn(canv, self._x + self._leftExtraIndent, y, _sW=aW-w)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sarwa\AppData\Local\Programs\Python\Python315\Lib\site-packages\reportlab\platypus\flowables.py", line 112, in drawOn
+    self._drawOn(canvas)
+    ~~~~~~~~~~~~^^^^^^^^
+  File "C:\Users\sarwa\AppData\Local\Programs\Python\Python315\Lib\site-packages\reportlab\platypus\flowables.py", line 93, in _drawOn
+    self.draw()#this is the bit you overload
+    ~~~~~~~~~^^
+  File "C:\Github\StudySpace\study_space.py", line 3719, in draw
+    c.setFillColor(rl_colors.HexColor(col or self.accent))
+                   ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sarwa\AppData\Local\Programs\Python\Python315\Lib\site-packages\reportlab\lib\colors.py", line 391, in HexColor
+    val = int(val,b)
+ValueError: invalid literal for int() with base 10: '2563EB'
+2026-11-23 22:28:14,819 ERROR studyspace: Background task failed
+Traceback (most recent call last):
+  File "C:\Github\StudySpace\study_space.py", line 5672, in run
+    self.done.emit(self.fn(lambda p, m: self.progress.emit(int(p), str(m))))
+                   ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Github\StudySpace\study_space.py", line 7466, in job
+    return generate_report(rc, cfg, out, progress, preview)
+  File "C:\Github\StudySpace\study_space.py", line 4432, in generate_report
+    return ReportEngine(core.repo, core.analytics, cfg, preview).generate(out_path, progress)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "C:\Github\StudySpace\study_space.py", line 4416, in generate
+    atomic_write(out_path, write)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Github\StudySpace\study_space.py", line 167, in atomic_write
+    writer(tmp)
+    ~~~~~~^^^^^
+  File "C:\Github\StudySpace\study_space.py", line 4408, in write
+    doc.build(holder["story"], canvasmaker=self._canvas_maker())
+    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sarwa\AppData\Local\Programs\Python\Python315\Lib\site-packages\reportlab\platypus\doctemplate.py", line 1083, in build
+    self.handle_flowable(flowables)
+    ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+  File "C:\Users\sarwa\AppData\Local\Programs\Python\Python315\Lib\site-packages\reportlab\platypus\doctemplate.py", line 932, in handle_flowable
+    if frame.add(f, canv, trySplit=self.allowSplitting):
+       ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sarwa\AppData\Local\Programs\Python\Python315\Lib\site-packages\reportlab\platypus\frames.py", line 201, in _add
+    flowable.drawOn(canv, self._x + self._leftExtraIndent, y, _sW=aW-w)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sarwa\AppData\Local\Programs\Python\Python315\Lib\site-packages\reportlab\platypus\flowables.py", line 112, in drawOn
+    self._drawOn(canvas)
+    ~~~~~~~~~~~~^^^^^^^^
+  File "C:\Users\sarwa\AppData\Local\Programs\Python\Python315\Lib\site-packages\reportlab\platypus\flowables.py", line 93, in _drawOn
+    self.draw()#this is the bit you overload
+    ~~~~~~~~~^^
+  File "C:\Github\StudySpace\study_space.py", line 3719, in draw
+    c.setFillColor(rl_colors.HexColor(col or self.accent))
+                   ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sarwa\AppData\Local\Programs\Python\Python315\Lib\site-packages\reportlab\lib\colors.py", line 391, in HexColor
+    val = int(val,b)
+ValueError: invalid literal for int() with base 10: '2563EB'
